@@ -1,50 +1,59 @@
-# React + TypeScript + Vite
+# KotBeheer — Student Onboarding PWA
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Digitale onboarding voor verhuurders: contracten opstellen, ondertekenen en plaatsbeschrijvingen opmaken.
 
-Currently, two official plugins are available:
+## Vereisten
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 20+
+- npm 10+
 
-## Expanding the ESLint configuration
+## Installatie
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm install
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Ontwikkeling
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+```bash
+npm run dev
 ```
+
+Opent op `http://localhost:5173`.
+
+## Tests
+
+```bash
+npm run test:run   # eenmalig
+npm test           # watch mode
+```
+
+## Bouwen voor productie
+
+```bash
+npm run build
+npm run preview
+```
+
+## Omgevingsvariabelen
+
+Kopieer `.env.example` naar `.env.local`:
+
+```
+VITE_SUPABASE_URL=https://jouw-project.supabase.co
+VITE_SUPABASE_ANON_KEY=jouw-anon-key
+```
+
+## Databasemigratie
+
+```bash
+supabase db push
+# of manueel via Supabase Studio: supabase/migrations/20260521000000_initial.sql
+```
+
+## Fasen
+
+- **Phase 1 (huidig):** Foundation + Dashboard — volledig met mock data
+- **Phase 2:** Contract Wizard (nieuw contract + verlenging)
+- **Phase 3:** Plaatsbeschrijving (inspectieflow)
+- **Phase 4:** Pandenbeheer
