@@ -8,6 +8,7 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 COPY --from=builder /app/dist ./dist
+COPY package.json ./package.json
 COPY server.js ./server.js
 EXPOSE 3000
 CMD ["node", "server.js"]
