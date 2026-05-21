@@ -1,4 +1,4 @@
-# KotBeheer — Student Onboarding PWA
+# KotStart — Student Onboarding PWA
 
 Digitale onboarding voor verhuurders: contracten opstellen, ondertekenen en plaatsbeschrijvingen opmaken.
 

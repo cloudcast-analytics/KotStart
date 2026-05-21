@@ -12,30 +12,32 @@ function renderDashboard() {
 }
 
 describe('DashboardPage', () => {
-  it('toont studentennamen', () => {
+  it('toont studentennamen', async () => {
     renderDashboard()
-    expect(screen.getByText('Emma Janssen')).toBeInTheDocument()
+    expect(await screen.findByText('Emma Janssen')).toBeInTheDocument()
     expect(screen.getByText('Liam Pieters')).toBeInTheDocument()
     expect(screen.getByText('Sara Bogaert')).toBeInTheDocument()
   })
 
-  it('sorteert standaard op kamernummer oplopend', () => {
+  it('sorteert standaard op kamernummer oplopend', async () => {
     renderDashboard()
+    await screen.findByText('Emma Janssen')
     const rows = screen.getAllByText(/Janssen|Pieters|Bogaert|De Smedt|Vandenberghe/)
     expect(rows[0].textContent).toContain('Janssen')
   })
 
-  it('wisselt naar studentsortering bij klik op Student header', () => {
+  it('wisselt naar studentsortering bij klik op Student header', async () => {
     renderDashboard()
+    await screen.findByText('Emma Janssen')
     fireEvent.click(screen.getByRole('button', { name: /^student$/i }))
     const rows = screen.getAllByText(/Janssen|Pieters|Bogaert|De Smedt|Vandenberghe/)
     expect(rows[0].textContent).toContain('Bogaert')
   })
 
-  it('toont lege staat als er geen data is voor de selectie', () => {
+  it('toont lege staat als er geen data is voor de selectie', async () => {
     renderDashboard()
-    const propertyChip = screen.getByText('Residentie De Linde')
+    const propertyChip = await screen.findByText('Residentie De Linde')
     fireEvent.click(propertyChip)
-    expect(screen.getByText('Nog geen studenten')).toBeInTheDocument()
+    expect(await screen.findByText('Nog geen studenten')).toBeInTheDocument()
   })
 })

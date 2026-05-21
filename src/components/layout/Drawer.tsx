@@ -42,7 +42,7 @@ export default function Drawer({ isOpen, onClose }: DrawerProps) {
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center">
                   <Home size={16} className="text-white" />
                 </div>
-                <span className="text-lg font-extrabold text-slate-800 tracking-tight">KotBeheer</span>
+                <span className="text-lg font-extrabold text-slate-800 tracking-tight">KotStart</span>
               </div>
             </div>
 

@@ -61,3 +61,25 @@ create table inspection_items (
   photo_url text,
   notes text
 );
+
+insert into storage.buckets (id, name, public)
+values
+  ('student-photos', 'student-photos', true),
+  ('inspection-photos', 'inspection-photos', true)
+on conflict (id) do nothing;
+
+create policy "Public student photos are readable"
+on storage.objects for select
+using (bucket_id = 'student-photos');
+
+create policy "Public inspection photos are readable"
+on storage.objects for select
+using (bucket_id = 'inspection-photos');
+
+create policy "Student photos can be uploaded"
+on storage.objects for insert
+with check (bucket_id = 'student-photos');
+
+create policy "Inspection photos can be uploaded"
+on storage.objects for insert
+with check (bucket_id = 'inspection-photos');

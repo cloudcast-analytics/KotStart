@@ -8,8 +8,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'KotBeheer',
-        short_name: 'KotBeheer',
+        name: 'KotStart',
+        short_name: 'KotStart',
         description: 'Student onboarding voor verhuurders',
         theme_color: '#6366f1',
         background_color: '#dbeafe',

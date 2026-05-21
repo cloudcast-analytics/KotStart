@@ -12,28 +12,43 @@ const mockRow: StudentDashboardRow = {
 }
 
 describe('StudentRow', () => {
+  const defaultProps = {
+    row: mockRow,
+    onStartInspection: vi.fn(),
+    onRenew: vi.fn(),
+    onEndInspection: vi.fn(),
+    onOpenContract: vi.fn(),
+  }
+
   it('toont de studentnaam', () => {
-    render(<StudentRow row={mockRow} onStartInspection={vi.fn()} onRenew={vi.fn()} onEndInspection={vi.fn()} />)
+    render(<StudentRow {...defaultProps} />)
     expect(screen.getByText('Emma Janssen')).toBeInTheDocument()
   })
 
   it('toont enkel het kamernummer (geen "Kamer" prefix)', () => {
-    render(<StudentRow row={mockRow} onStartInspection={vi.fn()} onRenew={vi.fn()} onEndInspection={vi.fn()} />)
+    render(<StudentRow {...defaultProps} />)
     expect(screen.queryByText(/^kamer$/i)).not.toBeInTheDocument()
     expect(screen.getAllByText('01').length).toBeGreaterThan(0)
   })
 
   it('roept onRenew aan bij klik op verlengknop', () => {
     const onRenew = vi.fn()
-    render(<StudentRow row={mockRow} onStartInspection={vi.fn()} onRenew={onRenew} onEndInspection={vi.fn()} />)
+    render(<StudentRow {...defaultProps} onRenew={onRenew} />)
     fireEvent.click(screen.getByRole('button', { name: /verlengen/i }))
     expect(onRenew).toHaveBeenCalledWith('c1')
   })
 
   it('roept onStartInspection aan bij klik op startplaatsbeschrijving', () => {
     const onStartInspection = vi.fn()
-    render(<StudentRow row={mockRow} onStartInspection={onStartInspection} onRenew={vi.fn()} onEndInspection={vi.fn()} />)
+    render(<StudentRow {...defaultProps} onStartInspection={onStartInspection} />)
     fireEvent.click(screen.getByRole('button', { name: /startplaatsbeschrijving/i }))
     expect(onStartInspection).toHaveBeenCalledWith('c1')
+  })
+
+  it('opent contractdetail bij klik op studentnaam', () => {
+    const onOpenContract = vi.fn()
+    render(<StudentRow {...defaultProps} onOpenContract={onOpenContract} />)
+    fireEvent.click(screen.getByRole('button', { name: /contract openen voor emma janssen/i }))
+    expect(onOpenContract).toHaveBeenCalledWith('c1')
   })
 })

@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import Sidebar from './Sidebar'
 import Drawer from './Drawer'
 import TopBar from './TopBar'
 import { PROPERTIES, SCHOOL_YEARS } from '../../lib/mockData'
+import type { Property } from '../../types'
 
 interface AppShellProps {
   children: ReactNode
@@ -10,6 +10,9 @@ interface AppShellProps {
   propertyId: string
   onSchoolYearChange: (year: string) => void
   onPropertyChange: (id: string) => void
+  properties?: Property[]
+  schoolYears?: string[]
+  showPropertyFilter?: boolean
 }
 
 export default function AppShell({
@@ -18,34 +21,34 @@ export default function AppShell({
   propertyId,
   onSchoolYearChange,
   onPropertyChange,
+  properties = PROPERTIES,
+  schoolYears = SCHOOL_YEARS,
+  showPropertyFilter = true,
 }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const selectedProperty = PROPERTIES.find(p => p.id === propertyId) ?? PROPERTIES[0]
+  const selectedProperty = properties.find(p => p.id === propertyId) ?? properties[0] ?? PROPERTIES[0]
 
   function handlePropertyChange(name: string) {
-    const found = PROPERTIES.find(p => p.name === name)
+    const found = properties.find(p => p.name === name)
     if (found) onPropertyChange(found.id)
   }
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <div className="hidden md:flex">
-        <Sidebar />
-      </div>
-
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar
           schoolYear={schoolYear}
           propertyName={selectedProperty.name}
-          schoolYears={SCHOOL_YEARS}
-          propertyNames={PROPERTIES.map(p => p.name)}
+          schoolYears={schoolYears}
+          propertyNames={properties.map(p => p.name)}
           onSchoolYearChange={onSchoolYearChange}
           onPropertyChange={handlePropertyChange}
           onMenuClick={() => setDrawerOpen(true)}
           showMenuButton={true}
+          showPropertyFilter={showPropertyFilter}
         />
         <main className="flex-1 overflow-y-auto">
           {children}

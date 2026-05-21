@@ -8,6 +8,7 @@ interface StudentRowProps {
   onStartInspection: (contractId: string) => void
   onRenew: (contractId: string) => void
   onEndInspection: (contractId: string) => void
+  onOpenContract: (contractId: string) => void
 }
 
 export default function StudentRow({
@@ -16,6 +17,7 @@ export default function StudentRow({
   onStartInspection,
   onRenew,
   onEndInspection,
+  onOpenContract,
 }: StudentRowProps) {
   return (
     <div
@@ -26,16 +28,26 @@ export default function StudentRow({
         'hover:bg-white/50 transition-colors duration-130',
       )}
     >
-      <div className="flex-1 min-w-0">
+      <button
+        type="button"
+        onClick={() => onOpenContract(row.contractId)}
+        className="flex-1 min-w-0 text-left rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/20"
+        aria-label={`Contract openen voor ${row.firstName} ${row.lastName}`}
+      >
         <p className="text-sm font-semibold text-slate-900 truncate">
           {row.firstName} {row.lastName}
         </p>
         <p className="text-xs text-slate-400 font-medium mt-0.5 md:hidden">{row.roomNumber}</p>
-      </div>
+      </button>
 
-      <div className="hidden md:block w-[72px] flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => onOpenContract(row.contractId)}
+        className="hidden md:block w-[72px] flex-shrink-0 text-left rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/20"
+        aria-label={`Contract openen kamer ${row.roomNumber}`}
+      >
         <span className="text-sm font-medium text-slate-500">{row.roomNumber}</span>
-      </div>
+      </button>
 
       <div className="flex items-center gap-1.5 w-[136px] justify-end flex-shrink-0">
         <button

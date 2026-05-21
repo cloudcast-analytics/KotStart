@@ -28,6 +28,6 @@ describe('Drawer', () => {
 
   it('toont app logo', () => {
     renderDrawer(true)
-    expect(screen.getByText('KotBeheer')).toBeInTheDocument()
+    expect(screen.getByText('KotStart')).toBeInTheDocument()
   })
 })
