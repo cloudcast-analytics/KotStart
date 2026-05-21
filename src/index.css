@@ -1,3 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  }
+
+  body {
+    @apply min-h-screen;
+    background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 35%, #fce7f3 65%, #d1fae5 100%);
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/55 backdrop-blur-2xl border border-white/75;
+    box-shadow: 0 4px 28px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.95);
+  }
+
+  .glass-chip {
+    @apply bg-white/68 backdrop-blur-md border border-white/90 cursor-pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05), inset 0 1px 0 white;
+  }
+
+  .glass-row-even {
+    @apply bg-white/30;
+  }
+
+  .btn-primary {
+    @apply font-bold rounded-xl text-white;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    box-shadow: 0 3px 12px rgba(79,70,229,0.32), inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+
+  .btn-action {
+    @apply w-9 h-9 rounded-xl flex items-center justify-center relative cursor-pointer transition-transform duration-100 active:scale-95;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.85);
+  }
+
+  .btn-action-start {
+    @apply bg-green-50/80 border border-green-300/55;
+  }
+
+  .btn-action-renew {
+    @apply bg-blue-50/80 border border-blue-300/55;
+  }
+
+  .btn-action-end {
+    @apply bg-purple-50/80 border border-purple-300/55;
+  }
+}
