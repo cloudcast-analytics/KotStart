@@ -43,9 +43,13 @@ Kopieer `.env.example` naar `.env.local`:
 VITE_DEMO_MODE=false
 VITE_SUPABASE_URL=https://jouw-project.supabase.co
 VITE_SUPABASE_ANON_KEY=jouw-anon-key
+RESEND_FROM_NAME=Cloudcast Analytics
+RESEND_FROM_EMAIL=info@cloudcast-analytics.com
 ```
 
 Gebruik `VITE_DEMO_MODE=true` alleen wanneer je expliciet zonder login met lokale mock data wilt testen. Laat deze waarde op `false` in normale ontwikkeling en productie.
+
+De Edge Function gebruikt `RESEND_FROM_NAME` en `RESEND_FROM_EMAIL` als afzender. Antwoorden op contractmails gaan naar het e-mailadres van de ingelogde gebruiker.
 
 ## Databasemigratie
 

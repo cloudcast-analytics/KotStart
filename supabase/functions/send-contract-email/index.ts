@@ -58,7 +58,8 @@ serve(async (req) => {
     const apiKey = Deno.env.get('RESEND_API_KEY')
     if (!apiKey) throw new Error('RESEND_API_KEY niet geconfigureerd')
 
-    const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') ?? 'onboarding@resend.dev'
+    const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') ?? 'info@cloudcast-analytics.com'
+    const fromName = Deno.env.get('RESEND_FROM_NAME') ?? 'Cloudcast Analytics'
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -67,8 +68,9 @@ serve(async (req) => {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: `KotStart <${fromAddress}>`,
+        from: `${fromName} <${fromAddress}>`,
         to,
+        reply_to: user.email,
         subject: `Huurovereenkomst voor ${name}`,
         html,
       }),
