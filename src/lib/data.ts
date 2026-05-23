@@ -129,8 +129,12 @@ async function uploadDataUrl(bucket: string, folder: string, value: string | nul
   const blob = dataUrlToBlob(value)
   if (!blob) return value
 
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  if (!userData.user) throw new Error('Geen ingelogde gebruiker voor upload')
+
   const extension = extensionForMime(blob.type)
-  const path = `${folder}/${crypto.randomUUID()}.${extension}`
+  const path = `${userData.user.id}/${folder}/${crypto.randomUUID()}.${extension}`
   const { error } = await supabase.storage.from(bucket).upload(path, blob, {
     contentType: blob.type,
     upsert: false,
@@ -138,8 +142,35 @@ async function uploadDataUrl(bucket: string, folder: string, value: string | nul
 
   if (error) throw error
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path)
-  return data.publicUrl
+  return `storage://${bucket}/${path}`
+}
+
+function parseStorageReference(value: string | null | undefined): { bucket: string; path: string } | null {
+  if (!value?.startsWith('storage://')) return null
+
+  const withoutProtocol = value.slice('storage://'.length)
+  const separatorIndex = withoutProtocol.indexOf('/')
+  if (separatorIndex === -1) return null
+
+  return {
+    bucket: withoutProtocol.slice(0, separatorIndex),
+    path: withoutProtocol.slice(separatorIndex + 1),
+  }
+}
+
+async function resolveStorageUrl(value: string | null | undefined): Promise<string | undefined> {
+  if (!value) return undefined
+  if (!isSupabaseConfigured) return value
+
+  const reference = parseStorageReference(value)
+  if (!reference) return value
+
+  const { data, error } = await supabase.storage
+    .from(reference.bucket)
+    .createSignedUrl(reference.path, 60 * 60)
+
+  if (error) throw error
+  return data.signedUrl
 }
 
 function asNumber(value: number | string | null): number {
@@ -186,6 +217,13 @@ function mapStudent(row: StudentRow): Student {
   }
 }
 
+async function mapStudentWithAssets(row: StudentRow): Promise<Student> {
+  return {
+    ...mapStudent(row),
+    photoUrl: await resolveStorageUrl(row.photo_url),
+  }
+}
+
 function mapContract(row: ContractRow): Contract {
   return {
     id: row.id,
@@ -213,6 +251,13 @@ function mapInspection(row: InspectionRow): Inspection {
   }
 }
 
+async function mapInspectionWithAssets(row: InspectionRow): Promise<Inspection> {
+  return {
+    ...mapInspection(row),
+    overviewPhotoUrl: await resolveStorageUrl(row.overview_photo_url),
+  }
+}
+
 function mapInspectionItem(row: InspectionItemRow): InspectionItem {
   return {
     id: row.id,
@@ -222,6 +267,13 @@ function mapInspectionItem(row: InspectionItemRow): InspectionItem {
     condition: row.condition,
     photoUrl: row.photo_url ?? undefined,
     notes: row.notes ?? undefined,
+  }
+}
+
+async function mapInspectionItemWithAssets(row: InspectionItemRow): Promise<InspectionItem> {
+  return {
+    ...mapInspectionItem(row),
+    photoUrl: await resolveStorageUrl(row.photo_url),
   }
 }
 
@@ -275,7 +327,7 @@ export async function getStudents(): Promise<Student[]> {
 
   const { data, error } = await supabase.from('students').select('*').order('last_name')
   if (error) throw error
-  return (data as StudentRow[]).map(mapStudent)
+  return Promise.all((data as StudentRow[]).map(mapStudentWithAssets))
 }
 
 export async function getContracts(): Promise<Contract[]> {
@@ -324,12 +376,12 @@ export async function getContractBundleData(contractId: string | undefined) {
       .maybeSingle()
 
     if (inspectionData) {
-      inspection = mapInspection(inspectionData as InspectionRow)
+      inspection = await mapInspectionWithAssets(inspectionData as InspectionRow)
       const { data: itemsData } = await supabase
         .from('inspection_items')
         .select('*')
         .eq('inspection_id', inspection.id)
-      inspectionItems = ((itemsData as InspectionItemRow[]) ?? []).map(mapInspectionItem)
+      inspectionItems = await Promise.all(((itemsData as InspectionItemRow[]) ?? []).map(mapInspectionItemWithAssets))
     }
   }
 
