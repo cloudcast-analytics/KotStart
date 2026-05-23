@@ -1,4 +1,4 @@
-import type { Contract, Property, Room, Student, StudentDashboardRow } from '../types'
+import type { Contract, Inspection, InspectionItem, Property, Room, Student, StudentDashboardRow } from '../types'
 import { CONTRACTS, PROPERTIES, ROOMS, STUDENTS } from './mockData'
 import { isSupabaseConfigured, supabase } from './supabase'
 
@@ -44,6 +44,24 @@ interface ContractRow {
   guardian_phone: string | null
   status: Contract['status']
   created_at: string
+}
+
+interface InspectionRow {
+  id: string
+  contract_id: string
+  type: 'start' | 'end'
+  overview_photo_url: string | null
+  created_at: string
+}
+
+interface InspectionItemRow {
+  id: string
+  inspection_id: string
+  category: string
+  item_name: string
+  condition: InspectionItem['condition']
+  photo_url: string | null
+  notes: string | null
 }
 
 interface ContractDraftStudent {
@@ -173,6 +191,28 @@ function mapContract(row: ContractRow): Contract {
   }
 }
 
+function mapInspection(row: InspectionRow): Inspection {
+  return {
+    id: row.id,
+    contractId: row.contract_id,
+    type: row.type,
+    overviewPhotoUrl: row.overview_photo_url ?? undefined,
+    createdAt: row.created_at,
+  }
+}
+
+function mapInspectionItem(row: InspectionItemRow): InspectionItem {
+  return {
+    id: row.id,
+    inspectionId: row.inspection_id,
+    category: row.category,
+    itemName: row.item_name,
+    condition: row.condition,
+    photoUrl: row.photo_url ?? undefined,
+    notes: row.notes ?? undefined,
+  }
+}
+
 function buildDashboardRows(
   propertyId: string,
   schoolYear: string,
@@ -257,7 +297,43 @@ export async function getContractBundleData(contractId: string | undefined) {
   const property = room ? properties.find(item => item.id === room.propertyId) : null
 
   if (!room || !student || !property) return null
-  return { contract, room, student, property }
+
+  let inspection: Inspection | undefined
+  let inspectionItems: InspectionItem[] = []
+
+  if (isSupabaseConfigured) {
+    const { data: inspectionData } = await supabase
+      .from('inspections')
+      .select('*')
+      .eq('contract_id', contractId)
+      .eq('type', 'start')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (inspectionData) {
+      inspection = mapInspection(inspectionData as InspectionRow)
+      const { data: itemsData } = await supabase
+        .from('inspection_items')
+        .select('*')
+        .eq('inspection_id', inspection.id)
+      inspectionItems = ((itemsData as InspectionItemRow[]) ?? []).map(mapInspectionItem)
+    }
+  }
+
+  return { contract, room, student, property, inspection, inspectionItems }
+}
+
+export async function sendContractEmail(
+  to: string,
+  name: string,
+  html: string,
+): Promise<void> {
+  if (!isSupabaseConfigured) return
+  const { error } = await supabase.functions.invoke('send-contract-email', {
+    body: { to, name, html },
+  })
+  if (error) throw error
 }
 
 export async function updateRoomData(room: Room): Promise<Room> {

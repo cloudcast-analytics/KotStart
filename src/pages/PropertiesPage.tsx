@@ -152,6 +152,8 @@ function RoomEditModal({
   )
 }
 
+const DISABLED = true as boolean
+
 export default function PropertiesPage() {
   const navigate = useNavigate()
   const [schoolYear, setSchoolYear] = useState('2025–2026')
@@ -235,6 +237,15 @@ export default function PropertiesPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kamer kon niet opgeslagen worden')
     }
+  }
+
+  if (DISABLED) {
+    return (
+      <div className="p-8 text-slate-600">
+        <h1 className="text-2xl font-bold">Panden</h1>
+        <p className="mt-2 text-sm">Komt later.</p>
+      </div>
+    )
   }
 
   return (

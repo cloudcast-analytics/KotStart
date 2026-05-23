@@ -63,7 +63,7 @@ describe('ContractDetailPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /pdf maken/i }))
 
-    expect(write).toHaveBeenCalledWith(expect.stringContaining('Huurovereenkomst studentenkamer'))
+    expect(write).toHaveBeenCalledWith(expect.stringContaining('HUUROVEREENKOMST STUDENTENKAMER'))
   })
 
   it('redirect naar dashboard bij onbekend contract', async () => {

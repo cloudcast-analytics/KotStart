@@ -7,18 +7,21 @@ import InspectionNewPage from './pages/InspectionNewPage'
 import PropertiesPage from './pages/PropertiesPage'
 import AccountPage from './pages/AccountPage'
 import SettingsPage from './pages/SettingsPage'
+import LoginPage from './pages/LoginPage'
+import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<DashboardPage />} />
-      <Route path="/contracts/new" element={<ContractNewPage />} />
-      <Route path="/contracts/:id/renew" element={<ContractRenewPage />} />
-      <Route path="/contracts/:id" element={<ContractDetailPage />} />
-      <Route path="/inspections/new" element={<InspectionNewPage />} />
-      <Route path="/properties" element={<PropertiesPage />} />
-      <Route path="/account" element={<AccountPage />} />
-      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/contracts/new" element={<ProtectedRoute><ContractNewPage /></ProtectedRoute>} />
+      <Route path="/contracts/:id/renew" element={<ProtectedRoute><ContractRenewPage /></ProtectedRoute>} />
+      <Route path="/contracts/:id" element={<ProtectedRoute><ContractDetailPage /></ProtectedRoute>} />
+      <Route path="/inspections/new" element={<ProtectedRoute><InspectionNewPage /></ProtectedRoute>} />
+      <Route path="/properties" element={<ProtectedRoute><PropertiesPage /></ProtectedRoute>} />
+      <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

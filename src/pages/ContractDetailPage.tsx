@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { Building2, CalendarPlus, Check, ClipboardList, Download, FileText, Home, Mail, User } from 'lucide-react'
-import { getContractBundleData } from '../lib/data'
+import { Building2, CalendarPlus, Check, CheckCircle, ClipboardList, Download, FileText, Home, Loader2, Mail, User, XCircle } from 'lucide-react'
+import { getContractBundleData, sendContractEmail } from '../lib/data'
 import { cn } from '../lib/cn'
-import type { Contract, Property, Room, Student } from '../types'
-import { printContractDocument } from '../lib/pdfDocuments'
+import type { Contract, Inspection, InspectionItem, Property, Room, Student } from '../types'
+import { generateContractHtml, printContractDocument } from '../lib/pdfDocuments'
 
 const STATUS_LABEL: Record<Contract['status'], string> = {
   draft: 'Concept',
@@ -32,9 +32,12 @@ export default function ContractDetailPage() {
     room: Room
     student: Student
     property: Property
+    inspection?: Inspection
+    inspectionItems?: InspectionItem[]
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
   useEffect(() => {
     let cancelled = false
@@ -68,8 +71,21 @@ export default function ContractDetailPage() {
 
   if (!bundle) return <Navigate to="/" replace />
 
-  const { contract, room, student, property } = bundle
+  const { contract, room, student, property, inspection, inspectionItems } = bundle
   const activeStatusIndex = STATUS_STEPS.findIndex(step => step.status === contract.status)
+
+  async function handleEmail() {
+    setEmailStatus('sending')
+    try {
+      const html = generateContractHtml({ contract, room, student, property, inspection, inspectionItems })
+      await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html)
+      setEmailStatus('sent')
+      setTimeout(() => setEmailStatus('idle'), 4000)
+    } catch {
+      setEmailStatus('error')
+      setTimeout(() => setEmailStatus('idle'), 4000)
+    }
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -110,8 +126,19 @@ export default function ContractDetailPage() {
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <ActionButton label="Verlengen" icon={CalendarPlus} onClick={() => navigate(`/contracts/${contract.id}/renew`)} />
               <ActionButton label="Startplaatsbeschrijving" icon={ClipboardList} onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })} />
-              <ActionButton label="PDF maken" icon={Download} onClick={() => printContractDocument({ contract, room, student, property })} />
-              <ActionButton label="E-mail" icon={Mail} onClick={() => window.location.href = `mailto:${student.email}`} />
+              <ActionButton label="PDF maken" icon={Download} onClick={() => printContractDocument({ contract, room, student, property, inspection, inspectionItems })} />
+              <button
+                type="button"
+                onClick={handleEmail}
+                disabled={emailStatus === 'sending'}
+                className="glass-chip flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 disabled:opacity-60"
+              >
+                {emailStatus === 'sending' && <Loader2 size={16} className="animate-spin text-accent" />}
+                {emailStatus === 'sent' && <CheckCircle size={16} className="text-green-500" />}
+                {emailStatus === 'error' && <XCircle size={16} className="text-red-500" />}
+                {emailStatus === 'idle' && <Mail size={16} className="text-accent" />}
+                {emailStatus === 'sending' ? 'Versturen...' : emailStatus === 'sent' ? 'Verstuurd!' : emailStatus === 'error' ? 'Fout' : 'E-mail'}
+              </button>
             </div>
           </section>
 
