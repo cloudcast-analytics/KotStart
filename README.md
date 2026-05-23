@@ -40,12 +40,12 @@ npm run preview
 Kopieer `.env.example` naar `.env.local`:
 
 ```
-VITE_DEMO_MODE=true
+VITE_DEMO_MODE=false
 VITE_SUPABASE_URL=https://jouw-project.supabase.co
 VITE_SUPABASE_ANON_KEY=jouw-anon-key
 ```
 
-Gebruik `VITE_DEMO_MODE=true` alleen voor lokale demo/mock data. Zet deze waarde uit of weg in productie en configureer dan Supabase.
+Gebruik `VITE_DEMO_MODE=true` alleen wanneer je expliciet zonder login met lokale mock data wilt testen. Laat deze waarde op `false` in normale ontwikkeling en productie.
 
 ## Databasemigratie
 
