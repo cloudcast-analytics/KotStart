@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, ChevronLeft, DoorOpen, Edit3, FileText, Home, MapPin, User, X } from 'lucide-react'
+import { Building2, ChevronLeft, DoorOpen, Edit3, FileText, Home, MapPin, Plus, User, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell'
 import { CONTRACTS, PROPERTIES, ROOMS, SCHOOL_YEARS, STUDENTS } from '../lib/mockData'
-import { getContracts, getProperties, getRooms, getStudents, updateRoomData } from '../lib/data'
+import { createPropertyData, getContracts, getProperties, getRooms, getStudents, updatePropertyData, updateRoomData } from '../lib/data'
 import type { Contract, Property, Room, Student } from '../types'
 
 const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
@@ -25,6 +25,18 @@ interface EditableRoom {
   fixedCosts: string
   studentTax: string
   deposit: string
+}
+
+interface EditableProperty {
+  name: string
+  address: string
+}
+
+function toEditableProperty(property?: Property): EditableProperty {
+  return {
+    name: property?.name ?? '',
+    address: property?.address ?? '',
+  }
 }
 
 function toEditableRoom(room: Room): EditableRoom {
@@ -152,23 +164,98 @@ function RoomEditModal({
   )
 }
 
-const DISABLED = true as boolean
+function PropertyEditModal({
+  property,
+  onClose,
+  onSave,
+}: {
+  property?: Property
+  onClose: () => void
+  onSave: (input: EditableProperty) => void
+}) {
+  const [form, setForm] = useState(() => toEditableProperty(property))
+  const isEditing = Boolean(property)
 
-export default function PropertiesPage() {
-  if (DISABLED) return <DisabledPropertiesPage />
-  return <EnabledPropertiesPage />
-}
+  function updateField<K extends keyof EditableProperty>(field: K, value: EditableProperty[K]) {
+    setForm(previous => ({ ...previous, [field]: value }))
+  }
 
-function DisabledPropertiesPage() {
+  function handleSave() {
+    onSave({
+      name: form.name.trim(),
+      address: form.address.trim(),
+    })
+  }
+
   return (
-    <div className="p-8 text-slate-600">
-      <h1 className="text-2xl font-bold">Panden</h1>
-      <p className="mt-2 text-sm">Komt later.</p>
+    <div className="fixed inset-0 z-50 flex items-end bg-slate-900/25 backdrop-blur-sm sm:items-center sm:justify-center">
+      <div className="w-full rounded-t-3xl border border-white/80 bg-white/80 p-4 shadow-2xl backdrop-blur-3xl sm:max-w-md sm:rounded-3xl">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              {isEditing ? 'Pand bewerken' : 'Nieuw pand'}
+            </p>
+            <h2 className="text-xl font-bold text-slate-900">
+              {isEditing ? property?.name : 'Pand toevoegen'}
+            </h2>
+          </div>
+          <button
+            type="button"
+            aria-label="Sluiten"
+            onClick={onClose}
+            className="glass-chip flex h-9 w-9 items-center justify-center rounded-xl"
+          >
+            <X size={16} className="text-slate-500" />
+          </button>
+        </div>
+
+        <div className="grid gap-3">
+          <label className="grid gap-1">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Naam</span>
+            <input
+              aria-label="Pandnaam"
+              value={form.name}
+              onChange={event => updateField('name', event.target.value)}
+              placeholder="Naam van het pand"
+              className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Adres</span>
+            <input
+              aria-label="Adres"
+              value={form.address}
+              onChange={event => updateField('address', event.target.value)}
+              placeholder="Straat, nummer, postcode en gemeente"
+              className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+            />
+          </label>
+        </div>
+
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-white/90 bg-white/60 py-3 text-sm font-bold text-slate-600"
+          >
+            Annuleren
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!form.name.trim()}
+            className="btn-primary flex-[2] py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Opslaan
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
 
-function EnabledPropertiesPage() {
+export default function PropertiesPage() {
   const navigate = useNavigate()
   const [schoolYear, setSchoolYear] = useState('2025–2026')
   const [propertyId, setPropertyId] = useState(PROPERTIES[0].id)
@@ -177,6 +264,8 @@ function EnabledPropertiesPage() {
   const [rooms, setRooms] = useState<Room[]>(ROOMS)
   const [contracts, setContracts] = useState<Contract[]>(CONTRACTS)
   const [students, setStudents] = useState<Student[]>(STUDENTS)
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null)
+  const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -253,6 +342,40 @@ function EnabledPropertiesPage() {
     }
   }
 
+  async function handleSaveProperty(input: EditableProperty) {
+    try {
+      if (editingProperty) {
+        const savedProperty = await updatePropertyData({
+          ...editingProperty,
+          name: input.name,
+          address: input.address,
+        })
+        setProperties(previous => previous.map(property => (
+          property.id === savedProperty.id ? savedProperty : property
+        )))
+      } else {
+        const savedProperty = await createPropertyData(input)
+        setProperties(previous => [...previous, savedProperty].sort((a, b) => a.name.localeCompare(b.name)))
+        setPropertyId(savedProperty.id)
+        setSelectedPropertyId(savedProperty.id)
+      }
+      setEditingProperty(null)
+      setShowPropertyModal(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Pand kon niet opgeslagen worden')
+    }
+  }
+
+  function openNewPropertyModal() {
+    setEditingProperty(null)
+    setShowPropertyModal(true)
+  }
+
+  function openEditPropertyModal(property: Property) {
+    setEditingProperty(property)
+    setShowPropertyModal(true)
+  }
+
   return (
     <AppShell
       schoolYear={schoolYear}
@@ -275,9 +398,19 @@ function EnabledPropertiesPage() {
               Panden
             </button>
           ) : (
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Beheer</p>
-              <h1 className="text-2xl font-bold text-slate-900">Panden</h1>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Beheer</p>
+                <h1 className="text-2xl font-bold text-slate-900">Panden</h1>
+              </div>
+              <button
+                type="button"
+                onClick={openNewPropertyModal}
+                className="btn-primary inline-flex min-h-10 items-center gap-2 px-3 text-sm"
+              >
+                <Plus size={16} />
+                Nieuw pand
+              </button>
             </div>
           )}
         </div>
@@ -295,39 +428,50 @@ function EnabledPropertiesPage() {
                 )
 
                 return (
-                  <button
-                    key={property.id}
-                    type="button"
-                    aria-label={`Open ${property.name}`}
-                    onClick={() => setSelectedPropertyId(property.id)}
-                    className="glass rounded-2xl p-4 text-left transition-transform active:scale-[0.99]"
-                  >
+                  <div key={property.id} className="glass rounded-2xl p-4 text-left transition-transform active:scale-[0.99]">
                     <div className="mb-4 flex items-start justify-between gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
                         <Building2 size={18} className="text-accent" />
                       </div>
-                      <span className="rounded-full border border-white/80 bg-white/60 px-2.5 py-1 text-xs font-bold text-slate-500">
-                        {propertyRooms.length} kamers
-                      </span>
-                    </div>
-                    <h2 className="text-lg font-bold text-slate-900">{property.name}</h2>
-                    <p className="mt-2 flex items-start gap-1.5 text-sm font-medium text-slate-500">
-                      <MapPin size={14} className="mt-0.5 shrink-0" />
-                      {property.address}
-                    </p>
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl bg-white/45 p-3">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bezet</p>
-                        <p className="mt-1 text-sm font-bold text-slate-800">{occupiedRooms.length}</p>
-                      </div>
-                      <div className="rounded-xl bg-emerald-50/80 p-3">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Vrij</p>
-                        <p className="mt-1 text-sm font-bold text-emerald-700">
-                          {propertyRooms.length - occupiedRooms.length}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full border border-white/80 bg-white/60 px-2.5 py-1 text-xs font-bold text-slate-500">
+                          {propertyRooms.length} kamers
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`${property.name} bewerken`}
+                          onClick={() => openEditPropertyModal(property)}
+                          className="glass-chip flex h-8 w-8 items-center justify-center rounded-xl"
+                        >
+                          <Edit3 size={14} className="text-slate-500" />
+                        </button>
                       </div>
                     </div>
-                  </button>
+                    <button
+                      type="button"
+                      aria-label={`Open ${property.name}`}
+                      onClick={() => setSelectedPropertyId(property.id)}
+                      className="w-full text-left"
+                    >
+                      <h2 className="text-lg font-bold text-slate-900">{property.name}</h2>
+                      <p className="mt-2 flex items-start gap-1.5 text-sm font-medium text-slate-500">
+                        <MapPin size={14} className="mt-0.5 shrink-0" />
+                        {property.address || 'Geen adres ingevuld'}
+                      </p>
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="rounded-xl bg-white/45 p-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bezet</p>
+                          <p className="mt-1 text-sm font-bold text-slate-800">{occupiedRooms.length}</p>
+                        </div>
+                        <div className="rounded-xl bg-emerald-50/80 p-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Vrij</p>
+                          <p className="mt-1 text-sm font-bold text-emerald-700">
+                            {propertyRooms.length - occupiedRooms.length}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
                 )
               })}
             </div>
@@ -342,8 +486,18 @@ function EnabledPropertiesPage() {
                   </div>
                   <div>
                     <h1 className="text-xl font-bold text-slate-900">{selectedProperty.name}</h1>
-                    <p className="mt-1 text-sm font-medium text-slate-500">{selectedProperty.address}</p>
+                    <p className="mt-1 text-sm font-medium text-slate-500">
+                      {selectedProperty.address || 'Geen adres ingevuld'}
+                    </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => openEditPropertyModal(selectedProperty)}
+                    className="glass-chip ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                    aria-label={`${selectedProperty.name} bewerken`}
+                  >
+                    <Edit3 size={15} className="text-slate-500" />
+                  </button>
                 </div>
               </div>
 
@@ -435,6 +589,16 @@ function EnabledPropertiesPage() {
 
       {editingRoom && (
         <RoomEditModal room={editingRoom} onClose={() => setEditingRoom(null)} onSave={handleSaveRoom} />
+      )}
+      {showPropertyModal && (
+        <PropertyEditModal
+          property={editingProperty ?? undefined}
+          onClose={() => {
+            setEditingProperty(null)
+            setShowPropertyModal(false)
+          }}
+          onSave={handleSaveProperty}
+        />
       )}
     </AppShell>
   )

@@ -101,6 +101,11 @@ interface SaveInspectionInput {
   }>
 }
 
+interface PropertyInput {
+  name: string
+  address: string
+}
+
 function dataUrlToBlob(dataUrl: string): Blob | null {
   const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
   if (!match) return null
@@ -415,6 +420,50 @@ export async function sendContractEmail(
     body: { to, name, html },
   })
   if (error) throw error
+}
+
+export async function createPropertyData(input: PropertyInput): Promise<Property> {
+  const fallbackProperty: Property = {
+    id: crypto.randomUUID(),
+    name: input.name,
+    address: input.address,
+    createdAt: new Date().toISOString(),
+  }
+  if (!isSupabaseConfigured) return fallbackProperty
+
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  if (!userData.user) throw new Error('Geen ingelogde gebruiker')
+
+  const { data, error } = await supabase
+    .from('properties')
+    .insert({
+      owner_id: userData.user.id,
+      name: input.name,
+      address: input.address || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapProperty(data as PropertyRow)
+}
+
+export async function updatePropertyData(property: Property): Promise<Property> {
+  if (!isSupabaseConfigured) return property
+
+  const { data, error } = await supabase
+    .from('properties')
+    .update({
+      name: property.name,
+      address: property.address || null,
+    })
+    .eq('id', property.id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapProperty(data as PropertyRow)
 }
 
 export async function updateRoomData(room: Room): Promise<Room> {
