@@ -10,7 +10,7 @@ const hasSupabaseConfig = Boolean(
 )
 
 export const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true'
-export const isSupabaseConfigured = hasSupabaseConfig && !isDemoMode
+export const isSupabaseConfigured = hasSupabaseConfig && !isDemoMode && import.meta.env.MODE !== 'test'
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',

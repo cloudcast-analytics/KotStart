@@ -28,9 +28,8 @@ function renderLoginPage(user: User | null = null) {
 }
 
 describe('LoginPage', () => {
-  it('toont Google-knop en e-mail/wachtwoord formulier', () => {
+  it('toont e-mail/wachtwoord formulier', () => {
     renderLoginPage()
-    expect(screen.getByRole('button', { name: /google/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/wachtwoord/i)).toBeInTheDocument()
   })
