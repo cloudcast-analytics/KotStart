@@ -1,4 +1,4 @@
-import type { Property, Room, Student, Contract, StudentDashboardRow } from '../types'
+import type { LandlordProfile, Property, Room, Student, Contract, StudentDashboardRow } from '../types'
 
 export const SCHOOL_YEARS = ['2024–2025', '2025–2026']
 
@@ -18,12 +18,28 @@ export const ROOMS: Room[] = [
 ]
 
 export const STUDENTS: Student[] = [
-  { id: 's1', firstName: 'Emma', lastName: 'Janssen', email: 'emma.janssen@student.ugent.be', phone: '0470 11 22 33', dateOfBirth: '2005-03-14', createdAt: '2025-08-15' },
-  { id: 's2', firstName: 'Liam', lastName: 'Pieters', email: 'liam.pieters@student.ugent.be', phone: '0471 44 55 66', dateOfBirth: '2004-07-22', createdAt: '2025-08-16' },
-  { id: 's3', firstName: 'Sara', lastName: 'Bogaert', email: 'sara.bogaert@student.ugent.be', phone: '0472 77 88 99', dateOfBirth: '2005-11-03', createdAt: '2025-08-17' },
-  { id: 's4', firstName: 'Noah', lastName: 'De Smedt', email: 'noah.desmedt@student.ugent.be', phone: '0473 00 11 22', dateOfBirth: '2004-05-18', createdAt: '2025-08-18' },
-  { id: 's5', firstName: 'Fien', lastName: 'Vandenberghe', email: 'fien.vandenberghe@student.ugent.be', phone: '0474 33 44 55', dateOfBirth: '2005-09-27', createdAt: '2025-08-19' },
+  { id: 's1', firstName: 'Emma', lastName: 'Janssen', email: 'emma.janssen@student.ugent.be', phone: '0470 11 22 33', dateOfBirth: '2005-03-14', nationalRegistryNumber: '05.03.14-234.56', institution: 'Universiteit Gent (UGent) — Faculteit Ingenieurswetenschappen', studentNumber: '202401234', primaryResidence: 'Kerkstraat 22, 9200 Dendermonde', createdAt: '2025-08-15' },
+  { id: 's2', firstName: 'Liam', lastName: 'Pieters', email: 'liam.pieters@student.ugent.be', phone: '0471 44 55 66', dateOfBirth: '2004-07-22', nationalRegistryNumber: '04.07.22-345.67', institution: 'Universiteit Gent (UGent) — Faculteit Economie', studentNumber: '202401235', primaryResidence: 'Molenstraat 5, 9000 Gent', createdAt: '2025-08-16' },
+  { id: 's3', firstName: 'Sara', lastName: 'Bogaert', email: 'sara.bogaert@student.ugent.be', phone: '0472 77 88 99', dateOfBirth: '2005-11-03', nationalRegistryNumber: '05.11.03-456.78', institution: 'Hogeschool Gent (HoGent) — Faculteit Gezondheid', studentNumber: '202401236', primaryResidence: 'Gentstraat 88, 9800 Deinze', createdAt: '2025-08-17' },
+  { id: 's4', firstName: 'Noah', lastName: 'De Smedt', email: 'noah.desmedt@student.ugent.be', phone: '0473 00 11 22', dateOfBirth: '2004-05-18', nationalRegistryNumber: '04.05.18-567.89', institution: 'Universiteit Gent (UGent) — Faculteit Recht', studentNumber: '202401237', primaryResidence: 'Stationslaan 12, 9300 Aalst', createdAt: '2025-08-18' },
+  { id: 's5', firstName: 'Fien', lastName: 'Vandenberghe', email: 'fien.vandenberghe@student.ugent.be', phone: '0474 33 44 55', dateOfBirth: '2005-09-27', nationalRegistryNumber: '05.09.27-678.90', institution: 'Universiteit Gent (UGent) — Faculteit Wetenschappen', studentNumber: '202401238', primaryResidence: 'Dorpsstraat 3, 9830 Sint-Martens-Latem', createdAt: '2025-08-19' },
 ]
+
+export const MOCK_LANDLORD_PROFILE: LandlordProfile = {
+  name: 'Vandenberghe, Geert François',
+  dateOfBirth: '15 maart 1972, Gent',
+  nationalRegistryNumber: '72.03.15-123.45',
+  address: 'Veldstraat 89, 9000 Gent',
+  phone: '0498 12 34 56',
+  email: 'geert.vandenberghe@kotbeheer.be',
+  iban: 'BE12 3456 7890 1234',
+  bic: 'GEBABEBB',
+  bank: 'BNP Paribas Fortis',
+  insuranceCompany: 'AXA Belgium',
+  policyNumber: 'AXA-2025-00456789',
+  epcLabel: 'C',
+  epcNumber: '20250515-EPC-4567',
+}
 
 export const CONTRACTS: Contract[] = [
   { id: 'c1', roomId: 'r1', schoolYear: '2025–2026', studentId: 's1', status: 'signed', createdAt: '2025-08-20' },

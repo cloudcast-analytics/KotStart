@@ -26,6 +26,10 @@ create table students (
   phone text,
   date_of_birth date,
   photo_url text,
+  national_registry_number text,
+  institution text,
+  student_number text,
+  primary_residence text,
   created_at timestamptz default now()
 );
 

@@ -28,6 +28,10 @@ function emptyStudent(): StudentFormData {
     phone: '',
     dateOfBirth: '',
     photoUrl: null,
+    nationalRegistryNumber: '',
+    institution: '',
+    studentNumber: '',
+    primaryResidence: '',
   }
 }
 
@@ -36,7 +40,11 @@ function studentIsComplete(student: StudentFormData): boolean {
     student.firstName.trim() &&
       student.lastName.trim() &&
       isValidEmail(student.email) &&
-      student.dateOfBirth,
+      student.dateOfBirth &&
+      student.nationalRegistryNumber.trim() &&
+      student.institution.trim() &&
+      student.studentNumber.trim() &&
+      student.primaryResidence.trim(),
   )
 }
 

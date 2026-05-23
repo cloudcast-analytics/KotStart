@@ -24,7 +24,27 @@ export interface Student {
   phone: string
   dateOfBirth: string
   photoUrl?: string
+  nationalRegistryNumber?: string
+  institution?: string
+  studentNumber?: string
+  primaryResidence?: string
   createdAt: string
+}
+
+export interface LandlordProfile {
+  name: string
+  dateOfBirth: string
+  nationalRegistryNumber: string
+  address: string
+  phone: string
+  email: string
+  iban: string
+  bic: string
+  bank: string
+  insuranceCompany: string
+  policyNumber: string
+  epcLabel: string
+  epcNumber: string
 }
 
 export interface Contract {

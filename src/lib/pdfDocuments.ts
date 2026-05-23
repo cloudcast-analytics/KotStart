@@ -1,4 +1,4 @@
-import type { Inspection, InspectionItem, Property, Room, Student, Contract } from '../types'
+import type { Inspection, InspectionItem, LandlordProfile, Property, Room, Student, Contract } from '../types'
 
 export interface ContractBundle {
   contract: Contract
@@ -8,6 +8,8 @@ export interface ContractBundle {
   secondStudent?: Student
   inspection?: Inspection
   inspectionItems?: InspectionItem[]
+  landlord?: LandlordProfile
+  signatureDataUrl?: string
 }
 
 interface InspectionDocumentItem {
@@ -37,11 +39,20 @@ const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
   double: 'Tweepersoonskamer',
 }
 
-const MOCK_LANDLORD = {
-  name: 'Geert Vandenberghe',
+const MOCK_LANDLORD: LandlordProfile = {
+  name: 'Vandenberghe, Geert François',
+  dateOfBirth: '15 maart 1972, Gent',
+  nationalRegistryNumber: '72.03.15-123.45',
   address: 'Veldstraat 89, 9000 Gent',
   phone: '0498 12 34 56',
   email: 'geert.vandenberghe@kotbeheer.be',
+  iban: 'BE12 3456 7890 1234',
+  bic: 'GEBABEBB',
+  bank: 'BNP Paribas Fortis',
+  insuranceCompany: 'AXA Belgium',
+  policyNumber: 'AXA-2025-00456789',
+  epcLabel: 'C',
+  epcNumber: '20250515-EPC-4567',
 }
 
 const DEFAULT_INSPECTION_ITEMS: Array<{ category: string; itemName: string }> = [
@@ -102,8 +113,8 @@ function schoolYearEndDate(schoolYear: string): string {
 }
 
 export function generateContractHtml(bundle: ContractBundle): string {
-  const { contract, room, property, student, secondStudent, inspection, inspectionItems = [] } = bundle
-  const landlord = MOCK_LANDLORD
+  const { contract, room, property, student, secondStudent, inspection, inspectionItems = [], signatureDataUrl } = bundle
+  const landlord = bundle.landlord ?? MOCK_LANDLORD
   const totalMonthly = room.monthlyRent + room.fixedCosts
   const startDate = schoolYearStartDate(contract.schoolYear)
   const endDate = schoolYearEndDate(contract.schoolYear)
@@ -183,6 +194,8 @@ export function generateContractHtml(bundle: ContractBundle): string {
 
 <p><strong>ENERZIJDS, de VERHUURDER:</strong></p>
 <div class="field-row"><span class="field-label">Naam en voornamen:</span><span>${escapeHtml(landlord.name)}</span></div>
+<div class="field-row"><span class="field-label">Geboortedatum en -plaats:</span><span>${escapeHtml(landlord.dateOfBirth)}</span></div>
+<div class="field-row"><span class="field-label">Rijksregisternummer:</span><span>${escapeHtml(landlord.nationalRegistryNumber)}</span></div>
 <div class="field-row"><span class="field-label">Adres:</span><span>${escapeHtml(landlord.address)}</span></div>
 <div class="field-row"><span class="field-label">Telefoon / gsm:</span><span>${escapeHtml(landlord.phone)}</span></div>
 <div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(landlord.email)}</span></div>
@@ -190,6 +203,10 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <p style="margin-top:12px;"><strong>ANDERZIJDS, de HUURDER:</strong></p>
 <div class="field-row"><span class="field-label">Naam en voornamen:</span><span>${huurderNaam}</span></div>
 <div class="field-row"><span class="field-label">Geboortedatum:</span><span>${escapeHtml(student.dateOfBirth)}</span></div>
+${student.nationalRegistryNumber ? `<div class="field-row"><span class="field-label">Rijksregisternummer:</span><span>${escapeHtml(student.nationalRegistryNumber)}</span></div>` : ''}
+${student.institution ? `<div class="field-row"><span class="field-label">Onderwijsinstelling:</span><span>${escapeHtml(student.institution)}</span></div>` : ''}
+${student.studentNumber ? `<div class="field-row"><span class="field-label">Studentennummer:</span><span>${escapeHtml(student.studentNumber)}</span></div>` : ''}
+${student.primaryResidence ? `<div class="field-row"><span class="field-label">Hoofdverblijf:</span><span>${escapeHtml(student.primaryResidence)}</span></div>` : ''}
 <div class="field-row"><span class="field-label">Telefoon / gsm:</span><span>${escapeHtml(student.phone)}</span></div>
 <div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(student.email)}</span></div>
 
@@ -228,14 +245,18 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <article>
   <span class="art-title">Art. 5. BETALING</span><br/>
   € ${totalMonthly},00 wordt maandelijks betaald door overschrijving, uiterlijk binnen vijf
-  kalenderdagen na de aanvang van de huurmaand.
+  kalenderdagen na de aanvang van de huurmaand.<br/>
+  IBAN-rekeningnummer: <strong>${escapeHtml(landlord.iban)}</strong><br/>
+  BIC-nummer: ${escapeHtml(landlord.bic)} &nbsp;|&nbsp; Bankinstelling: ${escapeHtml(landlord.bank)}<br/>
+  Op naam van: ${escapeHtml(landlord.name)}
 </article>
 
 <article>
   <span class="art-title">Art. 6. WAARBORG</span><br/>
-  De huurwaarborg bedraagt <strong>€ ${room.deposit},00</strong> en wordt gestort op een
-  geblokkeerde waarborgrekening op naam van de huurder vóór de aanvang van de huurperiode.
-  De waarborg wordt vrijgemaakt binnen drie maanden nadat de huurder het goed verlaten heeft.
+  De huurwaarborg bedraagt <strong>€ ${room.deposit},00</strong> (twee maanden huurprijs: 2 × € ${room.monthlyRent},00)
+  en wordt gestort op een geblokkeerde waarborgrekening op naam van de huurder vóór de aanvang van de huurperiode.
+  De waarborg wordt vrijgemaakt binnen drie maanden nadat de huurder het goed verlaten heeft,
+  tenzij de verhuurder de teruggave betwist bij aangetekende brief.
 </article>
 
 <article>
@@ -247,7 +268,8 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <article>
   <span class="art-title">Art. 8. BRANDVERZEKERING</span><br/>
   De verhuurder dekt in zijn brandverzekering de aansprakelijkheid van de huurder tegenover
-  de verhuurder en derden. De huurder zorgt zelf voor de verzekering van zijn persoonlijke inboedel.
+  de verhuurder en derden. De huurder zorgt zelf voor de verzekering van zijn persoonlijke inboedel.<br/>
+  Verzekeringsmaatschappij: ${escapeHtml(landlord.insuranceCompany)} &nbsp;|&nbsp; Polisnummer: ${escapeHtml(landlord.policyNumber)}
 </article>
 
 <article>
@@ -293,8 +315,11 @@ export function generateContractHtml(bundle: ContractBundle): string {
 
 <article>
   <span class="art-title">Art. 15. VEILIGHEIDSVOORSCHRIFTEN EN EPC</span><br/>
-  De verhuurder verklaart dat het pand uitgerust is met rookmelders conform de Vlaamse
-  regelgeving. De verhuurder overhandigt de brandveiligheidsvoorschriften aan de huurder.
+  De verhuurder verklaart dat het pand uitgerust is met rookmelders conform de Vlaamse regelgeving.
+  De huurder staat in voor het onderhoud van de rookmelder in zijn kamer.
+  De verhuurder overhandigt de brandveiligheidsvoorschriften aan de huurder.<br/>
+  EPC-label kamer: <strong>${escapeHtml(landlord.epcLabel)}</strong>
+  (Energieprestatiecertificaat nr. ${escapeHtml(landlord.epcNumber)})
 </article>
 
 <article>
@@ -328,7 +353,8 @@ Opgemaakt te Gent, in twee originelen. Elke partij erkent één exemplaar ontvan
 
 <div class="sign-block">
   <div class="sign-line">
-    <strong>Handtekening verhuurder</strong><br/><br/><br/>
+    <strong>Handtekening verhuurder</strong><br/>
+    ${signatureDataUrl ? `<img src="${signatureDataUrl}" alt="Handtekening verhuurder" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
     Naam: ${escapeHtml(landlord.name)}<br/>
     Datum: _____ / _____ / _____<br/>
     Plaats: Gent

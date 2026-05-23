@@ -1,5 +1,5 @@
-import type { Contract, Inspection, InspectionItem, Property, Room, Student, StudentDashboardRow } from '../types'
-import { CONTRACTS, PROPERTIES, ROOMS, STUDENTS } from './mockData'
+import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
+import { CONTRACTS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
 import { isSupabaseConfigured, supabase } from './supabase'
 
 interface PropertyRow {
@@ -28,6 +28,10 @@ interface StudentRow {
   phone: string | null
   date_of_birth: string | null
   photo_url: string | null
+  national_registry_number: string | null
+  institution: string | null
+  student_number: string | null
+  primary_residence: string | null
   created_at: string
 }
 
@@ -71,6 +75,10 @@ interface ContractDraftStudent {
   phone: string
   dateOfBirth: string
   photoUrl: string | null
+  nationalRegistryNumber: string
+  institution: string
+  studentNumber: string
+  primaryResidence: string
 }
 
 interface CreateContractDraftInput {
@@ -170,6 +178,10 @@ function mapStudent(row: StudentRow): Student {
     phone: row.phone ?? '',
     dateOfBirth: row.date_of_birth ?? '',
     photoUrl: row.photo_url ?? undefined,
+    nationalRegistryNumber: row.national_registry_number ?? undefined,
+    institution: row.institution ?? undefined,
+    studentNumber: row.student_number ?? undefined,
+    primaryResidence: row.primary_residence ?? undefined,
     createdAt: row.created_at,
   }
 }
@@ -321,7 +333,24 @@ export async function getContractBundleData(contractId: string | undefined) {
     }
   }
 
-  return { contract, room, student, property, inspection, inspectionItems }
+  const landlord = getLandlordProfile()
+  return { contract, room, student, property, inspection, inspectionItems, landlord }
+}
+
+const LANDLORD_PROFILE_KEY = 'kotstart_landlord_profile'
+
+export function getLandlordProfile(): LandlordProfile {
+  try {
+    const stored = localStorage.getItem(LANDLORD_PROFILE_KEY)
+    if (stored) return JSON.parse(stored) as LandlordProfile
+  } catch {
+    // ignore parse errors
+  }
+  return MOCK_LANDLORD_PROFILE
+}
+
+export function saveLandlordProfile(profile: LandlordProfile): void {
+  localStorage.setItem(LANDLORD_PROFILE_KEY, JSON.stringify(profile))
 }
 
 export async function sendContractEmail(
@@ -377,6 +406,10 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
         phone: student.phone || null,
         date_of_birth: student.dateOfBirth,
         photo_url: student.photoUrl,
+        national_registry_number: student.nationalRegistryNumber || null,
+        institution: student.institution || null,
+        student_number: student.studentNumber || null,
+        primary_residence: student.primaryResidence || null,
       })),
     )
     .select()

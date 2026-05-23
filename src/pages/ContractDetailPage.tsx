@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { Building2, CalendarPlus, Check, CheckCircle, ClipboardList, Download, FileText, Home, Loader2, Mail, User, XCircle } from 'lucide-react'
+import { Building2, CalendarPlus, Check, CheckCircle, ClipboardList, Download, FileText, Home, Loader2, PenLine, User, XCircle } from 'lucide-react'
 import { getContractBundleData, sendContractEmail } from '../lib/data'
 import { cn } from '../lib/cn'
-import type { Contract, Inspection, InspectionItem, Property, Room, Student } from '../types'
+import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student } from '../types'
 import { generateContractHtml, printContractDocument } from '../lib/pdfDocuments'
+import SignatureModal from '../components/SignatureModal'
 
 const STATUS_LABEL: Record<Contract['status'], string> = {
   draft: 'Concept',
@@ -34,10 +35,12 @@ export default function ContractDetailPage() {
     property: Property
     inspection?: Inspection
     inspectionItems?: InspectionItem[]
+    landlord?: LandlordProfile
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [showSignatureModal, setShowSignatureModal] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -71,13 +74,14 @@ export default function ContractDetailPage() {
 
   if (!bundle) return <Navigate to="/" replace />
 
-  const { contract, room, student, property, inspection, inspectionItems } = bundle
+  const { contract, room, student, property, inspection, inspectionItems, landlord } = bundle
   const activeStatusIndex = STATUS_STEPS.findIndex(step => step.status === contract.status)
 
-  async function handleEmail() {
+  async function handleSignatureConfirm(signatureDataUrl: string) {
+    setShowSignatureModal(false)
     setEmailStatus('sending')
     try {
-      const html = generateContractHtml({ contract, room, student, property, inspection, inspectionItems })
+      const html = generateContractHtml({ contract, room, student, property, inspection, inspectionItems, landlord, signatureDataUrl })
       await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html)
       setEmailStatus('sent')
       setTimeout(() => setEmailStatus('idle'), 4000)
@@ -126,18 +130,18 @@ export default function ContractDetailPage() {
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
               <ActionButton label="Verlengen" icon={CalendarPlus} onClick={() => navigate(`/contracts/${contract.id}/renew`)} />
               <ActionButton label="Startplaatsbeschrijving" icon={ClipboardList} onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })} />
-              <ActionButton label="PDF maken" icon={Download} onClick={() => printContractDocument({ contract, room, student, property, inspection, inspectionItems })} />
+              <ActionButton label="PDF maken" icon={Download} onClick={() => printContractDocument({ contract, room, student, property, inspection, inspectionItems, landlord })} />
               <button
                 type="button"
-                onClick={handleEmail}
+                onClick={() => setShowSignatureModal(true)}
                 disabled={emailStatus === 'sending'}
                 className="glass-chip flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 disabled:opacity-60"
               >
                 {emailStatus === 'sending' && <Loader2 size={16} className="animate-spin text-accent" />}
                 {emailStatus === 'sent' && <CheckCircle size={16} className="text-green-500" />}
                 {emailStatus === 'error' && <XCircle size={16} className="text-red-500" />}
-                {emailStatus === 'idle' && <Mail size={16} className="text-accent" />}
-                {emailStatus === 'sending' ? 'Versturen...' : emailStatus === 'sent' ? 'Verstuurd!' : emailStatus === 'error' ? 'Fout' : 'E-mail'}
+                {emailStatus === 'idle' && <PenLine size={16} className="text-accent" />}
+                {emailStatus === 'sending' ? 'Versturen...' : emailStatus === 'sent' ? 'Verstuurd!' : emailStatus === 'error' ? 'Fout' : 'Ondertekenen'}
               </button>
             </div>
           </section>
@@ -211,6 +215,13 @@ export default function ContractDetailPage() {
           </section>
         </div>
       </main>
+
+      {showSignatureModal && (
+        <SignatureModal
+          onConfirm={handleSignatureConfirm}
+          onClose={() => setShowSignatureModal(false)}
+        />
+      )}
     </div>
   )
 }

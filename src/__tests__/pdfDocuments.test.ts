@@ -31,7 +31,7 @@ describe('generateContractHtml', () => {
 
   it('bevat de verhuurdersnaam', () => {
     const html = generateContractHtml(mockBundle)
-    expect(html).toContain('Geert Vandenberghe')
+    expect(html).toContain('Vandenberghe')
   })
 
   it('bevat een plaatsbeschrijvingstabel met standaarditems ook zonder inspectie', () => {
@@ -39,6 +39,53 @@ describe('generateContractHtml', () => {
     expect(html).toContain('Plaatsbeschrijving')
     expect(html).toContain('Aanrecht')
     expect(html).toContain('Rookmelder')
+  })
+
+  it('bevat het rijksregisternummer van de student', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      student: { ...STUDENTS[0], nationalRegistryNumber: '05.03.14-123.45' },
+    })
+    expect(html).toContain('05.03.14-123.45')
+  })
+
+  it('bevat de onderwijsinstelling van de student', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      student: { ...STUDENTS[0], institution: 'Universiteit Gent' },
+    })
+    expect(html).toContain('Universiteit Gent')
+  })
+
+  it('bevat het IBAN van de verhuurder in art. 5', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      landlord: {
+        name: 'Geert Vandenberghe',
+        dateOfBirth: '15 maart 1972, Gent',
+        nationalRegistryNumber: '72.03.15-123.45',
+        address: 'Veldstraat 89, 9000 Gent',
+        phone: '0498 12 34 56',
+        email: 'geert@test.be',
+        iban: 'BE12 3456 7890 1234',
+        bic: 'GEBABEBB',
+        bank: 'BNP Paribas Fortis',
+        insuranceCompany: 'AXA Belgium',
+        policyNumber: 'AXA-2025-001',
+        epcLabel: 'C',
+        epcNumber: 'EPC-2025-001',
+      },
+    })
+    expect(html).toContain('BE12 3456 7890 1234')
+    expect(html).toContain('GEBABEBB')
+  })
+
+  it('bevat de handtekening als data URL wanneer opgegeven', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      signatureDataUrl: 'data:image/png;base64,abc123',
+    })
+    expect(html).toContain('data:image/png;base64,abc123')
   })
 
   it('vult de inspectietoestand in wanneer er items zijn', () => {

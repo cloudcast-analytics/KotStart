@@ -21,11 +21,17 @@ const FIELDS: Array<{
   { field: 'email', label: 'E-mail', type: 'email', required: true },
   { field: 'phone', label: 'Telefoon', type: 'tel', required: false },
   { field: 'dateOfBirth', label: 'Geboortedatum', type: 'date', required: true },
+  { field: 'nationalRegistryNumber', label: 'Rijksregisternummer', type: 'text', required: true },
+  { field: 'institution', label: 'Onderwijsinstelling', type: 'text', required: true },
+  { field: 'studentNumber', label: 'Studentennummer', type: 'text', required: true },
+  { field: 'primaryResidence', label: 'Hoofdverblijf (thuisadres)', type: 'text', required: true },
 ]
+
+const OPTIONAL_FIELDS: Array<keyof StudentFormData> = ['phone', 'photoUrl']
 
 function fieldError(student: StudentFormData, field: keyof StudentFormData): string | null {
   if (field === 'email' && student.email && !isValidEmail(student.email)) return 'Vul een geldig e-mailadres in'
-  if (field !== 'phone' && field !== 'photoUrl' && !student[field]) return 'Dit veld is verplicht'
+  if (!OPTIONAL_FIELDS.includes(field) && !student[field]) return 'Dit veld is verplicht'
   return null
 }
 

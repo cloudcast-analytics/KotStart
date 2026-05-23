@@ -12,6 +12,10 @@ const student: StudentFormData = {
   phone: '0470 11 22 33',
   dateOfBirth: '2004-03-14',
   photoUrl: null,
+  nationalRegistryNumber: '04.03.14-123.45',
+  institution: 'Universiteit Gent',
+  studentNumber: '202400001',
+  primaryResidence: 'Kerkstraat 1, 9000 Gent',
 }
 
 describe('Step4Review', () => {
