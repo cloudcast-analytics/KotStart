@@ -106,6 +106,16 @@ interface PropertyInput {
   address: string
 }
 
+interface RoomInput {
+  propertyId: string
+  roomNumber: string
+  roomType: Room['roomType']
+  monthlyRent: number
+  studentTax: number
+  fixedCosts: number
+  deposit: number
+}
+
 function dataUrlToBlob(dataUrl: string): Blob | null {
   const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/)
   if (!match) return null
@@ -466,6 +476,31 @@ export async function updatePropertyData(property: Property): Promise<Property> 
   return mapProperty(data as PropertyRow)
 }
 
+export async function createRoomData(input: RoomInput): Promise<Room> {
+  const fallbackRoom: Room = {
+    id: crypto.randomUUID(),
+    ...input,
+  }
+  if (!isSupabaseConfigured) return fallbackRoom
+
+  const { data, error } = await supabase
+    .from('rooms')
+    .insert({
+      property_id: input.propertyId,
+      room_number: input.roomNumber,
+      room_type: input.roomType,
+      monthly_rent: input.monthlyRent,
+      student_tax: input.studentTax,
+      fixed_costs: input.fixedCosts,
+      deposit: input.deposit,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return mapRoom(data as RoomRow)
+}
+
 export async function updateRoomData(room: Room): Promise<Room> {
   if (!isSupabaseConfigured) return room
 
@@ -485,6 +520,13 @@ export async function updateRoomData(room: Room): Promise<Room> {
 
   if (error) throw error
   return mapRoom(data as RoomRow)
+}
+
+export async function deleteRoomData(roomId: string): Promise<void> {
+  if (!isSupabaseConfigured) return
+
+  const { error } = await supabase.from('rooms').delete().eq('id', roomId)
+  if (error) throw error
 }
 
 export async function createContractDraft(input: CreateContractDraftInput): Promise<string | null> {

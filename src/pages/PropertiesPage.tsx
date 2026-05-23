@@ -1,9 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, ChevronLeft, DoorOpen, Edit3, FileText, Home, MapPin, Plus, User, X } from 'lucide-react'
+import { Building2, ChevronLeft, DoorOpen, Edit3, FileText, Home, MapPin, Plus, Trash2, User, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell'
 import { CONTRACTS, PROPERTIES, ROOMS, SCHOOL_YEARS, STUDENTS } from '../lib/mockData'
-import { createPropertyData, getContracts, getProperties, getRooms, getStudents, updatePropertyData, updateRoomData } from '../lib/data'
+import {
+  createPropertyData,
+  createRoomData,
+  deleteRoomData,
+  getContracts,
+  getProperties,
+  getRooms,
+  getStudents,
+  updatePropertyData,
+  updateRoomData,
+} from '../lib/data'
 import type { Contract, Property, Room, Student } from '../types'
 
 const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
@@ -50,6 +60,17 @@ function toEditableRoom(room: Room): EditableRoom {
   }
 }
 
+function newEditableRoom(): EditableRoom {
+  return {
+    roomNumber: '',
+    roomType: 'single',
+    monthlyRent: '0',
+    fixedCosts: '0',
+    studentTax: '0',
+    deposit: '0',
+  }
+}
+
 function toNumber(value: string) {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
@@ -57,14 +78,17 @@ function toNumber(value: string) {
 
 function RoomEditModal({
   room,
+  propertyName,
   onClose,
   onSave,
 }: {
-  room: Room
+  room?: Room
+  propertyName: string
   onClose: () => void
-  onSave: (room: Room) => void
+  onSave: (input: EditableRoom) => void
 }) {
-  const [form, setForm] = useState(() => toEditableRoom(room))
+  const [form, setForm] = useState(() => (room ? toEditableRoom(room) : newEditableRoom()))
+  const isEditing = Boolean(room)
 
   function updateField<K extends keyof EditableRoom>(field: K, value: EditableRoom[K]) {
     setForm(previous => ({ ...previous, [field]: value }))
@@ -72,13 +96,12 @@ function RoomEditModal({
 
   function handleSave() {
     onSave({
-      ...room,
-      roomNumber: form.roomNumber.trim() || room.roomNumber,
+      roomNumber: form.roomNumber.trim(),
       roomType: form.roomType,
-      monthlyRent: toNumber(form.monthlyRent),
-      fixedCosts: toNumber(form.fixedCosts),
-      studentTax: toNumber(form.studentTax),
-      deposit: toNumber(form.deposit),
+      monthlyRent: form.monthlyRent,
+      fixedCosts: form.fixedCosts,
+      studentTax: form.studentTax,
+      deposit: form.deposit,
     })
   }
 
@@ -87,8 +110,12 @@ function RoomEditModal({
       <div className="w-full rounded-t-3xl border border-white/80 bg-white/80 p-4 shadow-2xl backdrop-blur-3xl sm:max-w-md sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Kamer bewerken</p>
-            <h2 className="text-xl font-bold text-slate-900">Kamer {room.roomNumber}</h2>
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              {isEditing ? 'Kamer bewerken' : propertyName}
+            </p>
+            <h2 className="text-xl font-bold text-slate-900">
+              {isEditing ? `Kamer ${room?.roomNumber}` : 'Kamer toevoegen'}
+            </h2>
           </div>
           <button
             type="button"
@@ -107,6 +134,7 @@ function RoomEditModal({
               aria-label="Kamernummer"
               value={form.roomNumber}
               onChange={event => updateField('roomNumber', event.target.value)}
+              placeholder="Bijv. 1.01"
               className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </label>
@@ -155,7 +183,12 @@ function RoomEditModal({
           >
             Annuleren
           </button>
-          <button type="button" onClick={handleSave} className="btn-primary flex-[2] py-3 text-sm">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!form.roomNumber.trim()}
+            className="btn-primary flex-[2] py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+          >
             Opslaan
           </button>
         </div>
@@ -267,6 +300,7 @@ export default function PropertiesPage() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
+  const [showRoomModal, setShowRoomModal] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -332,13 +366,50 @@ export default function PropertiesPage() {
     }
   }
 
-  async function handleSaveRoom(updatedRoom: Room) {
+  async function handleSaveRoom(input: EditableRoom) {
+    if (!selectedProperty) return
+
     try {
-      const savedRoom = await updateRoomData(updatedRoom)
-      setRooms(previous => previous.map(room => (room.id === savedRoom.id ? savedRoom : room)))
+      const roomInput = {
+        propertyId: selectedProperty.id,
+        roomNumber: input.roomNumber,
+        roomType: input.roomType,
+        monthlyRent: toNumber(input.monthlyRent),
+        fixedCosts: toNumber(input.fixedCosts),
+        studentTax: toNumber(input.studentTax),
+        deposit: toNumber(input.deposit),
+      }
+
+      if (editingRoom) {
+        const savedRoom = await updateRoomData({
+          ...editingRoom,
+          ...roomInput,
+        })
+        setRooms(previous => previous.map(room => (room.id === savedRoom.id ? savedRoom : room)))
+      } else {
+        const savedRoom = await createRoomData(roomInput)
+        setRooms(previous => [...previous, savedRoom])
+      }
+
       setEditingRoom(null)
+      setShowRoomModal(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kamer kon niet opgeslagen worden')
+    }
+  }
+
+  async function handleDeleteRoom(room: Room) {
+    const hasContract = contracts.some(contract => contract.roomId === room.id)
+    if (hasContract) {
+      setError('Deze kamer heeft een contract en kan daarom niet verwijderd worden')
+      return
+    }
+
+    try {
+      await deleteRoomData(room.id)
+      setRooms(previous => previous.filter(item => item.id !== room.id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Kamer kon niet verwijderd worden')
     }
   }
 
@@ -374,6 +445,16 @@ export default function PropertiesPage() {
   function openEditPropertyModal(property: Property) {
     setEditingProperty(property)
     setShowPropertyModal(true)
+  }
+
+  function openNewRoomModal() {
+    setEditingRoom(null)
+    setShowRoomModal(true)
+  }
+
+  function openEditRoomModal(room: Room) {
+    setEditingRoom(room)
+    setShowRoomModal(true)
   }
 
   return (
@@ -484,20 +565,30 @@ export default function PropertiesPage() {
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10">
                     <Home size={18} className="text-accent" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h1 className="text-xl font-bold text-slate-900">{selectedProperty.name}</h1>
                     <p className="mt-1 text-sm font-medium text-slate-500">
                       {selectedProperty.address || 'Geen adres ingevuld'}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => openEditPropertyModal(selectedProperty)}
-                    className="glass-chip ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                    aria-label={`${selectedProperty.name} bewerken`}
-                  >
-                    <Edit3 size={15} className="text-slate-500" />
-                  </button>
+                  <div className="ml-auto flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={openNewRoomModal}
+                      className="btn-primary inline-flex min-h-9 items-center gap-2 px-3 text-sm"
+                    >
+                      <Plus size={15} />
+                      Kamer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEditPropertyModal(selectedProperty)}
+                      className="glass-chip flex h-9 w-9 items-center justify-center rounded-xl"
+                      aria-label={`${selectedProperty.name} bewerken`}
+                    >
+                      <Edit3 size={15} className="text-slate-500" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -528,14 +619,25 @@ export default function PropertiesPage() {
                             <p className="text-xs font-semibold text-slate-500">{ROOM_TYPE_LABEL[room.roomType]}</p>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          aria-label={`Kamer ${room.roomNumber} bewerken`}
-                          onClick={() => setEditingRoom(room)}
-                          className="glass-chip flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                        >
-                          <Edit3 size={15} className="text-slate-500" />
-                        </button>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <button
+                            type="button"
+                            aria-label={`Kamer ${room.roomNumber} bewerken`}
+                            onClick={() => openEditRoomModal(room)}
+                            className="glass-chip flex h-9 w-9 items-center justify-center rounded-xl"
+                          >
+                            <Edit3 size={15} className="text-slate-500" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Kamer ${room.roomNumber} verwijderen`}
+                            onClick={() => handleDeleteRoom(room)}
+                            disabled={contracts.some(contract => contract.roomId === room.id)}
+                            className="glass-chip flex h-9 w-9 items-center justify-center rounded-xl disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Trash2 size={15} className="text-red-500" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="mt-4 rounded-xl bg-white/45 p-3">
@@ -587,8 +689,16 @@ export default function PropertiesPage() {
         </div>
       </div>
 
-      {editingRoom && (
-        <RoomEditModal room={editingRoom} onClose={() => setEditingRoom(null)} onSave={handleSaveRoom} />
+      {showRoomModal && selectedProperty && (
+        <RoomEditModal
+          room={editingRoom ?? undefined}
+          propertyName={selectedProperty.name}
+          onClose={() => {
+            setEditingRoom(null)
+            setShowRoomModal(false)
+          }}
+          onSave={handleSaveRoom}
+        />
       )}
       {showPropertyModal && (
         <PropertyEditModal

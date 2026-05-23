@@ -42,4 +42,29 @@ describe('PropertiesPage', () => {
       expect(screen.getByRole('heading', { name: 'Testpand' })).toBeInTheDocument()
     })
   })
+
+  it('voegt een kamer toe aan een bestaand pand', async () => {
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Residentie De Linde' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kamer' }))
+    fireEvent.change(await screen.findByLabelText('Kamernummer'), { target: { value: '08' } })
+    fireEvent.change(screen.getByLabelText('Huurprijs'), { target: { value: '510' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Kamer 08' })).toBeInTheDocument()
+    })
+  })
+
+  it('verwijdert een vrije kamer', async () => {
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Residentie De Linde' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kamer 03 verwijderen' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'Kamer 03' })).not.toBeInTheDocument()
+    })
+  })
 })

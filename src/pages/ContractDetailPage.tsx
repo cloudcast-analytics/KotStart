@@ -40,6 +40,7 @@ export default function ContractDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [emailMessage, setEmailMessage] = useState<string | null>(null)
   const [showSignatureModal, setShowSignatureModal] = useState(false)
 
   useEffect(() => {
@@ -78,16 +79,23 @@ export default function ContractDetailPage() {
   const activeStatusIndex = STATUS_STEPS.findIndex(step => step.status === contract.status)
 
   async function handleSignatureConfirm(signatureDataUrl: string) {
+    if (!student.email) {
+      setEmailStatus('error')
+      setEmailMessage('Geen e-mailadres gevonden voor deze student.')
+      return
+    }
+
     setShowSignatureModal(false)
     setEmailStatus('sending')
+    setEmailMessage('Contract wordt ondertekend en verstuurd...')
     try {
       const html = generateContractHtml({ contract, room, student, property, inspection, inspectionItems, landlord, signatureDataUrl })
       await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html)
       setEmailStatus('sent')
-      setTimeout(() => setEmailStatus('idle'), 4000)
-    } catch {
+      setEmailMessage(`Contract is verstuurd naar ${student.email}.`)
+    } catch (err) {
       setEmailStatus('error')
-      setTimeout(() => setEmailStatus('idle'), 4000)
+      setEmailMessage(err instanceof Error ? err.message : 'Contract kon niet verstuurd worden.')
     }
   }
 
@@ -127,9 +135,10 @@ export default function ContractDetailPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
               <ActionButton label="Verlengen" icon={CalendarPlus} onClick={() => navigate(`/contracts/${contract.id}/renew`)} />
               <ActionButton label="Startplaatsbeschrijving" icon={ClipboardList} onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })} />
+              <ActionButton label="Eindplaatsbeschrijving" icon={ClipboardList} onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })} />
               <ActionButton label="PDF maken" icon={Download} onClick={() => printContractDocument({ contract, room, student, property, inspection, inspectionItems, landlord })} />
               <button
                 type="button"
@@ -141,9 +150,24 @@ export default function ContractDetailPage() {
                 {emailStatus === 'sent' && <CheckCircle size={16} className="text-green-500" />}
                 {emailStatus === 'error' && <XCircle size={16} className="text-red-500" />}
                 {emailStatus === 'idle' && <PenLine size={16} className="text-accent" />}
-                {emailStatus === 'sending' ? 'Versturen...' : emailStatus === 'sent' ? 'Verstuurd!' : emailStatus === 'error' ? 'Fout' : 'Ondertekenen'}
+                {emailStatus === 'sending' ? 'Versturen...' : emailStatus === 'sent' ? 'Verstuurd' : emailStatus === 'error' ? 'Opnieuw proberen' : 'Ondertekenen & versturen'}
               </button>
             </div>
+            {emailMessage && (
+              <div
+                role="status"
+                className={cn(
+                  'mt-3 rounded-xl border px-3 py-2 text-sm font-semibold',
+                  emailStatus === 'sent'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : emailStatus === 'error'
+                      ? 'border-red-200 bg-red-50 text-red-700'
+                      : 'border-slate-200 bg-white/65 text-slate-600',
+                )}
+              >
+                {emailMessage}
+              </div>
+            )}
           </section>
 
           <section className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
@@ -205,13 +229,22 @@ export default function ContractDetailPage() {
             <p className="text-sm font-medium text-slate-500">
               Koppel start- en eindplaatsbeschrijvingen aan dit contract zodra ze afgerond zijn.
             </p>
-            <button
-              type="button"
-              onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
-              className="btn-primary mt-4 px-4 py-3 text-sm"
-            >
-              Nieuwe plaatsbeschrijving
-            </button>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
+                className="btn-primary px-4 py-3 text-sm"
+              >
+                Startplaatsbeschrijving
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })}
+                className="rounded-xl border border-white/90 bg-white/60 px-4 py-3 text-sm font-bold text-slate-600"
+              >
+                Eindplaatsbeschrijving
+              </button>
+            </div>
           </section>
         </div>
       </main>

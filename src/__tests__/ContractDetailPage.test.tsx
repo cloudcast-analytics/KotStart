@@ -57,6 +57,14 @@ describe('ContractDetailPage', () => {
     expect(screen.getByText('Renew route')).toBeInTheDocument()
   })
 
+  it('toont ondertekenen en start/eindplaatsbeschrijving acties', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: /ondertekenen & versturen/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /startplaatsbeschrijving/i }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /eindplaatsbeschrijving/i }).length).toBeGreaterThan(0)
+  })
+
   it('maakt een printbaar contractdocument', async () => {
     const { write } = mockPrintWindow()
     renderPage()
