@@ -23,7 +23,7 @@ export const STUDENTS: Student[] = [
   { id: 's3', firstName: 'Sara', lastName: 'Bogaert', email: 'sara.bogaert@student.ugent.be', phone: '0472 77 88 99', dateOfBirth: '2005-11-03', nationalRegistryNumber: '05.11.03-456.78', institution: 'Hogeschool Gent (HoGent) — Faculteit Gezondheid', studentNumber: '202401236', primaryResidence: 'Gentstraat 88, 9800 Deinze', createdAt: '2025-08-17' },
   { id: 's4', firstName: 'Noah', lastName: 'De Smedt', email: 'noah.desmedt@student.ugent.be', phone: '0473 00 11 22', dateOfBirth: '2004-05-18', nationalRegistryNumber: '04.05.18-567.89', institution: 'Universiteit Gent (UGent) — Faculteit Recht', studentNumber: '202401237', primaryResidence: 'Stationslaan 12, 9300 Aalst', createdAt: '2025-08-18' },
   { id: 's5', firstName: 'Fien', lastName: 'Vandenberghe', email: 'fien.vandenberghe@student.ugent.be', phone: '0474 33 44 55', dateOfBirth: '2005-09-27', nationalRegistryNumber: '05.09.27-678.90', institution: 'Universiteit Gent (UGent) — Faculteit Wetenschappen', studentNumber: '202401238', primaryResidence: 'Dorpsstraat 3, 9830 Sint-Martens-Latem', createdAt: '2025-08-19' },
-  { id: 's-testpiet', firstName: 'Testpiet', lastName: 'Demo', email: 'testpiet@example.com', phone: '0470 00 00 00', dateOfBirth: '2005-01-01', nationalRegistryNumber: '05.01.01-000.00', institution: 'Demo Hogeschool', studentNumber: 'TEST-001', primaryResidence: 'Teststraat 1, 9000 Gent', createdAt: '2025-08-23' },
+  { id: 's-demo-student', firstName: 'Vincent', lastName: 'Grobben', email: 'vincent.grobben@example.com', phone: '0470 00 00 00', dateOfBirth: '2005-01-01', nationalRegistryNumber: '05.01.01-000.00', institution: 'Demo Hogeschool', studentNumber: 'DEMO-001', primaryResidence: 'Teststraat 1, 9000 Gent', createdAt: '2025-08-23' },
 ]
 
 export const MOCK_LANDLORD_PROFILE: LandlordProfile = {
@@ -48,7 +48,7 @@ export const CONTRACTS: Contract[] = [
   { id: 'c3', roomId: 'r4', schoolYear: '2025–2026', studentId: 's3', status: 'sent', createdAt: '2025-08-21' },
   { id: 'c4', roomId: 'r5', schoolYear: '2025–2026', studentId: 's4', status: 'draft', createdAt: '2025-08-22' },
   { id: 'c5', roomId: 'r7', schoolYear: '2025–2026', studentId: 's5', status: 'signed', createdAt: '2025-08-22' },
-  { id: 'c-testpiet', roomId: 'r6', schoolYear: '2025–2026', studentId: 's-testpiet', status: 'sent', createdAt: '2025-08-23' },
+  { id: 'c-demo-student', roomId: 'r6', schoolYear: '2025–2026', studentId: 's-demo-student', status: 'sent', createdAt: '2025-08-23' },
 ]
 
 export function getDashboardRows(propertyId: string, schoolYear: string): StudentDashboardRow[] {

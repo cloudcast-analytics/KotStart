@@ -1,8 +1,3 @@
-alter table public.students add column if not exists national_registry_number text;
-alter table public.students add column if not exists institution text;
-alter table public.students add column if not exists student_number text;
-alter table public.students add column if not exists primary_residence text;
-
 create or replace function public.ensure_vincent_grobben_demo_contract(user_id uuid)
 returns void
 language plpgsql
@@ -49,8 +44,12 @@ begin
   select id into v_student_id
   from public.students
   where owner_id = user_id
-    and first_name = 'Vincent'
-    and last_name = 'Grobben'
+    and (
+      (first_name = 'Vincent' and last_name = 'Grobben')
+      or first_name in ('Testpiet', 'DEMO-student')
+      or email in ('testpiet@example.com', 'demo-student@example.com', 'vincent.grobben@example.com')
+    )
+  order by created_at nulls last
   limit 1;
 
   if v_student_id is null then
@@ -79,6 +78,19 @@ begin
       'Teststraat 1, 9000 Gent'
     )
     returning id into v_student_id;
+  else
+    update public.students
+    set
+      first_name = 'Vincent',
+      last_name = 'Grobben',
+      email = 'vincent.grobben@example.com',
+      phone = coalesce(nullif(phone, ''), '0470 00 00 00'),
+      date_of_birth = coalesce(date_of_birth, '2005-01-01'),
+      national_registry_number = coalesce(nullif(national_registry_number, ''), '05.01.01-000.00'),
+      institution = coalesce(nullif(institution, ''), 'Demo Hogeschool'),
+      student_number = coalesce(nullif(student_number, ''), 'DEMO-001'),
+      primary_residence = coalesce(nullif(primary_residence, ''), 'Teststraat 1, 9000 Gent')
+    where id = v_student_id;
   end if;
 
   if not exists (
