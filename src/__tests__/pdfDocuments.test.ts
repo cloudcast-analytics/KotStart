@@ -29,9 +29,9 @@ describe('generateContractHtml', () => {
     expect(html).toContain('450')
   })
 
-  it('bevat de verhuurdersnaam', () => {
+  it('laat de verhuurdersnaam leeg wanneer die nog niet is ingevuld', () => {
     const html = generateContractHtml(mockBundle)
-    expect(html).toContain('Vandenberghe')
+    expect(html).toContain('<span></span>')
   })
 
   it('bevat een plaatsbeschrijvingstabel met standaarditems ook zonder inspectie', () => {

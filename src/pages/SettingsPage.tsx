@@ -4,19 +4,19 @@ import { getLandlordProfile, saveLandlordProfile } from '../lib/data'
 import type { LandlordProfile } from '../types'
 
 const FIELDS: Array<{ key: keyof LandlordProfile; label: string; placeholder: string }> = [
-  { key: 'name', label: 'Naam en voornamen', placeholder: 'Vandenberghe, Geert François' },
-  { key: 'dateOfBirth', label: 'Geboortedatum en -plaats', placeholder: '15 maart 1972, Gent' },
-  { key: 'nationalRegistryNumber', label: 'Rijksregisternummer', placeholder: '72.03.15-123.45' },
-  { key: 'address', label: 'Adres', placeholder: 'Veldstraat 89, 9000 Gent' },
-  { key: 'phone', label: 'Telefoon / gsm', placeholder: '0498 12 34 56' },
-  { key: 'email', label: 'E-mailadres', placeholder: 'geert@kotbeheer.be' },
-  { key: 'iban', label: 'IBAN (betalingsrekening)', placeholder: 'BE12 3456 7890 1234' },
-  { key: 'bic', label: 'BIC-code', placeholder: 'GEBABEBB' },
-  { key: 'bank', label: 'Bankinstelling', placeholder: 'BNP Paribas Fortis' },
-  { key: 'insuranceCompany', label: 'Verzekeringsmaatschappij', placeholder: 'AXA Belgium' },
-  { key: 'policyNumber', label: 'Polisnummer verzekering', placeholder: 'AXA-2025-001' },
-  { key: 'epcLabel', label: 'EPC-label', placeholder: 'C' },
-  { key: 'epcNumber', label: 'EPC-certificaatnummer', placeholder: '20250515-EPC-0001' },
+  { key: 'name', label: 'Naam en voornamen', placeholder: 'Naam verhuurder' },
+  { key: 'dateOfBirth', label: 'Geboortedatum en -plaats', placeholder: 'Geboortedatum en geboorteplaats' },
+  { key: 'nationalRegistryNumber', label: 'Rijksregisternummer', placeholder: 'Rijksregisternummer' },
+  { key: 'address', label: 'Adres', placeholder: 'Straat, nummer, postcode en gemeente' },
+  { key: 'phone', label: 'Telefoon / gsm', placeholder: 'Telefoonnummer' },
+  { key: 'email', label: 'E-mailadres', placeholder: 'E-mailadres' },
+  { key: 'iban', label: 'IBAN (betalingsrekening)', placeholder: 'IBAN' },
+  { key: 'bic', label: 'BIC-code', placeholder: 'BIC' },
+  { key: 'bank', label: 'Bankinstelling', placeholder: 'Bankinstelling' },
+  { key: 'insuranceCompany', label: 'Verzekeringsmaatschappij', placeholder: 'Verzekeringsmaatschappij' },
+  { key: 'policyNumber', label: 'Polisnummer verzekering', placeholder: 'Polisnummer' },
+  { key: 'epcLabel', label: 'EPC-label', placeholder: 'EPC-label' },
+  { key: 'epcNumber', label: 'EPC-certificaatnummer', placeholder: 'EPC-certificaatnummer' },
 ]
 
 export default function SettingsPage() {

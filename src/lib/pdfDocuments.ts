@@ -40,19 +40,19 @@ const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
 }
 
 const MOCK_LANDLORD: LandlordProfile = {
-  name: 'Vandenberghe, Geert François',
-  dateOfBirth: '15 maart 1972, Gent',
-  nationalRegistryNumber: '72.03.15-123.45',
-  address: 'Veldstraat 89, 9000 Gent',
-  phone: '0498 12 34 56',
-  email: 'geert.vandenberghe@kotbeheer.be',
-  iban: 'BE12 3456 7890 1234',
-  bic: 'GEBABEBB',
-  bank: 'BNP Paribas Fortis',
-  insuranceCompany: 'AXA Belgium',
-  policyNumber: 'AXA-2025-00456789',
-  epcLabel: 'C',
-  epcNumber: '20250515-EPC-4567',
+  name: '',
+  dateOfBirth: '',
+  nationalRegistryNumber: '',
+  address: '',
+  phone: '',
+  email: '',
+  iban: '',
+  bic: '',
+  bank: '',
+  insuranceCompany: '',
+  policyNumber: '',
+  epcLabel: '',
+  epcNumber: '',
 }
 
 const DEFAULT_INSPECTION_ITEMS: Array<{ category: string; itemName: string }> = [
