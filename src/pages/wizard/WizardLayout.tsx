@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Loader2, Send } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, Save } from 'lucide-react'
 import StepIndicator from './StepIndicator'
 import { cn } from '../../lib/cn'
 
@@ -67,7 +67,7 @@ export default function WizardLayout({
 
         <button
           type="button"
-          aria-label={isLastStep ? 'Contract versturen' : 'Volgende'}
+          aria-label={isLastStep ? 'Opslaan als concept' : 'Volgende'}
           onClick={onNext}
           disabled={!canProceed || isSending}
           className={cn(
@@ -78,12 +78,12 @@ export default function WizardLayout({
           {isSending ? (
             <>
               <Loader2 size={15} className="animate-spin" />
-              Wordt verstuurd...
+              Wordt opgeslagen...
             </>
           ) : isLastStep ? (
             <>
-              Contract versturen
-              <Send size={15} />
+              Opslaan als concept
+              <Save size={15} />
             </>
           ) : (
             <>
@@ -93,6 +93,12 @@ export default function WizardLayout({
           )}
         </button>
       </div>
+
+      {isLastStep && !isSending && (
+        <p className="mt-2 text-center text-xs text-slate-400">
+          Je kan daarna de plaatsbeschrijving doen en ondertekenen.
+        </p>
+      )}
     </div>
   )
 }

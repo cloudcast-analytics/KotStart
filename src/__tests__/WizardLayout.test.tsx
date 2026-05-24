@@ -47,9 +47,9 @@ describe('WizardLayout', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 
-  it('toont versturen en loading states', () => {
+  it('toont opslaan en loading states', () => {
     const { rerender } = renderWizard({ isLastStep: true })
-    expect(screen.getByRole('button', { name: /contract versturen/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /opslaan als concept/i })).toBeInTheDocument()
 
     rerender(
       <WizardLayout
@@ -65,7 +65,7 @@ describe('WizardLayout', () => {
       </WizardLayout>,
     )
 
-    expect(screen.getByText(/wordt verstuurd/i)).toBeInTheDocument()
+    expect(screen.getByText(/wordt opgeslagen/i)).toBeInTheDocument()
   })
 
   it('disablet Volgende knop als canProceed false is', () => {

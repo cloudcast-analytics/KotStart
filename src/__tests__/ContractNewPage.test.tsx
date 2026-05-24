@@ -83,6 +83,6 @@ describe('ContractNewPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
 
     expect(await screen.findByText('Emma Janssen')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /contract versturen/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /opslaan als concept/i })).toBeInTheDocument()
   })
 })
