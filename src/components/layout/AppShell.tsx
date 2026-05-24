@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react'
 import Drawer from './Drawer'
-import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import { PROPERTIES, SCHOOL_YEARS } from '../../lib/mockData'
 import type { Property } from '../../types'
@@ -38,9 +37,6 @@ export default function AppShell({
   return (
     <div className="flex h-screen overflow-hidden">
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <div className="hidden md:flex">
-        <Sidebar />
-      </div>
 
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar
