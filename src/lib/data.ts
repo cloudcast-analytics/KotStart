@@ -1,5 +1,5 @@
 import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
-import { CONTRACTS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
+import { CONTRACTS, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
 import { isSupabaseConfigured, supabase } from './supabase'
 
 interface PropertyRow {
@@ -377,31 +377,69 @@ export async function getContractBundleData(contractId: string | undefined) {
 
   if (!room || !student || !property) return null
 
-  let inspection: Inspection | undefined
-  let inspectionItems: InspectionItem[] = []
+  let startInspection: Inspection | undefined
+  let startInspectionItems: InspectionItem[] = []
+  let endInspection: Inspection | undefined
+  let endInspectionItems: InspectionItem[] = []
 
   if (isSupabaseConfigured) {
-    const { data: inspectionData } = await supabase
-      .from('inspections')
-      .select('*')
-      .eq('contract_id', contractId)
-      .eq('type', 'start')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    const [startResult, endResult] = await Promise.all([
+      supabase.from('inspections').select('*').eq('contract_id', contractId).eq('type', 'start').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('inspections').select('*').eq('contract_id', contractId).eq('type', 'end').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    ])
 
-    if (inspectionData) {
-      inspection = await mapInspectionWithAssets(inspectionData as InspectionRow)
-      const { data: itemsData } = await supabase
-        .from('inspection_items')
-        .select('*')
-        .eq('inspection_id', inspection.id)
-      inspectionItems = await Promise.all(((itemsData as InspectionItemRow[]) ?? []).map(mapInspectionItemWithAssets))
+    if (startResult.data) {
+      startInspection = await mapInspectionWithAssets(startResult.data as InspectionRow)
+      const { data: itemsData } = await supabase.from('inspection_items').select('*').eq('inspection_id', startInspection.id)
+      startInspectionItems = await Promise.all(((itemsData as InspectionItemRow[]) ?? []).map(mapInspectionItemWithAssets))
     }
+
+    if (endResult.data) {
+      endInspection = await mapInspectionWithAssets(endResult.data as InspectionRow)
+      const { data: itemsData } = await supabase.from('inspection_items').select('*').eq('inspection_id', endInspection.id)
+      endInspectionItems = await Promise.all(((itemsData as InspectionItemRow[]) ?? []).map(mapInspectionItemWithAssets))
+    }
+  } else {
+    startInspection = MOCK_INSPECTIONS.find(i => i.contractId === contractId && i.type === 'start')
+    startInspectionItems = startInspection
+      ? MOCK_INSPECTION_ITEMS.filter(i => i.inspectionId === startInspection!.id)
+      : []
+    endInspection = MOCK_INSPECTIONS.find(i => i.contractId === contractId && i.type === 'end')
+    endInspectionItems = endInspection
+      ? MOCK_INSPECTION_ITEMS.filter(i => i.inspectionId === endInspection!.id)
+      : []
   }
 
   const landlord = getLandlordProfile()
-  return { contract, room, student, property, inspection, inspectionItems, landlord }
+  return { contract, room, student, property, startInspection, startInspectionItems, endInspection, endInspectionItems, landlord }
+}
+
+export async function getInspectionData(inspectionId: string | undefined): Promise<{ inspection: Inspection; items: InspectionItem[] } | null> {
+  if (!inspectionId) return null
+
+  if (!isSupabaseConfigured) {
+    const inspection = MOCK_INSPECTIONS.find(i => i.id === inspectionId)
+    if (!inspection) return null
+    const items = MOCK_INSPECTION_ITEMS.filter(i => i.inspectionId === inspectionId)
+    return { inspection, items }
+  }
+
+  const { data: inspectionData, error } = await supabase
+    .from('inspections')
+    .select('*')
+    .eq('id', inspectionId)
+    .maybeSingle()
+
+  if (error || !inspectionData) return null
+
+  const inspection = await mapInspectionWithAssets(inspectionData as InspectionRow)
+  const { data: itemsData } = await supabase
+    .from('inspection_items')
+    .select('*')
+    .eq('inspection_id', inspectionId)
+
+  const items = await Promise.all(((itemsData as InspectionItemRow[]) ?? []).map(mapInspectionItemWithAssets))
+  return { inspection, items }
 }
 
 const LANDLORD_PROFILE_KEY = 'kotstart_landlord_profile'
