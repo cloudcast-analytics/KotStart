@@ -10,6 +10,7 @@ function renderPage(initialPath = '/contracts/c1') {
         <Route path="/contracts/:id" element={<ContractDetailPage />} />
         <Route path="/contracts/:id/renew" element={<div>Renew route</div>} />
         <Route path="/inspections/new" element={<div>Inspectie route</div>} />
+        <Route path="/inspections/:id" element={<div>Inspectie detail route</div>} />
         <Route path="/" element={<div>Dashboard</div>} />
       </Routes>
     </MemoryRouter>,
@@ -57,12 +58,27 @@ describe('ContractDetailPage', () => {
     expect(screen.getByText('Renew route')).toBeInTheDocument()
   })
 
-  it('toont ondertekenen en start/eindplaatsbeschrijving acties', async () => {
+  it('toont ondertekenen knop en inspectiepaspoort', async () => {
     renderPage()
 
     expect(await screen.findByRole('button', { name: /ondertekenen & versturen/i })).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /startplaatsbeschrijving/i }).length).toBeGreaterThan(0)
-    expect(screen.getAllByRole('button', { name: /eindplaatsbeschrijving/i }).length).toBeGreaterThan(0)
+    // c1 has a mock start inspection → should show "Bekijken" for start
+    expect(screen.getByRole('button', { name: /bekijken/i })).toBeInTheDocument()
+    // c1 has no end inspection → should show "Starten" for end
+    expect(screen.getAllByRole('button', { name: /starten/i }).length).toBeGreaterThan(0)
+    // Start and end labels present
+    expect(screen.getByText('Startplaatsbeschrijving')).toBeInTheDocument()
+    expect(screen.getByText('Eindplaatsbeschrijving')).toBeInTheDocument()
+  })
+
+  it('toont geen dubbele inspectieknoppen in de actiebalk', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Emma Janssen' })
+    // Only 3 action buttons in top bar: Verlengen, PDF maken, Ondertekenen & versturen
+    // Startplaatsbeschrijving and Eindplaatsbeschrijving must NOT be action buttons in the bar
+    const verlengenButtons = screen.getAllByRole('button', { name: /verlengen/i })
+    expect(verlengenButtons).toHaveLength(1)
   })
 
   it('maakt een printbaar contractdocument', async () => {
