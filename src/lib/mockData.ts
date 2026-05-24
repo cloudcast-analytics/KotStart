@@ -1,4 +1,4 @@
-import type { LandlordProfile, Property, Room, Student, Contract, StudentDashboardRow } from '../types'
+import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
 
 export const SCHOOL_YEARS = ['2024–2025', '2025–2026']
 
@@ -68,3 +68,20 @@ export function getDashboardRows(propertyId: string, schoolYear: string): Studen
     }
   }).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber))
 }
+
+export const MOCK_INSPECTIONS: Inspection[] = [
+  {
+    id: 'i1',
+    contractId: 'c1',
+    type: 'start',
+    overviewPhotoUrl: undefined,
+    createdAt: '2025-09-15T10:00:00.000Z',
+  },
+]
+
+export const MOCK_INSPECTION_ITEMS: InspectionItem[] = [
+  { id: 'ii1', inspectionId: 'i1', category: 'Kamer', itemName: 'Vloer', condition: 'good', photoUrl: undefined },
+  { id: 'ii2', inspectionId: 'i1', category: 'Kamer', itemName: 'Muren', condition: 'moderate', photoUrl: undefined },
+  { id: 'ii3', inspectionId: 'i1', category: 'Badkamer', itemName: 'Douche', condition: 'good', photoUrl: undefined },
+  { id: 'ii4', inspectionId: 'i1', category: 'Badkamer', itemName: 'Toilet & toiletbril', condition: 'good', photoUrl: undefined },
+]
