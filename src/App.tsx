@@ -7,6 +7,7 @@ const ContractNewPage = lazy(() => import('./pages/ContractNewPage'))
 const ContractDetailPage = lazy(() => import('./pages/ContractDetailPage'))
 const ContractRenewPage = lazy(() => import('./pages/ContractRenewPage'))
 const InspectionNewPage = lazy(() => import('./pages/InspectionNewPage'))
+const InspectionDetailPage = lazy(() => import('./pages/InspectionDetailPage'))
 const PropertiesPage = lazy(() => import('./pages/PropertiesPage'))
 const AccountPage = lazy(() => import('./pages/AccountPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/contracts/:id/renew" element={<ProtectedPage><ContractRenewPage /></ProtectedPage>} />
         <Route path="/contracts/:id" element={<ProtectedPage><ContractDetailPage /></ProtectedPage>} />
         <Route path="/inspections/new" element={<ProtectedPage><InspectionNewPage /></ProtectedPage>} />
+        <Route path="/inspections/:id" element={<ProtectedPage><InspectionDetailPage /></ProtectedPage>} />
         <Route path="/properties" element={<ProtectedPage><PropertiesPage /></ProtectedPage>} />
         <Route path="/account" element={<ProtectedPage><AccountPage /></ProtectedPage>} />
         <Route path="/settings" element={<ProtectedPage><SettingsPage /></ProtectedPage>} />

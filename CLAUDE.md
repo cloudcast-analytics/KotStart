@@ -59,7 +59,8 @@ src/
     ActionBar.tsx            # Sticky bottom action bar (used in detail pages)
     EmptyState.tsx           # Empty list placeholder component
     StudentRow.tsx           # Single row in the dashboard student list
-  __tests__/                 # Vitest + Testing Library tests (18 files, 76 tests)
+    InspectionDetailPage.tsx  # Inspection detail: items by category, condition chips, PDF print
+  __tests__/                 # Vitest + Testing Library tests (21 files, 94 tests)
 supabase/
   migrations/
     20260521000000_initial.sql  # Full DB schema + Storage bucket policies
@@ -121,6 +122,7 @@ Single point of contact between pages and persistence. Switches between mock dat
 | `/contracts/:id` | `ContractDetailPage` | Contract info + PDF action |
 | `/contracts/:id/renew` | `ContractRenewPage` | Contract renewal |
 | `/inspections/new` | `InspectionNewPage` | Inspection wizard (linked from contract detail) |
+| `/inspections/:id` | `InspectionDetailPage` | Inspection detail: items grouped by category + PDF print |
 | `/properties` | `PropertiesPage` | Property + room management |
 | `/account` | `AccountPage` | Account page |
 | `/settings` | `SettingsPage` | Verhuurder-profielformulier (naam, RR-nr., IBAN, verzekering, EPC) |
