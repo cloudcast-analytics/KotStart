@@ -620,13 +620,22 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
       guardian_name: input.guardian?.name ?? null,
       guardian_email: input.guardian?.email ?? null,
       guardian_phone: input.guardian?.phone ?? null,
-      status: 'sent',
+      status: 'draft',
     })
     .select()
     .single()
 
   if (contractError) throw contractError
   return (insertedContract as ContractRow).id
+}
+
+export async function updateContractStatus(contractId: string, status: Contract['status']): Promise<void> {
+  if (!isSupabaseConfigured) return
+  const { error } = await supabase
+    .from('contracts')
+    .update({ status })
+    .eq('id', contractId)
+  if (error) throw error
 }
 
 export async function saveInspectionData(input: SaveInspectionInput): Promise<string | null> {

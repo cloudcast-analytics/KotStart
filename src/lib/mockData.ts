@@ -77,6 +77,13 @@ export const MOCK_INSPECTIONS: Inspection[] = [
     overviewPhotoUrl: undefined,
     createdAt: '2025-09-15T10:00:00.000Z',
   },
+  {
+    id: 'i2',
+    contractId: 'c4',
+    type: 'start',
+    overviewPhotoUrl: undefined,
+    createdAt: '2025-09-16T10:00:00.000Z',
+  },
 ]
 
 export const MOCK_INSPECTION_ITEMS: InspectionItem[] = [
