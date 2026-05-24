@@ -167,9 +167,17 @@ export default function ContractDetailPage() {
                   Kamer {room.roomNumber}, {property.name}
                 </p>
               </div>
+              <button
+                type="button"
+                aria-label="Student verwijderen"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="glass-chip flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+              >
+                <Trash2 size={15} className="text-red-500" />
+              </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-2 gap-2">
               <ActionButton
                 label="Verlengen"
                 icon={CalendarPlus}
@@ -189,12 +197,6 @@ export default function ContractDetailPage() {
                   landlordSignatureDataUrl,
                   studentSignatureDataUrl,
                 })}
-              />
-              <ActionButton
-                label="Verwijderen"
-                icon={Trash2}
-                onClick={() => setShowDeleteConfirm(true)}
-                variant="danger"
               />
             </div>
           </section>
@@ -334,23 +336,18 @@ function ActionButton({
   label,
   icon: Icon,
   onClick,
-  variant = 'default',
 }: {
   label: string
   icon: React.ElementType
   onClick: () => void
-  variant?: 'default' | 'danger'
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        'glass-chip flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold',
-        variant === 'danger' ? 'text-red-600' : 'text-slate-700',
-      )}
+      className="glass-chip flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-700"
     >
-      <Icon size={16} className={variant === 'danger' ? 'text-red-500' : 'text-accent'} />
+      <Icon size={16} className="text-accent" />
       {label}
     </button>
   )
