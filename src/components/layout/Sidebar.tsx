@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { Home, Building2, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Home, Building2, Settings, ChevronLeft, ChevronRight, User } from 'lucide-react'
 import { cn } from '../../lib/cn'
 
 const NAV_ITEMS = [
   { to: '/', icon: Home, label: 'Overzicht', iconColor: 'text-accent' },
   { to: '/properties', icon: Building2, label: 'Panden', iconColor: 'text-teal-500' },
+  { to: '/account', icon: User, label: 'Account', iconColor: 'text-blue-500' },
   { to: '/settings', icon: Settings, label: 'Instellingen', iconColor: 'text-slate-500' },
 ]
 
@@ -54,7 +55,13 @@ export default function Sidebar() {
           >
             <div className={cn(
               'w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0',
-              iconColor === 'text-accent' ? 'bg-accent/12' : iconColor === 'text-teal-500' ? 'bg-teal-50' : 'bg-slate-100'
+              iconColor === 'text-accent'
+                ? 'bg-accent/12'
+                : iconColor === 'text-teal-500'
+                  ? 'bg-teal-50'
+                  : iconColor === 'text-blue-500'
+                    ? 'bg-blue-50'
+                    : 'bg-slate-100'
             )}>
               <Icon size={15} className={iconColor} />
             </div>

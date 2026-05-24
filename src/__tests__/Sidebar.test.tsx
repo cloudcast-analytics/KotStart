@@ -16,6 +16,7 @@ describe('Sidebar', () => {
     renderSidebar()
     expect(screen.getByText('Overzicht')).toBeInTheDocument()
     expect(screen.getByText('Panden')).toBeInTheDocument()
+    expect(screen.getByText('Account')).toBeInTheDocument()
     expect(screen.getByText('Instellingen')).toBeInTheDocument()
   })
 
