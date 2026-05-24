@@ -3,7 +3,7 @@ alter table public.students add column if not exists institution text;
 alter table public.students add column if not exists student_number text;
 alter table public.students add column if not exists primary_residence text;
 
-create or replace function public.ensure_vincent_grobben_demo_contract(user_id uuid)
+create or replace function public.ensure_testpiet_demo_contract(user_id uuid)
 returns void
 language plpgsql
 security definer
@@ -49,8 +49,7 @@ begin
   select id into v_student_id
   from public.students
   where owner_id = user_id
-    and first_name = 'Vincent'
-    and last_name = 'Grobben'
+    and first_name = 'Testpiet'
   limit 1;
 
   if v_student_id is null then
@@ -68,9 +67,9 @@ begin
     )
     values (
       user_id,
-      'Vincent',
-      'Grobben',
-      'vincent.grobben@example.com',
+      'Testpiet',
+      'Demo',
+      'testpiet@example.com',
       '0470 00 00 00',
       '2005-01-01',
       '05.01.01-000.00',
@@ -126,7 +125,7 @@ begin
     (property_id, '201', 'studio', 620, 0, 120, 1240),
     (property_id, '202', 'single', 475, 0, 95, 950);
 
-  perform public.ensure_vincent_grobben_demo_contract(new.id);
+  perform public.ensure_testpiet_demo_contract(new.id);
 
   return new;
 end;
@@ -139,6 +138,6 @@ begin
   for user_record in
     select id from auth.users
   loop
-    perform public.ensure_vincent_grobben_demo_contract(user_record.id);
+    perform public.ensure_testpiet_demo_contract(user_record.id);
   end loop;
 end $$;
