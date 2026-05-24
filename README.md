@@ -1,6 +1,14 @@
 # KotStart — Student Onboarding PWA
 
-Digitale onboarding voor verhuurders: contracten opstellen, ondertekenen en plaatsbeschrijvingen opmaken.
+Digitale tool voor Belgische studentenverhuurders: contracten opstellen, plaatsbeschrijvingen opmaken en contracten ondertekenen en versturen — conform het Vlaams Woninghuurdecreet.
+
+## Wat doet de app?
+
+1. **Contractwizard** — vul kamer, student en eventuele tweede partij in en sla op als concept.
+2. **Voortgangschecklist** — na het aanmaken zie je op de contractpagina vier stappen: aanmaken → startplaatsbeschrijving → handtekening verhuurder → versturen naar student. Elke stap is pas beschikbaar als de vorige klaar is (wettelijk verplichte volgorde).
+3. **Plaatsbeschrijving** — start- en eindplaatsbeschrijving per kamer, met foto's per ruimte en item.
+4. **PDF** — druk contracten en plaatsbeschrijvingen af vanuit de app.
+5. **Pandenbeheer** — overzicht van panden, kamers en huurprijzen.
 
 ## Vereisten
 
@@ -19,50 +27,61 @@ npm install
 npm run dev
 ```
 
-Opent op `http://localhost:5173`.
+Opent op `http://localhost:5173`. Zonder Supabase-variabelen draait de app op mock-data (lees-only, geen opslag).
 
 ## Tests
 
 ```bash
-npm run test:run   # eenmalig
+npm run test:run   # eenmalig (CI)
 npm test           # watch mode
 ```
+
+22 testbestanden, 104 tests — alles groen.
 
 ## Bouwen voor productie
 
 ```bash
 npm run build
-npm run preview
 ```
+
+Vereist Node 20. Als je lokaal Node 18 hebt: `nvm use 20 && npm run build`.
 
 ## Omgevingsvariabelen
 
 Kopieer `.env.example` naar `.env.local`:
 
 ```
-VITE_DEMO_MODE=false
 VITE_SUPABASE_URL=https://jouw-project.supabase.co
 VITE_SUPABASE_ANON_KEY=jouw-anon-key
-RESEND_FROM_NAME=Cloudcast Analytics
-RESEND_FROM_EMAIL=info@cloudcastanalytics.com
 ```
 
-Gebruik `VITE_DEMO_MODE=true` alleen wanneer je expliciet zonder login met lokale mock data wilt testen. Laat deze waarde op `false` in normale ontwikkeling en productie.
+Zonder deze variabelen werkt de app op lokale mock-data. `VITE_DEMO_MODE` is verouderd en niet meer nodig.
 
-De Edge Function gebruikt `RESEND_FROM_NAME` en `RESEND_FROM_EMAIL` als afzender. Antwoorden op contractmails gaan naar het e-mailadres van de ingelogde gebruiker.
+## Deployment
 
-## Databasemigratie
+De app draait op Railway: `https://kotstart.up.railway.app`
+
+Redeploy na een push naar `master` gaat automatisch als Railway aan de GitHub-repo is gekoppeld.
+
+## Database
+
+Supabase (project `tsieqsxzjrfnevcrbswg`). Migraties staan in `supabase/migrations/`. Toepassen:
 
 ```bash
-supabase db push
-# of manueel via Supabase Studio: supabase/migrations/*.sql
+npx supabase link --project-ref tsieqsxzjrfnevcrbswg
+npx supabase db push
 ```
 
-De hardening-migratie zet RLS aan en maakt storage buckets privé. Koppel bestaande seed-data eerst aan een `owner_id` voor je die migratie op een bestaande productie-database toepast.
+## E-mail
 
-## Fasen
+Contracten worden verstuurd via Resend vanuit de Supabase Edge Function `send-contract-email`. Afzender: `info@cloudcastanalytics.com`. DNS-records (DKIM, SPF, MX) zijn geconfigureerd bij one.com.
 
-- **Foundation + Dashboard:** aanwezig
-- **Contract Wizard:** aanwezig voor nieuw contract en verlenging
-- **Plaatsbeschrijving:** aanwezig als inspectieflow
-- **Pandenbeheer:** gedeeltelijk aanwezig, momenteel nog disabled in de UI
+## Status (mei 2026)
+
+- Contractwizard: aanwezig + wettelijk correcte flow afgedwongen
+- Plaatsbeschrijving (start + einde): aanwezig
+- Handtekening verhuurder: aanwezig (canvas, opgeslagen als data URL in sessie)
+- E-mail versturen na handtekening: aanwezig
+- Pandenbeheer: gedeeltelijk (zichtbaar, beheer van kamers)
+- Studentendashboard: aanwezig
+- Authenticatie: e-mail/wachtwoord via Supabase Auth

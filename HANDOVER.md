@@ -1,6 +1,6 @@
 # KotStart Handover
 
-Date: 2026-05-23
+Date: 2026-05-24
 
 ## Current Status
 
@@ -9,76 +9,86 @@ KotStart is deployed on Railway, connected to Supabase, and pushed to GitHub.
 - Production URL: `https://kotstart.up.railway.app`
 - GitHub remote: `https://github.com/cloudcast-analytics/KotStart.git`
 - Branch: `master`
-- Latest pushed commit at handover time: `03e84ee fix: simplify login and correct Cloudcast email domain`
+- Latest commit: `cd9306e fix: remove stale signature guard on send, fix status message colors`
 - Supabase project ref: `tsieqsxzjrfnevcrbswg`
 - Supabase URL: `https://tsieqsxzjrfnevcrbswg.supabase.co`
 
-The app now uses Supabase in production (`VITE_DEMO_MODE=false`). Tests use mock data even when `.env.local` contains Supabase values.
+The app uses Supabase in production. Tests run on mock data regardless of env vars.
+
+## What Was Built (May 24 2026 — Contract Flow Redesign)
+
+The contract flow was redesigned to enforce the legally correct order required by the Vlaams Woninghuurdecreet:
+
+**Before:** Wizard ended with "Contract versturen" — sending the email without a start inspection or landlord signature.
+
+**After:** Wizard ends with "Opslaan als concept". The contract detail page shows a 4-step voortgangschecklist:
+
+1. Contract aangemaakt (always done)
+2. Startplaatsbeschrijving → navigates to inspection wizard (always available)
+3. Handtekening verhuurder → opens signature canvas (only after step 2)
+4. Versturen naar student → sends the email (only after step 3)
+
+Each step is gated on the previous one. The `contract.status` progression is now `draft → signed → sent`.
 
 ## Local Project
 
 - Path: `/Users/arryawillems/Desktop/Projects/StudentOnboarding`
-- Framework: React + Vite + TypeScript + Tailwind
+- Framework: React 18 + Vite + TypeScript + Tailwind CSS
 - Node requirement: Node 20+
-- Local shell may default to Node 18. Use `nvm use 20` before production builds.
-
-Useful commands:
+- Local shell may default to Node 18 — use `nvm use 20` before production builds.
 
 ```bash
 nvm use 20
 npm run lint
-npm run test:run
+npm run test:run    # 22 files, 104 tests
 npm run build
 ```
 
 ## Implemented Features
 
-- Email/password authentication through Supabase Auth.
-- Google login is intentionally hidden for now because Google OAuth is not configured.
+- Email/password authentication via Supabase Auth.
 - Dashboard with property/year filters.
-- Contract wizard for new contracts.
+- Contract wizard (4 steps: kamer → student → tweede partij → overzicht).
+- After saving, navigates directly to the new contract's detail page.
+- 4-step voortgangschecklist on contract detail page (create → inspect → sign → send).
+- Signature capture via canvas (stored in-session as data URL; included in PDF).
 - Contract renewal flow.
-- Contract detail with PDF/print and signature/email action.
-- Inspection wizard with photos and PDF preview.
-- Properties page exists but is currently disabled in the UI.
-- Supabase data layer with mock fallback only for demo/test mode.
-- Supabase Storage upload support with private storage references and signed URL reads.
-- Supabase Edge Function `send-contract-email` sends through Resend.
-- Route-level lazy loading for smaller production chunks.
+- Inspection wizard (start + einde) with photos and PDF preview.
+- Properties page with room management.
+- PDF generation for contracts and inspections (browser print).
+- Supabase data layer with mock fallback for demo/test mode.
+- Supabase Storage for student photos and inspection photos (private buckets, signed URLs).
+- Supabase Edge Function `send-contract-email` via Resend.
 
 ## Important Files
 
-- `src/lib/supabase.ts`: Supabase config guard. Production uses Supabase when `VITE_DEMO_MODE=false`; tests force mock data.
-- `src/contexts/AuthProvider.tsx`: Supabase auth provider.
-- `src/pages/LoginPage.tsx`: email/password login/register UI. Google button removed.
-- `src/lib/data.ts`: data access, upload helpers, signed storage URL resolution.
-- `src/lib/pdfDocuments.ts`: browser print/PDF documents.
-- `supabase/functions/send-contract-email/index.ts`: Resend email function.
-- `supabase/migrations/20260521000000_initial.sql`: initial database schema.
-- `supabase/migrations/20260523000000_security_hardening.sql`: RLS/storage hardening.
-- `supabase/migrations/20260523001000_bootstrap_user_property.sql`: creates default property/rooms for new users.
+- `src/lib/data.ts` — all data access; `createContractDraft` returns contract ID, `updateContractStatus` updates `draft → signed → sent`
+- `src/pages/ContractDetailPage.tsx` — voortgangschecklist, split sign/send flow
+- `src/pages/ContractNewPage.tsx` — wizard entry; navigates to `/contracts/:id` after save
+- `src/pages/wizard/WizardLayout.tsx` — last step button is "Opslaan als concept"
+- `src/lib/pdfDocuments.ts` — HTML contract generation (Art. 1–19 + Bijlage A)
+- `src/components/SignatureModal.tsx` — canvas signature capture
+- `supabase/functions/send-contract-email/index.ts` — Resend email function
+- `supabase/migrations/20260521000000_initial.sql` — full DB schema
+- `supabase/migrations/20260523000000_security_hardening.sql` — RLS + private storage
+- `supabase/migrations/20260523001000_bootstrap_user_property.sql` — default property for new users
 
 ## Railway
 
-Railway is linked locally.
-
-- Project: `proud-success`
-- Service: `KotStart`
-- Environment: `production`
+- Project: `proud-success`, Service: `KotStart`, Environment: `production`
 - Public URL: `https://kotstart.up.railway.app`
-- Railway account used by CLI: `info@cloudcastanalytics.com`
+- CLI account: `info@cloudcastanalytics.com`
 
-Railway variables currently expected:
+Railway env vars required:
 
 ```env
-VITE_DEMO_MODE=false
 VITE_SUPABASE_URL=https://tsieqsxzjrfnevcrbswg.supabase.co
 VITE_SUPABASE_ANON_KEY=sb_publishable_...
 RESEND_FROM_NAME=Cloudcast Analytics
 RESEND_FROM_EMAIL=info@cloudcastanalytics.com
 ```
 
-Redeploy command:
+Redeploy:
 
 ```bash
 railway up --detach
@@ -87,41 +97,15 @@ railway status
 
 ## Supabase
 
-Supabase CLI was linked and migrations/functions were deployed manually by the user.
-
-Completed:
-
 ```bash
 npx supabase link --project-ref tsieqsxzjrfnevcrbswg
 npx supabase db push
 npx supabase functions deploy send-contract-email
 ```
 
-Auth settings observed through `/auth/v1/settings`:
+Auth settings: email/password enabled, autoconfirm on, Google provider off.
 
-- `email: true`
-- `disable_signup: false`
-- `mailer_autoconfirm: true`
-- Google provider: false
-
-Direct signup against Supabase succeeded after email autoconfirm was enabled. If the browser still shows connection errors, suspect stale PWA/service-worker cache first.
-
-Recommended user-side browser reset:
-
-- Hard refresh: `Cmd + Shift + R`
-- Or test in incognito/private window
-
-## Resend / Email
-
-Current intended sender:
-
-```txt
-Cloudcast Analytics <info@cloudcastanalytics.com>
-```
-
-Important: the correct Cloudcast mail domain is `cloudcastanalytics.com` without a hyphen. `cloudcast-analytics.com` has no MX record and Supabase rejected addresses on that domain as invalid.
-
-Supabase secrets expected:
+Supabase secrets needed for the Edge Function:
 
 ```bash
 npx supabase secrets set RESEND_API_KEY=...
@@ -131,38 +115,26 @@ npx supabase secrets set ALLOWED_ORIGIN=https://kotstart.up.railway.app
 npx supabase functions deploy send-contract-email
 ```
 
-Resend may still require domain verification for `cloudcastanalytics.com` before production email delivery works reliably.
+## Resend / Email
 
-## Known Issues / Current Debug Context
+Sender: `Cloudcast Analytics <info@cloudcastanalytics.com>`
 
-- Supabase registration previously returned `over_email_send_rate_limit`; this was the built-in Supabase auth mailer limit, not a general app request limit.
-- Email autoconfirm is now enabled, so registration no longer needs Supabase to send confirmation email.
-- If login fails for an account created during earlier failures, the account may not exist. Register again with a valid email.
-- Use a normal email address such as Gmail or `...@cloudcastanalytics.com`; do not use `...@cloudcast-analytics.com`.
-- Google login is disabled in UI until a Google Cloud OAuth app is configured.
-- A Supabase access token was pasted in chat earlier; it should be revoked in Supabase account settings if not already done.
+DNS records at one.com for `cloudcastanalytics.com`:
+- SPF: `v=spf1 include:amazonses.com ~all` (TXT at `@`)
+- DKIM: set at `resend._domainkey` (TXT, long `p=MIGfMA0...` value from Resend dashboard)
+- MX: `feedback-smtp.eu-west-1.amazonses.com` priority 10
 
-## Verification
+Status as of 2026-05-24: SPF + MX verified in Resend; DKIM was added and is pending propagation (can take up to 48h at one.com).
 
-Latest successful local checks after login/domain fixes:
+## Known Limitations
 
-```bash
-npm run lint
-npm run test:run
-nvm use 20 && npm run build
-```
-
-Results:
-
-- 21 test files passed
-- 88 tests passed
-- Production build passed
+- **Landlord signature is session-only.** After signing (status → `signed`), the signature image lives only in React state. If the page reloads before sending, the PDF will be sent without an embedded signature image. The contract status in Supabase remains `signed`, and sending still works — but the PDF won't contain the signature image. Fix for a future session: persist the signature to Supabase Storage.
+- Google login is disabled in the UI until Google OAuth is configured in a Google Cloud project.
+- Properties page shows rooms but full property creation UI is not complete.
 
 ## Next Steps
 
-1. In Supabase, confirm the pasted access token has been revoked.
-2. Confirm `RESEND_FROM_EMAIL` secret is set to `info@cloudcastanalytics.com`, then redeploy the Edge Function.
-3. Verify Resend domain setup for `cloudcastanalytics.com`.
-4. Test registration in incognito on `https://kotstart.up.railway.app`.
-5. If registration works but dashboard is empty, confirm the bootstrap migration trigger exists and inspect the new user's `properties` rows.
-6. Later: configure Google OAuth under a Cloudcast-controlled Google account or leave email/password only.
+1. Verify DKIM propagation in Resend dashboard (check after 24–48h).
+2. Test full flow end-to-end in production: create contract → start inspection → sign → send email → student receives PDF.
+3. Future: persist landlord signature to Supabase Storage so re-sending after reload includes the signature image.
+4. Future: configure Google OAuth if needed.
