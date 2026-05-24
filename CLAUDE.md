@@ -43,6 +43,7 @@ src/
     ContractNewPage.tsx      # Entry point for the 4-step contract wizard
     ContractDetailPage.tsx   # Contract status, room/student/finance info, PDF action
     ContractRenewPage.tsx    # Contract renewal flow
+    InspectionDetailPage.tsx # Full inspection report: items by category, condition chips, PDF print
     InspectionNewPage.tsx    # Multi-category inspection wizard with photo upload
     PropertiesPage.tsx       # Property cards → room list with occupancy status
     AccountPage.tsx          # Account info page
@@ -59,7 +60,6 @@ src/
     ActionBar.tsx            # Sticky bottom action bar (used in detail pages)
     EmptyState.tsx           # Empty list placeholder component
     StudentRow.tsx           # Single row in the dashboard student list
-    InspectionDetailPage.tsx  # Inspection detail: items by category, condition chips, PDF print
   __tests__/                 # Vitest + Testing Library tests (21 files, 94 tests)
 supabase/
   migrations/
