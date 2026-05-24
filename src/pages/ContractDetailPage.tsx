@@ -24,13 +24,14 @@ export default function ContractDetailPage() {
     startInspection?: Inspection
     startInspectionItems?: InspectionItem[]
     endInspection?: Inspection
+    endInspectionItems?: InspectionItem[]
     landlord?: LandlordProfile
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSignatureModal, setShowSignatureModal] = useState(false)
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | undefined>(undefined)
-  const [_signStatus, setSignStatus] = useState<'idle' | 'signing' | 'error'>('idle')
+  const [, setSignStatus] = useState<'idle' | 'signing' | 'error'>('idle')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
@@ -101,7 +102,7 @@ export default function ContractDetailPage() {
         inspection: startInspection,
         inspectionItems: startInspectionItems,
         landlord,
-        signatureDataUrl,
+        signatureDataUrl: signatureDataUrl ?? undefined,
       })
       await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html)
       await updateContractStatus(contract.id, 'sent')
@@ -185,10 +186,6 @@ export default function ContractDetailPage() {
                 label="Startplaatsbeschrijving"
                 done={startDone}
                 date={startInspection?.createdAt}
-                primaryAction={startDone ? undefined : () => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
-                primaryLabel={startDone ? undefined : 'Starten'}
-                secondaryAction={startDone && startInspection ? () => navigate(`/inspections/${startInspection.id}`) : undefined}
-                secondaryLabel={startDone ? 'Bekijken →' : undefined}
               />
               <ProgressRow
                 label="Handtekening verhuurder"
@@ -246,17 +243,30 @@ export default function ContractDetailPage() {
             />
           </section>
 
-          <section className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
+          <section
+            aria-labelledby="inspection-passport-heading"
+            className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl"
+          >
             <div className="mb-3 flex items-center gap-2">
               <ClipboardList size={16} className="text-accent" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Inspectiepaspoort</h2>
+              <h2 id="inspection-passport-heading" className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                Inspectiepaspoort
+              </h2>
             </div>
-            <InspectionRow
-              label="Eindplaatsbeschrijving"
-              inspection={endInspection}
-              onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })}
-              onView={() => { if (endInspection) navigate(`/inspections/${endInspection.id}`) }}
-            />
+            <div className="flex flex-col gap-2">
+              <InspectionRow
+                label="Startplaatsbeschrijving"
+                inspection={startInspection}
+                onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
+                onView={() => { if (startInspection) navigate(`/inspections/${startInspection.id}`) }}
+              />
+              <InspectionRow
+                label="Eindplaatsbeschrijving"
+                inspection={endInspection}
+                onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })}
+                onView={() => { if (endInspection) navigate(`/inspections/${endInspection.id}`) }}
+              />
+            </div>
           </section>
         </div>
       </main>

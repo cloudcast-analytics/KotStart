@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import ContractDetailPage from '../pages/ContractDetailPage'
@@ -43,7 +43,7 @@ describe('ContractDetailPage', () => {
 
     await screen.findByRole('heading', { name: 'Emma Janssen' })
     expect(screen.getByText('Contract aangemaakt')).toBeInTheDocument()
-    expect(screen.getByText('Startplaatsbeschrijving')).toBeInTheDocument()
+    expect(screen.getAllByText('Startplaatsbeschrijving')).not.toHaveLength(0)
     expect(screen.getByText('Handtekening verhuurder')).toBeInTheDocument()
     expect(screen.getByText('Versturen naar student')).toBeInTheDocument()
   })
@@ -73,13 +73,45 @@ describe('ContractDetailPage', () => {
     expect(screen.queryByRole('button', { name: /ondertekenen & versturen/i })).not.toBeInTheDocument()
   })
 
-  it('toont alleen Eindplaatsbeschrijving in Inspectiepaspoort (niet Start)', async () => {
+  it('toont Start en Einde in Inspectiepaspoort met de juiste status', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Emma Janssen' })
+    const passport = screen.getByRole('region', { name: /inspectiepaspoort/i })
+    expect(within(passport).getByText('Startplaatsbeschrijving')).toBeInTheDocument()
+    expect(within(passport).getByText('Eindplaatsbeschrijving')).toBeInTheDocument()
+    expect(within(passport).getByText(/15 september 2025/i)).toBeInTheDocument()
+    expect(within(passport).getByText('Nog niet gedaan')).toBeInTheDocument()
+  })
+
+  it('start een ontbrekende eindplaatsbeschrijving vanuit het inspectiepaspoort', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Emma Janssen' })
+    const passport = screen.getByRole('region', { name: /inspectiepaspoort/i })
+    fireEvent.click(within(passport).getByRole('button', { name: /starten/i }))
+
+    expect(screen.getByText('Inspectie route')).toBeInTheDocument()
+  })
+
+  it('opent een bestaande startplaatsbeschrijving vanuit het inspectiepaspoort', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Emma Janssen' })
+    const passport = screen.getByRole('region', { name: /inspectiepaspoort/i })
+    fireEvent.click(within(passport).getByRole('button', { name: /bekijken/i }))
+
+    expect(screen.getByText('Inspectie detail route')).toBeInTheDocument()
+  })
+
+  it('toont geen inspectieknoppen in de top action bar', async () => {
     renderPage()
 
     await screen.findByRole('heading', { name: 'Emma Janssen' })
     expect(screen.getByText('Eindplaatsbeschrijving')).toBeInTheDocument()
-    // Startplaatsbeschrijving appears exactly once — in the checklist, not in Inspectiepaspoort
-    expect(screen.getAllByText('Startplaatsbeschrijving')).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: /starten/i })).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: /startplaatsbeschrijving/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /eindplaatsbeschrijving/i })).not.toBeInTheDocument()
   })
 
   it('navigeert naar contract verlengen', async () => {
