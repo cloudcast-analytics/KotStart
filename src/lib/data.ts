@@ -429,7 +429,20 @@ export async function sendContractEmail(
   const { error } = await supabase.functions.invoke('send-contract-email', {
     body: { to, name, html },
   })
-  if (error) throw error
+  if (error) {
+    const response = (error as { context?: Response }).context
+    if (response) {
+      try {
+        const body = await response.clone().json() as { error?: string }
+        if (body.error) throw new Error(body.error)
+      } catch (parseError) {
+        if (parseError instanceof Error && parseError.message !== 'Unexpected end of JSON input') {
+          throw parseError
+        }
+      }
+    }
+    throw error
+  }
 }
 
 export async function createPropertyData(input: PropertyInput): Promise<Property> {
