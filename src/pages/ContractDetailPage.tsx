@@ -85,10 +85,6 @@ export default function ContractDetailPage() {
   }
 
   async function handleSend() {
-    if (!signatureDataUrl) {
-      setShowSignatureModal(true)
-      return
-    }
     if (!student.email) {
       setSendStatus('error')
       setStatusMessage('Geen e-mailadres gevonden voor deze student.')
@@ -214,11 +210,11 @@ export default function ContractDetailPage() {
                 role="status"
                 className={cn(
                   'mt-3 rounded-xl border px-3 py-2 text-sm font-semibold',
-                  sendStatus === 'sent' || signStatus === 'error'
-                    ? sendStatus === 'sent'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                      : 'border-red-200 bg-red-50 text-red-700'
-                    : 'border-red-200 bg-red-50 text-red-700',
+                  sendStatus === 'sent'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : sendStatus === 'sending'
+                      ? 'border-slate-200 bg-white/65 text-slate-600'
+                      : 'border-red-200 bg-red-50 text-red-700',
                 )}
               >
                 {statusMessage}
