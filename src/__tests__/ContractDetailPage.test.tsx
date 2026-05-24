@@ -3,9 +3,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import ContractDetailPage from '../pages/ContractDetailPage'
 
-function renderPage(initialPath = '/contracts/c1') {
+function renderPage(initialPath = '/contracts/c1', state?: unknown) {
   return render(
-    <MemoryRouter initialEntries={[initialPath]}>
+    <MemoryRouter initialEntries={[state ? { pathname: initialPath, state } : initialPath]}>
       <Routes>
         <Route path="/contracts/:id" element={<ContractDetailPage />} />
         <Route path="/contracts/:id/renew" element={<div>Renew route</div>} />
@@ -58,6 +58,15 @@ describe('ContractDetailPage', () => {
     renderPage()
 
     expect(await screen.findByRole('button', { name: /^versturen$/i })).toBeInTheDocument()
+  })
+
+  it('toont na opslaan als concept een knop terug naar dashboard', async () => {
+    renderPage('/contracts/c1', { savedDraft: true })
+
+    expect(await screen.findByText('Concept opgeslagen')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /naar dashboard/i }))
+
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
   })
 
   it('toont Ondertekenen-knop als start gedaan en status draft (c4)', async () => {

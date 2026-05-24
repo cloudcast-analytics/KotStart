@@ -1,18 +1,22 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import ContractNewPage from '../pages/ContractNewPage'
 
-function renderPage() {
+function renderNewContractPage() {
   return render(
-    <MemoryRouter>
-      <ContractNewPage />
+    <MemoryRouter initialEntries={['/contracts/new']}>
+      <Routes>
+        <Route path="/" element={<div>Dashboard</div>} />
+        <Route path="/contracts/new" element={<ContractNewPage />} />
+        <Route path="/contracts/:id" element={<div>Contract detail</div>} />
+      </Routes>
     </MemoryRouter>,
   )
 }
 
-function selectFirstRoomAndContinue() {
-  fireEvent.click(screen.getByRole('button', { name: /kamer 01/i }))
+async function selectFirstRoomAndContinue() {
+  fireEvent.click(await screen.findByRole('button', { name: /kamer 01/i }))
   fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
 }
 
@@ -28,45 +32,47 @@ async function fillStudent() {
 }
 
 describe('ContractNewPage', () => {
-  it('toont stap 1 bij openen', () => {
-    renderPage()
+  it('toont stap 1 bij openen', async () => {
+    renderNewContractPage()
 
-    expect(screen.getByText(/kies een kamer/i)).toBeInTheDocument()
+    expect(await screen.findByText(/kies een kamer/i)).toBeInTheDocument()
   })
 
-  it('toont de stapindicator met 4 stappen', () => {
-    renderPage()
+  it('toont de stapindicator met 4 stappen', async () => {
+    renderNewContractPage()
 
     expect(screen.getByText('Kamer')).toBeInTheDocument()
     expect(screen.getByText('Student')).toBeInTheDocument()
     expect(screen.getByText('Partij')).toBeInTheDocument()
     expect(screen.getByText('Overzicht')).toBeInTheDocument()
+    expect(await screen.findByText(/kies een kamer/i)).toBeInTheDocument()
   })
 
-  it('Volgende knop is uitgeschakeld op stap 1 als geen kamer geselecteerd', () => {
-    renderPage()
+  it('Volgende knop is uitgeschakeld op stap 1 als geen kamer geselecteerd', async () => {
+    renderNewContractPage()
 
+    expect(await screen.findByText(/kies een kamer/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /volgende/i })).toBeDisabled()
   })
 
   it('gaat naar stap 2 na kamerselectie en klik Volgende', async () => {
-    renderPage()
-    selectFirstRoomAndContinue()
+    renderNewContractPage()
+    await selectFirstRoomAndContinue()
 
     expect(await screen.findByLabelText(/voornaam/i)).toBeInTheDocument()
   })
 
-  it('gaat terug naar stap 1 bij klik Terug op stap 2', () => {
-    renderPage()
-    selectFirstRoomAndContinue()
+  it('gaat terug naar stap 1 bij klik Terug op stap 2', async () => {
+    renderNewContractPage()
+    await selectFirstRoomAndContinue()
     fireEvent.click(screen.getByRole('button', { name: /terug/i }))
 
-    expect(screen.getByText(/kies een kamer/i)).toBeInTheDocument()
+    expect(await screen.findByText(/kies een kamer/i)).toBeInTheDocument()
   })
 
   it('blokkeert stap 2 bij ongeldig e-mailadres', async () => {
-    renderPage()
-    selectFirstRoomAndContinue()
+    renderNewContractPage()
+    await selectFirstRoomAndContinue()
     fireEvent.change(await screen.findByLabelText(/voornaam/i), { target: { value: 'Emma' } })
     fireEvent.change(screen.getByLabelText(/achternaam/i), { target: { value: 'Janssen' } })
     fireEvent.change(screen.getByLabelText(/e-mail/i), { target: { value: 'emma' } })
@@ -76,13 +82,25 @@ describe('ContractNewPage', () => {
   })
 
   it('toont overzicht na geldige stappen', async () => {
-    renderPage()
-    selectFirstRoomAndContinue()
+    renderNewContractPage()
+    await selectFirstRoomAndContinue()
     await fillStudent()
     fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
     fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
 
     expect(await screen.findByText('Emma Janssen')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /opslaan als concept/i })).toBeInTheDocument()
+  })
+
+  it('gaat na Opslaan als concept verder naar de volgende route', async () => {
+    renderNewContractPage()
+    await selectFirstRoomAndContinue()
+    await fillStudent()
+    fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
+    fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
+
+    fireEvent.click(await screen.findByRole('button', { name: /opslaan als concept/i }))
+
+    expect(await screen.findByText('Dashboard')).toBeInTheDocument()
   })
 })

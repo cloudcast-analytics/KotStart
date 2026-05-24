@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Building2, CalendarPlus, Check, ClipboardList, Download, Home, User } from 'lucide-react'
 import { getContractBundleData, sendContractEmail, updateContractStatus } from '../lib/data'
 import { cn } from '../lib/cn'
@@ -16,6 +16,7 @@ const ROOM_TYPE_LABEL = {
 export default function ContractDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [bundle, setBundle] = useState<{
     contract: Contract
     room: Room
@@ -70,6 +71,7 @@ export default function ContractDetailPage() {
   const startDone = !!startInspection
   const signedDone = contract.status === 'signed' || contract.status === 'sent'
   const sentDone = contract.status === 'sent'
+  const savedDraft = (location.state as { savedDraft?: boolean } | null)?.savedDraft === true
 
   async function handleSignatureConfirm(sig: string) {
     setShowSignatureModal(false)
@@ -170,6 +172,25 @@ export default function ContractDetailPage() {
               />
             </div>
           </section>
+
+          {savedDraft && (
+            <section
+              role="status"
+              className="rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-emerald-800"
+            >
+              <p className="text-sm font-bold">Concept opgeslagen</p>
+              <p className="mt-1 text-xs font-semibold text-emerald-700">
+                Dit contract staat nu in je dashboard en is gekoppeld aan je account.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="mt-3 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white"
+              >
+                Naar dashboard
+              </button>
+            </section>
+          )}
 
           <section className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
             <div className="mb-3 flex items-center gap-2">

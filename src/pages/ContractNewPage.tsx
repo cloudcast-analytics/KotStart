@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PROPERTIES, ROOMS } from '../lib/mockData'
-import { createContractDraft } from '../lib/data'
+import { createContractDraft, getRooms } from '../lib/data'
 import type { Room } from '../types'
 import Step1Room from './wizard/Step1Room'
 import Step2Student from './wizard/Step2Student'
@@ -67,11 +66,31 @@ export default function ContractNewPage() {
   const [secondTenant, setSecondTenant] = useState<SecondPartyData | null>(null)
   const [guardian, setGuardian] = useState<GuardianData | null>(null)
   const [isSending, setIsSending] = useState(false)
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [loadingRooms, setLoadingRooms] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const propertyRooms = useMemo(
-    () => ROOMS.filter(room => room.propertyId === PROPERTIES[0].id),
-    [],
-  )
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadRooms() {
+      setLoadingRooms(true)
+      setError(null)
+      try {
+        const nextRooms = await getRooms()
+        if (!cancelled) setRooms(nextRooms)
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Kamers konden niet geladen worden')
+      } finally {
+        if (!cancelled) setLoadingRooms(false)
+      }
+    }
+
+    loadRooms()
+    return () => { cancelled = true }
+  }, [])
+
+  const propertyRooms = useMemo(() => rooms, [rooms])
   const selectedRoom: Room | null = propertyRooms.find(room => room.id === selectedRoomId) ?? null
   const hasMinor = students.some(student => isMinor(student.dateOfBirth))
 
@@ -93,6 +112,7 @@ export default function ContractNewPage() {
   }
 
   function canProceed(): boolean {
+    if (loadingRooms || error) return false
     if (currentStep === 1) return selectedRoomId !== null
     if (currentStep === 2) return students.every(studentIsComplete)
     if (currentStep === 3) {
@@ -124,9 +144,10 @@ export default function ContractNewPage() {
         secondLandlord,
         guardian,
       })
-      navigate(contractId ? `/contracts/${contractId}` : '/')
+      navigate(contractId ? `/contracts/${contractId}` : '/', { state: { savedDraft: true } })
     } catch (err) {
       console.error('Contract opslaan mislukt:', err)
+      setError(err instanceof Error ? err.message : 'Contract opslaan mislukt')
       setIsSending(false)
     }
   }
@@ -151,8 +172,22 @@ export default function ContractNewPage() {
         isLastStep={currentStep === 4}
         isSending={isSending}
       >
+        {error && (
+          <div role="alert" className="m-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+            {error}
+          </div>
+        )}
+
         {currentStep === 1 && (
-          <Step1Room rooms={propertyRooms} selectedRoomId={selectedRoomId} onSelect={handleRoomSelect} />
+          loadingRooms ? (
+            <div className="p-4 text-sm font-semibold text-slate-500">Kamers laden...</div>
+          ) : propertyRooms.length === 0 ? (
+            <div className="m-4 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm font-semibold text-yellow-800">
+              Geen kamers gevonden. Maak eerst een kamer aan bij Panden.
+            </div>
+          ) : (
+            <Step1Room rooms={propertyRooms} selectedRoomId={selectedRoomId} onSelect={handleRoomSelect} />
+          )
         )}
 
         {currentStep === 2 && <Step2Student students={students} onChange={handleStudentChange} />}
