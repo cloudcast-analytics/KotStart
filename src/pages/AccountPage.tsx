@@ -14,6 +14,7 @@ export default function AccountPage() {
       onPropertyChange={setPropertyId}
       properties={PROPERTIES}
       schoolYears={SCHOOL_YEARS}
+      showSchoolYearFilter={false}
       showPropertyFilter={false}
     >
       <div className="p-8 text-slate-600">

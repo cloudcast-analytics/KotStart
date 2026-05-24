@@ -51,6 +51,7 @@ export default function SettingsPage() {
       onPropertyChange={setPropertyId}
       properties={PROPERTIES}
       schoolYears={SCHOOL_YEARS}
+      showSchoolYearFilter={false}
       showPropertyFilter={false}
     >
       <div className="mx-auto max-w-xl p-6">

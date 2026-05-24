@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Building2, CalendarPlus, Check, ClipboardList, Download, Home, User } from 'lucide-react'
-import { getContractBundleData, sendContractEmail, updateContractStatus } from '../lib/data'
+import { Building2, CalendarPlus, Check, ClipboardList, Download, Home, Trash2, User } from 'lucide-react'
+import { deleteContractBundleData, getContractBundleData, sendContractEmail, updateContractStatus } from '../lib/data'
 import { cn } from '../lib/cn'
 import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student } from '../types'
 import { generateContractHtml, printContractDocument } from '../lib/pdfDocuments'
@@ -31,10 +31,12 @@ export default function ContractDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSignatureModal, setShowSignatureModal] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [landlordSignatureDataUrl, setLandlordSignatureDataUrl] = useState<string | undefined>(undefined)
   const [studentSignatureDataUrl, setStudentSignatureDataUrl] = useState<string | undefined>(undefined)
   const [, setSignStatus] = useState<'idle' | 'signing' | 'error'>('idle')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [deleteStatus, setDeleteStatus] = useState<'idle' | 'deleting' | 'error'>('idle')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -120,6 +122,19 @@ export default function ContractDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    setDeleteStatus('deleting')
+    setStatusMessage(null)
+    try {
+      await deleteContractBundleData(contract.id)
+      navigate('/')
+    } catch (err) {
+      setDeleteStatus('error')
+      setShowDeleteConfirm(false)
+      setStatusMessage(err instanceof Error ? err.message : 'Student verwijderen mislukt.')
+    }
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <div className="border-b border-white/65 bg-white/38 px-4 py-3 backdrop-blur-xl">
@@ -154,7 +169,7 @@ export default function ContractDetailPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
               <ActionButton
                 label="Verlengen"
                 icon={CalendarPlus}
@@ -174,6 +189,12 @@ export default function ContractDetailPage() {
                   landlordSignatureDataUrl,
                   studentSignatureDataUrl,
                 })}
+              />
+              <ActionButton
+                label="Verwijderen"
+                icon={Trash2}
+                onClick={() => setShowDeleteConfirm(true)}
+                variant="danger"
               />
             </div>
           </section>
@@ -297,6 +318,14 @@ export default function ContractDetailPage() {
           onClose={() => setShowSignatureModal(false)}
         />
       )}
+      {showDeleteConfirm && (
+        <ConfirmDeleteModal
+          studentName={`${student.firstName} ${student.lastName}`}
+          isDeleting={deleteStatus === 'deleting'}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+        />
+      )}
     </div>
   )
 }
@@ -305,20 +334,66 @@ function ActionButton({
   label,
   icon: Icon,
   onClick,
+  variant = 'default',
 }: {
   label: string
   icon: React.ElementType
   onClick: () => void
+  variant?: 'default' | 'danger'
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="glass-chip flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-700"
+      className={cn(
+        'glass-chip flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold',
+        variant === 'danger' ? 'text-red-600' : 'text-slate-700',
+      )}
     >
-      <Icon size={16} className="text-accent" />
+      <Icon size={16} className={variant === 'danger' ? 'text-red-500' : 'text-accent'} />
       {label}
     </button>
+  )
+}
+
+function ConfirmDeleteModal({
+  studentName,
+  isDeleting,
+  onCancel,
+  onConfirm,
+}: {
+  studentName: string
+  isDeleting: boolean
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+      <div role="dialog" aria-modal="true" aria-labelledby="delete-student-title" className="w-full max-w-md rounded-2xl border border-white/80 bg-white p-5 shadow-2xl">
+        <h2 id="delete-student-title" className="text-lg font-bold text-slate-900">Student verwijderen?</h2>
+        <p className="mt-2 text-sm font-medium text-slate-600">
+          Weet je zeker dat je {studentName} wilt verwijderen? Het contract en gekoppelde plaatsbeschrijvingen worden ook verwijderd.
+        </p>
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 disabled:opacity-50"
+          >
+            Nee, behouden
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-bold text-white disabled:opacity-50"
+          >
+            {isDeleting ? 'Verwijderen...' : 'Ja, verwijderen'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 

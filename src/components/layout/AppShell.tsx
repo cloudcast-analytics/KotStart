@@ -12,6 +12,7 @@ interface AppShellProps {
   onPropertyChange: (id: string) => void
   properties?: Property[]
   schoolYears?: string[]
+  showSchoolYearFilter?: boolean
   showPropertyFilter?: boolean
 }
 
@@ -23,6 +24,7 @@ export default function AppShell({
   onPropertyChange,
   properties = PROPERTIES,
   schoolYears = SCHOOL_YEARS,
+  showSchoolYearFilter = true,
   showPropertyFilter = true,
 }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -48,6 +50,7 @@ export default function AppShell({
           onPropertyChange={handlePropertyChange}
           onMenuClick={() => setDrawerOpen(true)}
           showMenuButton={true}
+          showSchoolYearFilter={showSchoolYearFilter}
           showPropertyFilter={showPropertyFilter}
         />
         <main className="flex-1 overflow-y-auto">

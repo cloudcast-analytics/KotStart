@@ -465,6 +465,7 @@ export default function PropertiesPage() {
       onPropertyChange={setPropertyId}
       properties={properties}
       schoolYears={SCHOOL_YEARS}
+      showSchoolYearFilter={false}
       showPropertyFilter={false}
     >
       <div className="flex h-full flex-col">

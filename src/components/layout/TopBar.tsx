@@ -10,6 +10,7 @@ interface TopBarProps {
   onPropertyChange: (name: string) => void
   onMenuClick: () => void
   showMenuButton: boolean
+  showSchoolYearFilter?: boolean
   showPropertyFilter?: boolean
 }
 
@@ -22,6 +23,7 @@ export default function TopBar({
   onPropertyChange,
   onMenuClick,
   showMenuButton,
+  showSchoolYearFilter = true,
   showPropertyFilter = true,
 }: TopBarProps) {
   return (
@@ -38,15 +40,17 @@ export default function TopBar({
           </button>
         )}
         <div className="flex gap-1.5 flex-1 min-w-0">
-          <Chip
-            label={schoolYear}
-            onClick={() => {
-              const currentIndex = schoolYears.indexOf(schoolYear)
-              const next = schoolYears[(currentIndex + 1) % schoolYears.length] ?? schoolYear
-              onSchoolYearChange(next)
-            }}
-            className="flex-1 max-w-[130px]"
-          />
+          {showSchoolYearFilter && (
+            <Chip
+              label={schoolYear}
+              onClick={() => {
+                const currentIndex = schoolYears.indexOf(schoolYear)
+                const next = schoolYears[(currentIndex + 1) % schoolYears.length] ?? schoolYear
+                onSchoolYearChange(next)
+              }}
+              className="flex-1 max-w-[130px]"
+            />
+          )}
           {showPropertyFilter && (
             <Chip
               label={propertyName}

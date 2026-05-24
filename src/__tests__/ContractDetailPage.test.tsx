@@ -143,4 +143,17 @@ describe('ContractDetailPage', () => {
 
     expect(await screen.findByText('Dashboard')).toBeInTheDocument()
   })
+
+  it('vraagt bevestiging en verwijdert de student met contract', async () => {
+    renderPage('/contracts/c2')
+
+    fireEvent.click(await screen.findByRole('button', { name: /verwijderen/i }))
+
+    expect(screen.getByRole('dialog', { name: /student verwijderen/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /nee, behouden/i })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /ja, verwijderen/i }))
+
+    expect(await screen.findByText('Dashboard')).toBeInTheDocument()
+  })
 })

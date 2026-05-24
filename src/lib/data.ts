@@ -644,6 +644,78 @@ export async function updateContractStatus(contractId: string, status: Contract[
   if (error) throw error
 }
 
+export async function deleteContractBundleData(contractId: string): Promise<void> {
+  const bundle = await getContractBundleData(contractId)
+  if (!bundle) throw new Error('Contract niet gevonden')
+
+  const studentIds = [bundle.contract.studentId, bundle.contract.secondStudentId].filter((value): value is string => Boolean(value))
+
+  if (!isSupabaseConfigured) {
+    const contractIndex = CONTRACTS.findIndex(contract => contract.id === contractId)
+    if (contractIndex >= 0) CONTRACTS.splice(contractIndex, 1)
+
+    const inspectionIds = MOCK_INSPECTIONS
+      .filter(inspection => inspection.contractId === contractId)
+      .map(inspection => inspection.id)
+
+    for (let index = MOCK_INSPECTION_ITEMS.length - 1; index >= 0; index -= 1) {
+      if (inspectionIds.includes(MOCK_INSPECTION_ITEMS[index].inspectionId)) {
+        MOCK_INSPECTION_ITEMS.splice(index, 1)
+      }
+    }
+
+    for (let index = MOCK_INSPECTIONS.length - 1; index >= 0; index -= 1) {
+      if (MOCK_INSPECTIONS[index].contractId === contractId) {
+        MOCK_INSPECTIONS.splice(index, 1)
+      }
+    }
+
+    for (let index = STUDENTS.length - 1; index >= 0; index -= 1) {
+      if (studentIds.includes(STUDENTS[index].id)) {
+        STUDENTS.splice(index, 1)
+      }
+    }
+    return
+  }
+
+  const { data: inspectionsData, error: inspectionSelectError } = await supabase
+    .from('inspections')
+    .select('id')
+    .eq('contract_id', contractId)
+
+  if (inspectionSelectError) throw inspectionSelectError
+
+  const inspectionIds = ((inspectionsData as Array<{ id: string }> | null) ?? []).map(inspection => inspection.id)
+
+  if (inspectionIds.length > 0) {
+    const { error: itemError } = await supabase
+      .from('inspection_items')
+      .delete()
+      .in('inspection_id', inspectionIds)
+    if (itemError) throw itemError
+  }
+
+  const { error: inspectionError } = await supabase
+    .from('inspections')
+    .delete()
+    .eq('contract_id', contractId)
+  if (inspectionError) throw inspectionError
+
+  const { error: contractError } = await supabase
+    .from('contracts')
+    .delete()
+    .eq('id', contractId)
+  if (contractError) throw contractError
+
+  if (studentIds.length > 0) {
+    const { error: studentError } = await supabase
+      .from('students')
+      .delete()
+      .in('id', studentIds)
+    if (studentError) throw studentError
+  }
+}
+
 export async function saveInspectionData(input: SaveInspectionInput): Promise<string | null> {
   if (!isSupabaseConfigured) return null
 
