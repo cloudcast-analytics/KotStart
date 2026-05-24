@@ -33,8 +33,10 @@ export default function ContractDetailPage() {
     room: Room
     student: Student
     property: Property
-    inspection?: Inspection
-    inspectionItems?: InspectionItem[]
+    startInspection?: Inspection
+    startInspectionItems?: InspectionItem[]
+    endInspection?: Inspection
+    endInspectionItems?: InspectionItem[]
     landlord?: LandlordProfile
   } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -75,7 +77,7 @@ export default function ContractDetailPage() {
 
   if (!bundle) return <Navigate to="/" replace />
 
-  const { contract, room, student, property, inspection, inspectionItems, landlord } = bundle
+  const { contract, room, student, property, startInspection, startInspectionItems, endInspection, landlord } = bundle
   const activeStatusIndex = STATUS_STEPS.findIndex(step => step.status === contract.status)
 
   async function handleSignatureConfirm(signatureDataUrl: string) {
@@ -89,7 +91,7 @@ export default function ContractDetailPage() {
     setEmailStatus('sending')
     setEmailMessage('Contract wordt ondertekend en verstuurd...')
     try {
-      const html = generateContractHtml({ contract, room, student, property, inspection, inspectionItems, landlord, signatureDataUrl })
+      const html = generateContractHtml({ contract, room, student, property, inspection: startInspection, inspectionItems: startInspectionItems, landlord, signatureDataUrl })
       await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html)
       setEmailStatus('sent')
       setEmailMessage(`Contract is verstuurd naar ${student.email}.`)
@@ -135,11 +137,9 @@ export default function ContractDetailPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <ActionButton label="Verlengen" icon={CalendarPlus} onClick={() => navigate(`/contracts/${contract.id}/renew`)} />
-              <ActionButton label="Startplaatsbeschrijving" icon={ClipboardList} onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })} />
-              <ActionButton label="Eindplaatsbeschrijving" icon={ClipboardList} onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })} />
-              <ActionButton label="PDF maken" icon={Download} onClick={() => printContractDocument({ contract, room, student, property, inspection, inspectionItems, landlord })} />
+              <ActionButton label="PDF maken" icon={Download} onClick={() => printContractDocument({ contract, room, student, property, inspection: startInspection, inspectionItems: startInspectionItems, landlord })} />
               <button
                 type="button"
                 onClick={() => setShowSignatureModal(true)}
@@ -226,24 +226,19 @@ export default function ContractDetailPage() {
               <ClipboardList size={16} className="text-accent" />
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Inspectiepaspoort</h2>
             </div>
-            <p className="text-sm font-medium text-slate-500">
-              Koppel start- en eindplaatsbeschrijvingen aan dit contract zodra ze afgerond zijn.
-            </p>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
-                className="btn-primary px-4 py-3 text-sm"
-              >
-                Startplaatsbeschrijving
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })}
-                className="rounded-xl border border-white/90 bg-white/60 px-4 py-3 text-sm font-bold text-slate-600"
-              >
-                Eindplaatsbeschrijving
-              </button>
+            <div className="flex flex-col gap-2">
+              <InspectionRow
+                label="Startplaatsbeschrijving"
+                inspection={startInspection}
+                onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
+                onView={() => navigate(`/inspections/${startInspection!.id}`)}
+              />
+              <InspectionRow
+                label="Eindplaatsbeschrijving"
+                inspection={endInspection}
+                onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })}
+                onView={() => navigate(`/inspections/${endInspection!.id}`)}
+              />
             </div>
           </section>
         </div>
@@ -301,6 +296,57 @@ function InfoCard({
           <span className="text-right text-sm font-bold text-slate-800">{value}</span>
         </div>
       ))}
+    </div>
+  )
+}
+
+function InspectionRow({
+  label,
+  inspection,
+  onStart,
+  onView,
+}: {
+  label: string
+  inspection?: { id: string; createdAt: string }
+  onStart: () => void
+  onView: () => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-100/70 bg-white/40 px-4 py-3">
+      <div className="flex items-center gap-3">
+        {inspection ? (
+          <Check size={15} className="shrink-0 text-green-500" />
+        ) : (
+          <div className="h-4 w-4 shrink-0 rounded-full border-2 border-slate-300" />
+        )}
+        <div>
+          <p className="text-sm font-bold text-slate-800">{label}</p>
+          {inspection ? (
+            <p className="text-xs text-slate-500">
+              {new Date(inspection.createdAt).toLocaleDateString('nl-BE', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          ) : (
+            <p className="text-xs text-slate-400">Nog niet gedaan</p>
+          )}
+        </div>
+      </div>
+      {inspection ? (
+        <button
+          type="button"
+          onClick={onView}
+          className="glass-chip rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700"
+        >
+          Bekijken →
+        </button>
+      ) : (
+        <button type="button" onClick={onStart} className="btn-primary px-3 py-1.5 text-xs">
+          Starten
+        </button>
+      )}
     </div>
   )
 }
