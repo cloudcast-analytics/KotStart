@@ -9,6 +9,7 @@ import Step4Review from './wizard/Step4Review'
 import WizardLayout from './wizard/WizardLayout'
 import {
   isMinor,
+  isValidDateOfBirth,
   isValidEmail,
   type GuardianData,
   type SecondPartyData,
@@ -39,7 +40,7 @@ function studentIsComplete(student: StudentFormData): boolean {
     student.firstName.trim() &&
       student.lastName.trim() &&
       isValidEmail(student.email) &&
-      student.dateOfBirth &&
+      isValidDateOfBirth(student.dateOfBirth) &&
       student.nationalRegistryNumber.trim() &&
       student.institution.trim() &&
       student.studentNumber.trim() &&

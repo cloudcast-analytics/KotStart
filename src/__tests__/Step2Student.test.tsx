@@ -42,6 +42,21 @@ describe('Step2Student', () => {
     expect(onChange).toHaveBeenCalledWith(0, 'firstName', 'Emma')
   })
 
+  it('laat geboortedatum typen als dd-mm-jjjj en bewaart intern als ISO-datum', () => {
+    const onChange = vi.fn()
+    render(<Step2Student students={[emptyStudent]} onChange={onChange} />)
+
+    fireEvent.change(screen.getByLabelText(/geboortedatum/i), { target: { value: '23-10-2003' } })
+
+    expect(onChange).toHaveBeenCalledWith(0, 'dateOfBirth', '2003-10-23')
+  })
+
+  it('toont een ISO-geboortedatum als dd-mm-jjjj in het formulier', () => {
+    render(<Step2Student students={[{ ...emptyStudent, dateOfBirth: '2003-10-23' }]} onChange={vi.fn()} />)
+
+    expect(screen.getByLabelText(/geboortedatum/i)).toHaveValue('23-10-2003')
+  })
+
   it('toont minderjarig badge bij geboortedatum onder 18 jaar', () => {
     render(<Step2Student students={[{ ...emptyStudent, dateOfBirth: '2015-01-01' }]} onChange={vi.fn()} />)
 

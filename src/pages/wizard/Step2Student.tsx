@@ -1,7 +1,14 @@
 import { type ChangeEvent, useState } from 'react'
 import { AlertCircle, Camera } from 'lucide-react'
 import { cn } from '../../lib/cn'
-import { isMinor, isValidEmail, type StudentFormData } from './types'
+import {
+  formatDateOfBirthForInput,
+  isMinor,
+  isValidDateOfBirth,
+  isValidEmail,
+  toIsoDateOfBirth,
+  type StudentFormData,
+} from './types'
 
 interface Step2StudentProps {
   students: StudentFormData[]
@@ -20,7 +27,7 @@ const FIELDS: Array<{
   { field: 'lastName', label: 'Achternaam', type: 'text', required: true },
   { field: 'email', label: 'E-mail', type: 'email', required: true },
   { field: 'phone', label: 'Telefoon', type: 'tel', required: false },
-  { field: 'dateOfBirth', label: 'Geboortedatum', type: 'date', required: true },
+  { field: 'dateOfBirth', label: 'Geboortedatum', type: 'text', required: true },
   { field: 'nationalRegistryNumber', label: 'Rijksregisternummer', type: 'text', required: true },
   { field: 'institution', label: 'Onderwijsinstelling', type: 'text', required: true },
   { field: 'studentNumber', label: 'Studentennummer', type: 'text', required: true },
@@ -31,8 +38,23 @@ const OPTIONAL_FIELDS: Array<keyof StudentFormData> = ['phone', 'photoUrl']
 
 function fieldError(student: StudentFormData, field: keyof StudentFormData): string | null {
   if (field === 'email' && student.email && !isValidEmail(student.email)) return 'Vul een geldig e-mailadres in'
+  if (field === 'dateOfBirth' && student.dateOfBirth && !isValidDateOfBirth(student.dateOfBirth)) {
+    return 'Gebruik formaat dd-mm-jjjj'
+  }
   if (!OPTIONAL_FIELDS.includes(field) && !student[field]) return 'Dit veld is verplicht'
   return null
+}
+
+function formatDateTyping(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`
+}
+
+function normalizeDateChange(value: string): string {
+  const formatted = formatDateTyping(value)
+  return isValidDateOfBirth(formatted) ? toIsoDateOfBirth(formatted) : formatted
 }
 
 function StudentForm({
@@ -116,16 +138,19 @@ function StudentForm({
               aria-label={label}
               aria-invalid={error ? 'true' : 'false'}
               type={type}
-              value={student[field] ?? ''}
+              inputMode={field === 'dateOfBirth' ? 'numeric' : undefined}
+              autoComplete={field === 'dateOfBirth' ? 'bday' : undefined}
+              maxLength={field === 'dateOfBirth' ? 10 : undefined}
+              value={field === 'dateOfBirth' ? formatDateOfBirthForInput(student.dateOfBirth) : (student[field] ?? '')}
               onBlur={() => onTouch(field)}
-              onChange={event => onChange(field, event.target.value)}
+              onChange={event => onChange(field, field === 'dateOfBirth' ? normalizeDateChange(event.target.value) : event.target.value)}
               className={cn(
                 'w-full rounded-xl border bg-white/60 px-3 py-2.5 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2',
                 error
                   ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
                   : 'border-white/90 focus:border-accent/50 focus:ring-accent/20',
               )}
-              placeholder={label}
+              placeholder={field === 'dateOfBirth' ? 'dd-mm-jjjj' : label}
             />
             {error && <p className="mt-1 text-xs font-semibold text-red-600">{error}</p>}
           </div>
