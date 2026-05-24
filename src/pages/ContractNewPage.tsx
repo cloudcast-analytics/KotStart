@@ -117,14 +117,14 @@ export default function ContractNewPage() {
 
     setIsSending(true)
     try {
-      await createContractDraft({
+      const contractId = await createContractDraft({
         roomId: selectedRoom.id,
         schoolYear: '2025–2026',
         students,
         secondLandlord,
         guardian,
       })
-      window.setTimeout(() => navigate('/'), 1500)
+      navigate(contractId ? `/contracts/${contractId}` : '/')
     } catch (err) {
       console.error('Contract opslaan mislukt:', err)
       setIsSending(false)
