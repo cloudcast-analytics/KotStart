@@ -380,7 +380,6 @@ export async function getContractBundleData(contractId: string | undefined) {
   let startInspection: Inspection | undefined
   let startInspectionItems: InspectionItem[] = []
   let endInspection: Inspection | undefined
-  let endInspectionItems: InspectionItem[] = []
 
   if (isSupabaseConfigured) {
     const [startResult, endResult] = await Promise.all([
@@ -396,8 +395,6 @@ export async function getContractBundleData(contractId: string | undefined) {
 
     if (endResult.data) {
       endInspection = await mapInspectionWithAssets(endResult.data as InspectionRow)
-      const { data: itemsData } = await supabase.from('inspection_items').select('*').eq('inspection_id', endInspection.id)
-      endInspectionItems = await Promise.all(((itemsData as InspectionItemRow[]) ?? []).map(mapInspectionItemWithAssets))
     }
   } else {
     startInspection = MOCK_INSPECTIONS.find(i => i.contractId === contractId && i.type === 'start')
@@ -405,13 +402,10 @@ export async function getContractBundleData(contractId: string | undefined) {
       ? MOCK_INSPECTION_ITEMS.filter(i => i.inspectionId === startInspection!.id)
       : []
     endInspection = MOCK_INSPECTIONS.find(i => i.contractId === contractId && i.type === 'end')
-    endInspectionItems = endInspection
-      ? MOCK_INSPECTION_ITEMS.filter(i => i.inspectionId === endInspection!.id)
-      : []
   }
 
   const landlord = getLandlordProfile()
-  return { contract, room, student, property, startInspection, startInspectionItems, endInspection, endInspectionItems, landlord }
+  return { contract, room, student, property, startInspection, startInspectionItems, endInspection, landlord }
 }
 
 export async function getInspectionData(inspectionId: string | undefined): Promise<{ inspection: Inspection; items: InspectionItem[] } | null> {

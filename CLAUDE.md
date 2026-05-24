@@ -60,7 +60,7 @@ src/
     ActionBar.tsx            # Sticky bottom action bar (used in detail pages)
     EmptyState.tsx           # Empty list placeholder component
     StudentRow.tsx           # Single row in the dashboard student list
-  __tests__/                 # Vitest + Testing Library tests (21 files, 94 tests)
+  __tests__/                 # Vitest + Testing Library tests (22 files, 101 tests)
 supabase/
   migrations/
     20260521000000_initial.sql  # Full DB schema + Storage bucket policies

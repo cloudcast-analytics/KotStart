@@ -231,13 +231,13 @@ export default function ContractDetailPage() {
                 label="Startplaatsbeschrijving"
                 inspection={startInspection}
                 onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
-                onView={() => navigate(`/inspections/${startInspection!.id}`)}
+                onView={() => { if (startInspection) navigate(`/inspections/${startInspection.id}`) }}
               />
               <InspectionRow
                 label="Eindplaatsbeschrijving"
                 inspection={endInspection}
                 onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })}
-                onView={() => navigate(`/inspections/${endInspection!.id}`)}
+                onView={() => { if (endInspection) navigate(`/inspections/${endInspection.id}`) }}
               />
             </div>
           </section>
