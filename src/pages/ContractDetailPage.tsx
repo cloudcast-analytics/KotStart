@@ -1,23 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { Building2, CalendarPlus, Check, CheckCircle, ClipboardList, Download, FileText, Home, Loader2, PenLine, User, XCircle } from 'lucide-react'
-import { getContractBundleData, sendContractEmail } from '../lib/data'
+import { Building2, CalendarPlus, Check, ClipboardList, Download, Home, User } from 'lucide-react'
+import { getContractBundleData, sendContractEmail, updateContractStatus } from '../lib/data'
 import { cn } from '../lib/cn'
 import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student } from '../types'
 import { generateContractHtml, printContractDocument } from '../lib/pdfDocuments'
 import SignatureModal from '../components/SignatureModal'
-
-const STATUS_LABEL: Record<Contract['status'], string> = {
-  draft: 'Concept',
-  sent: 'Verstuurd',
-  signed: 'Ondertekend',
-}
-
-const STATUS_STEPS: Array<{ status: Contract['status']; label: string }> = [
-  { status: 'draft', label: 'Concept' },
-  { status: 'sent', label: 'Verstuurd' },
-  { status: 'signed', label: 'Ondertekend' },
-]
 
 const ROOM_TYPE_LABEL = {
   studio: 'Studio',
@@ -36,14 +24,15 @@ export default function ContractDetailPage() {
     startInspection?: Inspection
     startInspectionItems?: InspectionItem[]
     endInspection?: Inspection
-    endInspectionItems?: InspectionItem[]
     landlord?: LandlordProfile
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
-  const [emailMessage, setEmailMessage] = useState<string | null>(null)
   const [showSignatureModal, setShowSignatureModal] = useState(false)
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null)
+  const [signStatus, setSignStatus] = useState<'idle' | 'signing' | 'error'>('idle')
+  const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -62,9 +51,7 @@ export default function ContractDetailPage() {
     }
 
     loadContract()
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [id])
 
   if (loading) {
@@ -78,26 +65,56 @@ export default function ContractDetailPage() {
   if (!bundle) return <Navigate to="/" replace />
 
   const { contract, room, student, property, startInspection, startInspectionItems, endInspection, landlord } = bundle
-  const activeStatusIndex = STATUS_STEPS.findIndex(step => step.status === contract.status)
 
-  async function handleSignatureConfirm(signatureDataUrl: string) {
-    if (!student.email) {
-      setEmailStatus('error')
-      setEmailMessage('Geen e-mailadres gevonden voor deze student.')
+  const startDone = !!startInspection
+  const signedDone = contract.status === 'signed' || contract.status === 'sent'
+  const sentDone = contract.status === 'sent'
+
+  async function handleSignatureConfirm(sig: string) {
+    setShowSignatureModal(false)
+    setSignStatus('signing')
+    try {
+      await updateContractStatus(contract.id, 'signed')
+      setSignatureDataUrl(sig)
+      setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'signed' } } : null)
+      setSignStatus('idle')
+    } catch (err) {
+      setSignStatus('error')
+      setStatusMessage(err instanceof Error ? err.message : 'Ondertekenen mislukt.')
+    }
+  }
+
+  async function handleSend() {
+    if (!signatureDataUrl) {
+      setShowSignatureModal(true)
       return
     }
-
-    setShowSignatureModal(false)
-    setEmailStatus('sending')
-    setEmailMessage('Contract wordt ondertekend en verstuurd...')
+    if (!student.email) {
+      setSendStatus('error')
+      setStatusMessage('Geen e-mailadres gevonden voor deze student.')
+      return
+    }
+    setSendStatus('sending')
+    setStatusMessage('Contract wordt verstuurd...')
     try {
-      const html = generateContractHtml({ contract, room, student, property, inspection: startInspection, inspectionItems: startInspectionItems, landlord, signatureDataUrl })
+      const html = generateContractHtml({
+        contract,
+        room,
+        student,
+        property,
+        inspection: startInspection,
+        inspectionItems: startInspectionItems,
+        landlord,
+        signatureDataUrl,
+      })
       await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html)
-      setEmailStatus('sent')
-      setEmailMessage(`Contract is verstuurd naar ${student.email}.`)
+      await updateContractStatus(contract.id, 'sent')
+      setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'sent' } } : null)
+      setSendStatus('sent')
+      setStatusMessage(`Contract is verstuurd naar ${student.email}.`)
     } catch (err) {
-      setEmailStatus('error')
-      setEmailMessage(err instanceof Error ? err.message : 'Contract kon niet verstuurd worden.')
+      setSendStatus('error')
+      setStatusMessage(err instanceof Error ? err.message : 'Contract kon niet verstuurd worden.')
     }
   }
 
@@ -115,6 +132,7 @@ export default function ContractDetailPage() {
 
       <main className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
+
           <section className="glass rounded-2xl p-4">
             <div className="flex items-start gap-4">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-accent/10">
@@ -125,9 +143,6 @@ export default function ContractDetailPage() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  {STATUS_LABEL[contract.status]}
-                </p>
                 <h1 className="mt-1 text-2xl font-bold text-slate-900">
                   {student.firstName} {student.lastName}
                 </h1>
@@ -137,64 +152,78 @@ export default function ContractDetailPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              <ActionButton label="Verlengen" icon={CalendarPlus} onClick={() => navigate(`/contracts/${contract.id}/renew`)} />
-              <ActionButton label="PDF maken" icon={Download} onClick={() => printContractDocument({ contract, room, student, property, inspection: startInspection, inspectionItems: startInspectionItems, landlord })} />
-              <button
-                type="button"
-                onClick={() => setShowSignatureModal(true)}
-                disabled={emailStatus === 'sending'}
-                className="glass-chip flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 disabled:opacity-60"
-              >
-                {emailStatus === 'sending' && <Loader2 size={16} className="animate-spin text-accent" />}
-                {emailStatus === 'sent' && <CheckCircle size={16} className="text-green-500" />}
-                {emailStatus === 'error' && <XCircle size={16} className="text-red-500" />}
-                {emailStatus === 'idle' && <PenLine size={16} className="text-accent" />}
-                {emailStatus === 'sending' ? 'Versturen...' : emailStatus === 'sent' ? 'Verstuurd' : emailStatus === 'error' ? 'Opnieuw proberen' : 'Ondertekenen & versturen'}
-              </button>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <ActionButton
+                label="Verlengen"
+                icon={CalendarPlus}
+                onClick={() => navigate(`/contracts/${contract.id}/renew`)}
+              />
+              <ActionButton
+                label="PDF maken"
+                icon={Download}
+                onClick={() => printContractDocument({
+                  contract,
+                  room,
+                  student,
+                  property,
+                  inspection: startInspection,
+                  inspectionItems: startInspectionItems,
+                  landlord,
+                })}
+              />
             </div>
-            {emailMessage && (
+          </section>
+
+          <section className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
+            <div className="mb-3 flex items-center gap-2">
+              <Home size={16} className="text-accent" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Voortgang</h2>
+            </div>
+            <div className="flex flex-col gap-2">
+              <ProgressRow
+                label="Contract aangemaakt"
+                done={true}
+                date={contract.createdAt}
+              />
+              <ProgressRow
+                label="Startplaatsbeschrijving"
+                done={startDone}
+                date={startInspection?.createdAt}
+                primaryAction={startDone ? undefined : () => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
+                primaryLabel={startDone ? undefined : 'Starten'}
+                secondaryAction={startDone && startInspection ? () => navigate(`/inspections/${startInspection.id}`) : undefined}
+                secondaryLabel={startDone ? 'Bekijken →' : undefined}
+              />
+              <ProgressRow
+                label="Handtekening verhuurder"
+                done={signedDone}
+                blocked={!startDone}
+                primaryAction={!signedDone && startDone ? () => setShowSignatureModal(true) : undefined}
+                primaryLabel={!signedDone && startDone ? 'Ondertekenen' : undefined}
+              />
+              <ProgressRow
+                label="Versturen naar student"
+                done={sentDone}
+                blocked={!signedDone}
+                primaryAction={signedDone && !sentDone ? handleSend : undefined}
+                primaryLabel={signedDone && !sentDone ? (sendStatus === 'sending' ? 'Versturen...' : 'Versturen') : undefined}
+              />
+            </div>
+            {statusMessage && (
               <div
                 role="status"
                 className={cn(
                   'mt-3 rounded-xl border px-3 py-2 text-sm font-semibold',
-                  emailStatus === 'sent'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : emailStatus === 'error'
-                      ? 'border-red-200 bg-red-50 text-red-700'
-                      : 'border-slate-200 bg-white/65 text-slate-600',
+                  sendStatus === 'sent' || signStatus === 'error'
+                    ? sendStatus === 'sent'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-red-200 bg-red-50 text-red-700'
+                    : 'border-red-200 bg-red-50 text-red-700',
                 )}
               >
-                {emailMessage}
+                {statusMessage}
               </div>
             )}
-          </section>
-
-          <section className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
-            <div className="mb-4 flex items-center gap-2">
-              <FileText size={16} className="text-accent" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Status</h2>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {STATUS_STEPS.map((step, index) => {
-                const isDone = index <= activeStatusIndex
-                return (
-                  <div key={step.status} className="flex flex-col items-center text-center">
-                    <div
-                      className={cn(
-                        'flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-bold',
-                        isDone ? 'border-accent bg-accent text-white' : 'border-slate-200 bg-slate-100 text-slate-400',
-                      )}
-                    >
-                      {isDone ? <Check size={15} /> : index + 1}
-                    </div>
-                    <p className={cn('mt-2 text-xs font-bold', isDone ? 'text-accent' : 'text-slate-400')}>
-                      {step.label}
-                    </p>
-                  </div>
-                )
-              })}
-            </div>
           </section>
 
           <section className="grid gap-3 md:grid-cols-2">
@@ -226,20 +255,12 @@ export default function ContractDetailPage() {
               <ClipboardList size={16} className="text-accent" />
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Inspectiepaspoort</h2>
             </div>
-            <div className="flex flex-col gap-2">
-              <InspectionRow
-                label="Startplaatsbeschrijving"
-                inspection={startInspection}
-                onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'start' } })}
-                onView={() => { if (startInspection) navigate(`/inspections/${startInspection.id}`) }}
-              />
-              <InspectionRow
-                label="Eindplaatsbeschrijving"
-                inspection={endInspection}
-                onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })}
-                onView={() => { if (endInspection) navigate(`/inspections/${endInspection.id}`) }}
-              />
-            </div>
+            <InspectionRow
+              label="Eindplaatsbeschrijving"
+              inspection={endInspection}
+              onStart={() => navigate('/inspections/new', { state: { contractId: contract.id, type: 'end' } })}
+              onView={() => { if (endInspection) navigate(`/inspections/${endInspection.id}`) }}
+            />
           </section>
         </div>
       </main>
@@ -272,6 +293,63 @@ function ActionButton({
       <Icon size={16} className="text-accent" />
       {label}
     </button>
+  )
+}
+
+function ProgressRow({
+  label,
+  done,
+  blocked,
+  date,
+  primaryAction,
+  primaryLabel,
+  secondaryAction,
+  secondaryLabel,
+}: {
+  label: string
+  done: boolean
+  blocked?: boolean
+  date?: string
+  primaryAction?: () => void
+  primaryLabel?: string
+  secondaryAction?: () => void
+  secondaryLabel?: string
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-100/70 bg-white/40 px-4 py-3">
+      <div className="flex items-center gap-3">
+        {done ? (
+          <Check size={15} className="shrink-0 text-green-500" />
+        ) : (
+          <div className={cn('h-4 w-4 shrink-0 rounded-full border-2', blocked ? 'border-slate-200' : 'border-accent')} />
+        )}
+        <div>
+          <p className={cn('text-sm font-bold', blocked && !done ? 'text-slate-400' : 'text-slate-800')}>{label}</p>
+          {done && date && (
+            <p className="text-xs text-slate-500">
+              {new Date(date).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          )}
+          {!done && blocked && <p className="text-xs text-slate-400">Wacht op vorige stap</p>}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        {secondaryAction && secondaryLabel && (
+          <button
+            type="button"
+            onClick={secondaryAction}
+            className="glass-chip rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700"
+          >
+            {secondaryLabel}
+          </button>
+        )}
+        {primaryAction && primaryLabel && (
+          <button type="button" onClick={primaryAction} className="btn-primary px-3 py-1.5 text-xs">
+            {primaryLabel}
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -41,7 +41,7 @@ src/
   pages/
     DashboardPage.tsx        # Student list filtered by property + school year
     ContractNewPage.tsx      # Entry point for the 4-step contract wizard
-    ContractDetailPage.tsx   # Contract status, room/student/finance info, PDF action
+    ContractDetailPage.tsx   # Voortgangschecklist (4-step progress), split sign/send actions, Einde-only Inspectiepaspoort
     ContractRenewPage.tsx    # Contract renewal flow
     InspectionDetailPage.tsx # Full inspection report: items by category, condition chips, PDF print
     InspectionNewPage.tsx    # Multi-category inspection wizard with photo upload
@@ -60,7 +60,7 @@ src/
     ActionBar.tsx            # Sticky bottom action bar (used in detail pages)
     EmptyState.tsx           # Empty list placeholder component
     StudentRow.tsx           # Single row in the dashboard student list
-  __tests__/                 # Vitest + Testing Library tests (22 files, 101 tests)
+  __tests__/                 # Vitest + Testing Library tests (22 files, 104 tests)
 supabase/
   migrations/
     20260521000000_initial.sql  # Full DB schema + Storage bucket policies
@@ -83,7 +83,7 @@ All types live in `src/types/index.ts`.
 | `Room` | propertyId, roomNumber, roomType, monthlyRent, studentTax, fixedCosts, deposit | roomType: `studio \| single \| double` |
 | `Student` | firstName, lastName, email, phone, dateOfBirth, photoUrl, nationalRegistryNumber?, institution?, studentNumber?, primaryResidence? | Photo stored in Supabase Storage |
 | `LandlordProfile` | name, dateOfBirth, nationalRegistryNumber, address, phone, email, iban, bic, bank, insuranceCompany, policyNumber, epcLabel, epcNumber | Stored in localStorage; editable via SettingsPage |
-| `Contract` | roomId, schoolYear, studentId, secondStudentId?, status | status: `draft \| sent \| signed` |
+| `Contract` | roomId, schoolYear, studentId, secondStudentId?, status | status: `draft \| signed \| sent` (order matters: draft → signed → sent) |
 | `Inspection` | contractId, type, overviewPhotoUrl | type: `start \| end` |
 | `InspectionItem` | inspectionId, category, itemName, condition, photoUrl? | condition: `good \| moderate \| bad \| unusable` |
 | `StudentDashboardRow` | studentId, firstName, lastName, roomNumber, contractId | Computed join for dashboard display |
@@ -101,7 +101,8 @@ Single point of contact between pages and persistence. Switches between mock dat
 - `getLandlordProfile()` — reads `LandlordProfile` from localStorage (falls back to `MOCK_LANDLORD_PROFILE`)
 
 **Write functions** (no-ops when Supabase is not configured):
-- `createContractDraft(input)` — inserts student(s) + contract, uploads student photos
+- `createContractDraft(input)` — inserts student(s) + contract (status `draft`), uploads student photos; returns contract ID or `null` in demo mode
+- `updateContractStatus(contractId, status)` — updates a contract's status field (`draft` → `signed` → `sent`)
 - `saveInspectionData(input)` — inserts inspection + items, uploads inspection photos
 - `updateRoomData(room)` — updates a room record
 - `saveLandlordProfile(profile)` — writes `LandlordProfile` to localStorage
@@ -136,7 +137,7 @@ Single point of contact between pages and persistence. Switches between mock dat
 - **Wizard state is local React state** in `ContractNewPage` and `InspectionNewPage`. Step components receive props + callbacks; no global state manager.
 - **`cn()` from `src/lib/cn.ts`** is the project-wide utility for conditional Tailwind classes (wraps `clsx`).
 - **PDF/print** is triggered browser-side via `pdfDocuments.ts` using `window.print()`. `generateContractHtml(ContractBundle)` produces a full A4 HTML contract (Art. 1–19 + Bijlage A plaatsbeschrijving) conform het Vlaams Woninghuurdecreet. `ContractBundle` = `{ contract, room, property, student, secondStudent?, inspection?, inspectionItems?, landlord?, signatureDataUrl? }`. `landlord` defaults to `MOCK_LANDLORD` when absent. `signatureDataUrl` embeds the verhuurder's handtekening as a `<img>` in het handtekeningblok.
-- **Handtekening + e-mail**: `ContractDetailPage` toont een "Ondertekenen" knop die `SignatureModal` opent (canvas via `signature_pad`). Na bevestigen wordt `generateContractHtml` aangeroepen met de handtekening en het ondertekend contract verstuurd via `sendContractEmail`.
+- **Contract flow (legally correct order)**: `ContractDetailPage` shows a 4-step voortgangschecklist: (1) Contract aangemaakt, (2) Startplaatsbeschrijving → navigates to `/inspections/new`, (3) Handtekening verhuurder → opens `SignatureModal`, saves signature as data URL, calls `updateContractStatus('signed')`, (4) Versturen → calls `generateContractHtml` + `sendContractEmail` + `updateContractStatus('sent')`. Steps 3 and 4 are separate actions; the "Ondertekenen & versturen" combined button no longer exists.
 - **Verhuurder-profiel**: `LandlordProfile` wordt opgeslagen in `localStorage` via `saveLandlordProfile`. `getLandlordProfile` valt terug op `MOCK_LANDLORD_PROFILE` (uit `mockData.ts`). Editable via `/settings`.
 - **Framer Motion** handles page and step transition animations.
 
@@ -184,7 +185,7 @@ npm test           # watch mode
 ```
 
 - **Framework**: Vitest + Testing Library + jest-dom
-- **21 test files** in `src/__tests__/`, **88 tests** — all passing
+- **22 test files** in `src/__tests__/`, **104 tests** — all passing
 - `src/test-setup.ts` registers jest-dom matchers globally
 
 ---

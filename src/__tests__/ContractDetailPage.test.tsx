@@ -22,11 +22,7 @@ describe('ContractDetailPage', () => {
     const print = vi.fn()
     const write = vi.fn()
     vi.spyOn(window, 'open').mockReturnValue({
-      document: {
-        open: vi.fn(),
-        write,
-        close: vi.fn(),
-      },
+      document: { open: vi.fn(), write, close: vi.fn() },
       focus: vi.fn(),
       print,
     } as unknown as Window)
@@ -42,12 +38,48 @@ describe('ContractDetailPage', () => {
     expect(screen.getByText('€ 450/maand')).toBeInTheDocument()
   })
 
-  it('toont status-tijdlijn', async () => {
-    renderPage('/contracts/c3')
+  it('toont voortgangschecklist met 4 stappen', async () => {
+    renderPage()
 
-    expect(await screen.findByText('Concept')).toBeInTheDocument()
-    expect(screen.getAllByText('Verstuurd').length).toBeGreaterThan(0)
-    expect(screen.getByText('Ondertekend')).toBeInTheDocument()
+    await screen.findByRole('heading', { name: 'Emma Janssen' })
+    expect(screen.getByText('Contract aangemaakt')).toBeInTheDocument()
+    expect(screen.getByText('Startplaatsbeschrijving')).toBeInTheDocument()
+    expect(screen.getByText('Handtekening verhuurder')).toBeInTheDocument()
+    expect(screen.getByText('Versturen naar student')).toBeInTheDocument()
+  })
+
+  it('toont Bekijken-knop voor start als inspectie klaar is (c1)', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: /bekijken/i })).toBeInTheDocument()
+  })
+
+  it('toont Versturen-knop als contract ondertekend is (c1 status signed)', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: /^versturen$/i })).toBeInTheDocument()
+  })
+
+  it('toont Ondertekenen-knop als start gedaan en status draft (c4)', async () => {
+    renderPage('/contracts/c4')
+
+    expect(await screen.findByRole('button', { name: /ondertekenen/i })).toBeInTheDocument()
+  })
+
+  it('toont geen "Ondertekenen & versturen" als één knop', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Emma Janssen' })
+    expect(screen.queryByRole('button', { name: /ondertekenen & versturen/i })).not.toBeInTheDocument()
+  })
+
+  it('toont alleen Eindplaatsbeschrijving in Inspectiepaspoort (niet Start)', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Emma Janssen' })
+    expect(screen.getByText('Eindplaatsbeschrijving')).toBeInTheDocument()
+    // Startplaatsbeschrijving appears exactly once — in the checklist, not in Inspectiepaspoort
+    expect(screen.getAllByText('Startplaatsbeschrijving')).toHaveLength(1)
   })
 
   it('navigeert naar contract verlengen', async () => {
@@ -56,29 +88,6 @@ describe('ContractDetailPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /verlengen/i }))
 
     expect(screen.getByText('Renew route')).toBeInTheDocument()
-  })
-
-  it('toont ondertekenen knop en inspectiepaspoort', async () => {
-    renderPage()
-
-    expect(await screen.findByRole('button', { name: /ondertekenen & versturen/i })).toBeInTheDocument()
-    // c1 has a mock start inspection → should show "Bekijken" for start
-    expect(screen.getByRole('button', { name: /bekijken/i })).toBeInTheDocument()
-    // c1 has no end inspection → should show "Starten" for end
-    expect(screen.getAllByRole('button', { name: /starten/i }).length).toBeGreaterThan(0)
-    // Start and end labels present
-    expect(screen.getByText('Startplaatsbeschrijving')).toBeInTheDocument()
-    expect(screen.getByText('Eindplaatsbeschrijving')).toBeInTheDocument()
-  })
-
-  it('toont geen dubbele inspectieknoppen in de actiebalk', async () => {
-    renderPage()
-
-    await screen.findByRole('heading', { name: 'Emma Janssen' })
-    // Only 3 action buttons in top bar: Verlengen, PDF maken, Ondertekenen & versturen
-    // Startplaatsbeschrijving and Eindplaatsbeschrijving must NOT be action buttons in the bar
-    const verlengenButtons = screen.getAllByRole('button', { name: /verlengen/i })
-    expect(verlengenButtons).toHaveLength(1)
   })
 
   it('maakt een printbaar contractdocument', async () => {
