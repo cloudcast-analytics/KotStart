@@ -88,6 +88,18 @@ describe('generateContractHtml', () => {
     expect(html).toContain('data:image/png;base64,abc123')
   })
 
+  it('bevat handtekeningen van verhuurder en huurder wanneer opgegeven', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      landlordSignatureDataUrl: 'data:image/png;base64,landlord',
+      studentSignatureDataUrl: 'data:image/png;base64,student',
+    })
+
+    expect(html).toContain('data:image/png;base64,landlord')
+    expect(html).toContain('data:image/png;base64,student')
+    expect(html).toContain('alt="Handtekening huurder"')
+  })
+
   it('vult de inspectietoestand in wanneer er items zijn', () => {
     const bundleWithInspection = {
       ...mockBundle,

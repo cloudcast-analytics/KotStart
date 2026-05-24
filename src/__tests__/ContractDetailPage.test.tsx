@@ -44,7 +44,7 @@ describe('ContractDetailPage', () => {
     await screen.findByRole('heading', { name: 'Emma Janssen' })
     expect(screen.getByText('Contract aangemaakt')).toBeInTheDocument()
     expect(screen.getAllByText('Startplaatsbeschrijving')).not.toHaveLength(0)
-    expect(screen.getByText('Handtekening verhuurder')).toBeInTheDocument()
+    expect(screen.getByText('Handtekeningen verhuurder en student')).toBeInTheDocument()
     expect(screen.getByText('Versturen naar student')).toBeInTheDocument()
   })
 
@@ -60,19 +60,17 @@ describe('ContractDetailPage', () => {
     expect(await screen.findByRole('button', { name: /^versturen$/i })).toBeInTheDocument()
   })
 
-  it('toont na opslaan als concept een knop terug naar dashboard', async () => {
+  it('toont na opslaan als concept een status zonder dashboardknop', async () => {
     renderPage('/contracts/c1', { savedDraft: true })
 
     expect(await screen.findByText('Concept opgeslagen')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /naar dashboard/i }))
-
-    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /naar dashboard/i })).not.toBeInTheDocument()
   })
 
-  it('toont Ondertekenen-knop als start gedaan en status draft (c4)', async () => {
+  it('toont Handtekeningen opslaan-knop als start gedaan en status draft (c4)', async () => {
     renderPage('/contracts/c4')
 
-    expect(await screen.findByRole('button', { name: /ondertekenen/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /handtekeningen opslaan/i })).toBeInTheDocument()
   })
 
   it('toont geen "Ondertekenen & versturen" als één knop', async () => {

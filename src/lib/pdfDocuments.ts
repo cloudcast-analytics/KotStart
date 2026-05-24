@@ -10,6 +10,8 @@ export interface ContractBundle {
   inspectionItems?: InspectionItem[]
   landlord?: LandlordProfile
   signatureDataUrl?: string
+  landlordSignatureDataUrl?: string
+  studentSignatureDataUrl?: string
 }
 
 interface InspectionDocumentItem {
@@ -113,8 +115,20 @@ function schoolYearEndDate(schoolYear: string): string {
 }
 
 export function generateContractHtml(bundle: ContractBundle): string {
-  const { contract, room, property, student, secondStudent, inspection, inspectionItems = [], signatureDataUrl } = bundle
+  const {
+    contract,
+    room,
+    property,
+    student,
+    secondStudent,
+    inspection,
+    inspectionItems = [],
+    signatureDataUrl,
+    landlordSignatureDataUrl,
+    studentSignatureDataUrl,
+  } = bundle
   const landlord = bundle.landlord ?? MOCK_LANDLORD
+  const landlordSignature = landlordSignatureDataUrl ?? signatureDataUrl
   const totalMonthly = room.monthlyRent + room.fixedCosts
   const startDate = schoolYearStartDate(contract.schoolYear)
   const endDate = schoolYearEndDate(contract.schoolYear)
@@ -354,13 +368,14 @@ Opgemaakt te Gent, in twee originelen. Elke partij erkent één exemplaar ontvan
 <div class="sign-block">
   <div class="sign-line">
     <strong>Handtekening verhuurder</strong><br/>
-    ${signatureDataUrl ? `<img src="${signatureDataUrl}" alt="Handtekening verhuurder" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
+    ${landlordSignature ? `<img src="${landlordSignature}" alt="Handtekening verhuurder" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
     Naam: ${escapeHtml(landlord.name)}<br/>
     Datum: _____ / _____ / _____<br/>
     Plaats: Gent
   </div>
   <div class="sign-line">
-    <strong>Handtekening huurder</strong><br/><br/><br/>
+    <strong>Handtekening huurder</strong><br/>
+    ${studentSignatureDataUrl ? `<img src="${studentSignatureDataUrl}" alt="Handtekening huurder" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
     Naam: ${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}<br/>
     Datum: _____ / _____ / _____<br/>
     Plaats: _____________________

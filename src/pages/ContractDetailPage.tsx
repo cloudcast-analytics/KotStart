@@ -31,7 +31,8 @@ export default function ContractDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSignatureModal, setShowSignatureModal] = useState(false)
-  const [signatureDataUrl, setSignatureDataUrl] = useState<string | undefined>(undefined)
+  const [landlordSignatureDataUrl, setLandlordSignatureDataUrl] = useState<string | undefined>(undefined)
+  const [studentSignatureDataUrl, setStudentSignatureDataUrl] = useState<string | undefined>(undefined)
   const [, setSignStatus] = useState<'idle' | 'signing' | 'error'>('idle')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
@@ -73,17 +74,18 @@ export default function ContractDetailPage() {
   const sentDone = contract.status === 'sent'
   const savedDraft = (location.state as { savedDraft?: boolean } | null)?.savedDraft === true
 
-  async function handleSignatureConfirm(sig: string) {
+  async function handleSignatureConfirm(signatures: { landlord: string; student: string }) {
     setShowSignatureModal(false)
     setSignStatus('signing')
     try {
       await updateContractStatus(contract.id, 'signed')
-      setSignatureDataUrl(sig)
+      setLandlordSignatureDataUrl(signatures.landlord)
+      setStudentSignatureDataUrl(signatures.student)
       setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'signed' } } : null)
       setSignStatus('idle')
     } catch (err) {
       setSignStatus('error')
-      setStatusMessage(err instanceof Error ? err.message : 'Ondertekenen mislukt.')
+      setStatusMessage(err instanceof Error ? err.message : 'Handtekeningen opslaan mislukt.')
     }
   }
 
@@ -104,7 +106,8 @@ export default function ContractDetailPage() {
         inspection: startInspection,
         inspectionItems: startInspectionItems,
         landlord,
-        signatureDataUrl: signatureDataUrl ?? undefined,
+        landlordSignatureDataUrl,
+        studentSignatureDataUrl,
       })
       await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html)
       await updateContractStatus(contract.id, 'sent')
@@ -168,6 +171,8 @@ export default function ContractDetailPage() {
                   inspection: startInspection,
                   inspectionItems: startInspectionItems,
                   landlord,
+                  landlordSignatureDataUrl,
+                  studentSignatureDataUrl,
                 })}
               />
             </div>
@@ -182,13 +187,6 @@ export default function ContractDetailPage() {
               <p className="mt-1 text-xs font-semibold text-emerald-700">
                 Dit contract staat nu in je dashboard en is gekoppeld aan je account.
               </p>
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="mt-3 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white"
-              >
-                Naar dashboard
-              </button>
             </section>
           )}
 
@@ -209,11 +207,11 @@ export default function ContractDetailPage() {
                 date={startInspection?.createdAt}
               />
               <ProgressRow
-                label="Handtekening verhuurder"
+                label="Handtekeningen verhuurder en student"
                 done={signedDone}
                 blocked={!startDone}
                 primaryAction={!signedDone && startDone ? () => setShowSignatureModal(true) : undefined}
-                primaryLabel={!signedDone && startDone ? 'Ondertekenen' : undefined}
+                primaryLabel={!signedDone && startDone ? 'Handtekeningen opslaan' : undefined}
               />
               <ProgressRow
                 label="Versturen naar student"
@@ -294,6 +292,7 @@ export default function ContractDetailPage() {
 
       {showSignatureModal && (
         <SignatureModal
+          studentName={`${student.firstName} ${student.lastName}`}
           onConfirm={handleSignatureConfirm}
           onClose={() => setShowSignatureModal(false)}
         />
