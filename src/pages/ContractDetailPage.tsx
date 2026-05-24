@@ -29,8 +29,8 @@ export default function ContractDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSignatureModal, setShowSignatureModal] = useState(false)
-  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null)
-  const [signStatus, setSignStatus] = useState<'idle' | 'signing' | 'error'>('idle')
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | undefined>(undefined)
+  const [_signStatus, setSignStatus] = useState<'idle' | 'signing' | 'error'>('idle')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
