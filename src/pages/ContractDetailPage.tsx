@@ -4,7 +4,7 @@ import { Building2, CalendarPlus, Check, ClipboardList, Download, Home, Trash2, 
 import { deleteContractBundleData, getContractBundleData, sendContractEmail, updateContractStatus } from '../lib/data'
 import { cn } from '../lib/cn'
 import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student } from '../types'
-import { generateContractHtml, printContractDocument } from '../lib/pdfDocuments'
+import { generateContractHtml, generateContractPdfBase64, printContractDocument } from '../lib/pdfDocuments'
 import SignatureModal from '../components/SignatureModal'
 
 const ROOM_TYPE_LABEL = {
@@ -98,9 +98,9 @@ export default function ContractDetailPage() {
       return
     }
     setSendStatus('sending')
-    setStatusMessage('Contract wordt verstuurd...')
+    setStatusMessage('PDF wordt gegenereerd...')
     try {
-      const html = generateContractHtml({
+      const bundle = {
         contract,
         room,
         student,
@@ -110,8 +110,17 @@ export default function ContractDetailPage() {
         landlord,
         landlordSignatureDataUrl,
         studentSignatureDataUrl,
-      })
-      await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html)
+      }
+      const html = generateContractHtml(bundle)
+      setStatusMessage('PDF wordt gegenereerd...')
+      let pdfBase64: string | undefined
+      try {
+        pdfBase64 = await generateContractPdfBase64(bundle)
+      } catch (pdfError) {
+        console.error('PDF-generatie mislukt, verstuur HTML fallback:', pdfError)
+      }
+      setStatusMessage('Contract wordt verstuurd...')
+      await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html, pdfBase64)
       await updateContractStatus(contract.id, 'sent')
       setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'sent' } } : null)
       setSendStatus('sent')

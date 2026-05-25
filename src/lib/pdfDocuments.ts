@@ -437,6 +437,52 @@ export function printContractDocument(bundle: ContractBundle) {
   )
 }
 
+/**
+ * Generates a PDF from the contract HTML and returns it as a base64 string.
+ * Uses html2pdf.js (client-side, no server needed).
+ */
+export async function generateContractPdfBase64(bundle: ContractBundle): Promise<string> {
+  // Dynamically import to avoid SSR issues
+  const html2pdf = (await import('html2pdf.js')).default
+
+  const html = generateContractHtml(bundle)
+
+  // Create a hidden container with the full HTML
+  const container = document.createElement('div')
+  container.innerHTML = html
+  container.style.position = 'absolute'
+  container.style.left = '-9999px'
+  container.style.top = '0'
+  document.body.appendChild(container)
+
+  try {
+    const blob: Blob = await html2pdf()
+      .set({
+        margin: [20, 20, 20, 20], // mm
+        filename: `huurovereenkomst_${bundle.student.firstName}_${bundle.student.lastName}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      })
+      .from(container)
+      .output('blob')
+
+    // Convert blob to base64
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = reader.result as string
+        // Strip the data URL prefix (e.g. "data:application/pdf;base64,")
+        resolve(result.split(',')[1])
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  } finally {
+    document.body.removeChild(container)
+  }
+}
+
 export function printInspectionDocument({ title, type, overviewPhotoUrl, items }: InspectionDocumentData) {
   const grouped = items.reduce<Record<string, InspectionDocumentItem[]>>((acc, item) => {
     acc[item.category] = [...(acc[item.category] ?? []), item]

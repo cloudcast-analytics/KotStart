@@ -50,7 +50,7 @@ serve(async (req) => {
       return jsonResponse(req, { error: 'Niet geauthenticeerd' }, 401)
     }
 
-    const { to, name, html } = await req.json() as { to?: string; name?: string; html?: string }
+    const { to, name, html, pdfBase64 } = await req.json() as { to?: string; name?: string; html?: string; pdfBase64?: string }
     if (!to || !name || !html || !isValidEmail(to) || name.length > 120 || html.length > 500_000) {
       return jsonResponse(req, { error: 'Ongeldige payload' }, 400)
     }
@@ -61,19 +61,37 @@ serve(async (req) => {
     const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') ?? 'info@cloudcastanalytics.com'
     const fromName = Deno.env.get('RESEND_FROM_NAME') ?? 'Cloudcast Analytics'
 
+    const safeName = name.replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').slice(0, 80)
+
+    const emailBody: Record<string, unknown> = {
+      from: `${fromName} <${fromAddress}>`,
+      to,
+      reply_to: user.email,
+      subject: `Huurovereenkomst voor ${name}`,
+      html: `<p>Beste ${name},</p>
+             <p>In bijlage vindt u de ondertekende huurovereenkomst als PDF.</p>
+             <p>Met vriendelijke groeten,<br>${fromName}</p>`,
+    }
+
+    if (pdfBase64) {
+      emailBody.attachments = [
+        {
+          filename: `huurovereenkomst_${safeName}.pdf`,
+          content: pdfBase64,
+        },
+      ]
+    } else {
+      // Fallback: stuur HTML als body als PDF generatie mislukte
+      emailBody.html = html
+    }
+
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        from: `${fromName} <${fromAddress}>`,
-        to,
-        reply_to: user.email,
-        subject: `Huurovereenkomst voor ${name}`,
-        html,
-      }),
+      body: JSON.stringify(emailBody),
     })
 
     if (!res.ok) {

@@ -462,10 +462,11 @@ export async function sendContractEmail(
   to: string,
   name: string,
   html: string,
+  pdfBase64?: string,
 ): Promise<void> {
   if (!isSupabaseConfigured) return
   const { error } = await supabase.functions.invoke('send-contract-email', {
-    body: { to, name, html },
+    body: { to, name, html, pdfBase64 },
   })
   if (error) {
     const response = (error as { context?: Response }).context
