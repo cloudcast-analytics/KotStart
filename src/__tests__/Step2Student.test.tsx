@@ -10,7 +10,6 @@ const emptyStudent: StudentFormData = {
   phone: '',
   dateOfBirth: '',
   photoUrl: null,
-  nationalRegistryNumber: '',
   institution: '',
   studentNumber: '',
   primaryResidence: '',

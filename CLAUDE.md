@@ -9,6 +9,7 @@
 - **Hosting**: Railway via a custom Node.js static server (`server.js`)
 - **PWA**: `vite-plugin-pwa` with auto-update, installable on mobile
 - **Node requirement**: Node 20+ (Node 18 breaks the PWA build step)
+- **GitHub**: `https://github.com/cloudcast-analytics/KotStart.git` (branch: `master`)
 
 ---
 
@@ -140,6 +141,7 @@ Single point of contact between pages and persistence. Switches between mock dat
 - **Contract flow (legally correct order)**: `ContractDetailPage` shows a 4-step voortgangschecklist: (1) Contract aangemaakt, (2) Startplaatsbeschrijving → navigates to `/inspections/new`, (3) Handtekening verhuurder → opens `SignatureModal`, saves signature as data URL, calls `updateContractStatus('signed')`, (4) Versturen → calls `generateContractHtml` + `sendContractEmail` + `updateContractStatus('sent')`. Steps 3 and 4 are separate actions; the "Ondertekenen & versturen" combined button no longer exists.
 - **Verhuurder-profiel**: `LandlordProfile` wordt opgeslagen in `localStorage` via `saveLandlordProfile`. `getLandlordProfile` valt terug op `MOCK_LANDLORD_PROFILE` (uit `mockData.ts`). Editable via `/settings`.
 - **Framer Motion** handles page and step transition animations.
+- **Known limitation — signature persistence**: The verhuurder's signature (`signatureDataUrl`) lives only in React state on `ContractDetailPage`. If the page is reloaded after signing (step 3) but before sending (step 4), the email will be sent without the signature image. The contract status in Supabase remains correct (`signed`). Fix (future): save the signature data URL to Supabase Storage immediately after signing and load it back from there.
 
 ---
 
@@ -156,7 +158,7 @@ Without these, the app runs entirely on mock data (read-only, no persistence, no
 
 ## Deployment
 
-- **Railway** is the live host. Project: `kotstart-demo`, URL: `https://kotstart-demo-production.up.railway.app`
+- **Railway** is the live host. Project: `kotstart-demo`, URL: `https://kotstart.up.railway.app`
 - **Build**: `npm run build` (requires Node 20+)
 - **Start**: `node server.js` — a custom static file server that binds to `0.0.0.0:$PORT` and serves the `dist/` folder with SPA fallback (all unknown paths → `index.html`)
 - **railway.toml** controls build/start commands on Railway
@@ -174,6 +176,8 @@ Tables: `properties`, `rooms`, `students`, `contracts`, `inspections`, `inspecti
 Storage buckets: `student-photos`, `inspection-photos`
 
 To apply: run the SQL in Supabase SQL Editor, then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to Railway env vars.
+
+**Email domain (Resend)**: Currently using `cloudcast-analytics.com` (domain of a separate company, Cloudcast). SPF + MX are verified. DKIM was added at one.com on 2026-05-24 — propagation may take 24–48h, check Resend dashboard for green status. **Before official launch, KotStart needs its own domain** (e.g. `kotstart.be`) with fresh SPF/DKIM/MX records configured in Resend.
 
 ---
 

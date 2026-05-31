@@ -41,14 +41,6 @@ describe('generateContractHtml', () => {
     expect(html).toContain('Rookmelder')
   })
 
-  it('bevat het rijksregisternummer van de student', () => {
-    const html = generateContractHtml({
-      ...mockBundle,
-      student: { ...STUDENTS[0], nationalRegistryNumber: '05.03.14-123.45' },
-    })
-    expect(html).toContain('05.03.14-123.45')
-  })
-
   it('bevat de onderwijsinstelling van de student', () => {
     const html = generateContractHtml({
       ...mockBundle,
@@ -63,7 +55,6 @@ describe('generateContractHtml', () => {
       landlord: {
         name: 'Geert Vandenberghe',
         dateOfBirth: '15 maart 1972, Gent',
-        nationalRegistryNumber: '72.03.15-123.45',
         address: 'Veldstraat 89, 9000 Gent',
         phone: '0498 12 34 56',
         email: 'geert@test.be',

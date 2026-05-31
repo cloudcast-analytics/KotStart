@@ -44,7 +44,6 @@ const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
 const MOCK_LANDLORD: LandlordProfile = {
   name: '',
   dateOfBirth: '',
-  nationalRegistryNumber: '',
   address: '',
   phone: '',
   email: '',
@@ -209,7 +208,6 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <p><strong>ENERZIJDS, de VERHUURDER:</strong></p>
 <div class="field-row"><span class="field-label">Naam en voornamen:</span><span>${escapeHtml(landlord.name)}</span></div>
 <div class="field-row"><span class="field-label">Geboortedatum en -plaats:</span><span>${escapeHtml(landlord.dateOfBirth)}</span></div>
-<div class="field-row"><span class="field-label">Rijksregisternummer:</span><span>${escapeHtml(landlord.nationalRegistryNumber)}</span></div>
 <div class="field-row"><span class="field-label">Adres:</span><span>${escapeHtml(landlord.address)}</span></div>
 <div class="field-row"><span class="field-label">Telefoon / gsm:</span><span>${escapeHtml(landlord.phone)}</span></div>
 <div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(landlord.email)}</span></div>
@@ -217,7 +215,6 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <p style="margin-top:12px;"><strong>ANDERZIJDS, de HUURDER:</strong></p>
 <div class="field-row"><span class="field-label">Naam en voornamen:</span><span>${huurderNaam}</span></div>
 <div class="field-row"><span class="field-label">Geboortedatum:</span><span>${escapeHtml(student.dateOfBirth)}</span></div>
-${student.nationalRegistryNumber ? `<div class="field-row"><span class="field-label">Rijksregisternummer:</span><span>${escapeHtml(student.nationalRegistryNumber)}</span></div>` : ''}
 ${student.institution ? `<div class="field-row"><span class="field-label">Onderwijsinstelling:</span><span>${escapeHtml(student.institution)}</span></div>` : ''}
 ${student.studentNumber ? `<div class="field-row"><span class="field-label">Studentennummer:</span><span>${escapeHtml(student.studentNumber)}</span></div>` : ''}
 ${student.primaryResidence ? `<div class="field-row"><span class="field-label">Hoofdverblijf:</span><span>${escapeHtml(student.primaryResidence)}</span></div>` : ''}
@@ -447,18 +444,18 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
 
   const html = generateContractHtml(bundle)
 
-  // Create a hidden container with the full HTML
+  // Render the full HTML document in an off-screen container.
+  // Width must be set explicitly (A4 at 96dpi = 794px); without it, flex/grid
+  // content collapses to zero width and html2canvas captures a blank page.
   const container = document.createElement('div')
   container.innerHTML = html
-  container.style.position = 'absolute'
-  container.style.left = '-9999px'
-  container.style.top = '0'
+  container.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:#fff;'
   document.body.appendChild(container)
 
   try {
     const blob: Blob = await html2pdf()
       .set({
-        margin: [20, 20, 20, 20], // mm
+        margin: 0,
         filename: `huurovereenkomst_${bundle.student.firstName}_${bundle.student.lastName}.pdf`,
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { scale: 2, useCORS: true },

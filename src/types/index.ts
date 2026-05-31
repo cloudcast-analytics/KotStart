@@ -24,7 +24,6 @@ export interface Student {
   phone: string
   dateOfBirth: string
   photoUrl?: string
-  nationalRegistryNumber?: string
   institution?: string
   studentNumber?: string
   primaryResidence?: string
@@ -34,7 +33,6 @@ export interface Student {
 export interface LandlordProfile {
   name: string
   dateOfBirth: string
-  nationalRegistryNumber: string
   address: string
   phone: string
   email: string

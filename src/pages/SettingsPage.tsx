@@ -8,7 +8,6 @@ import type { LandlordProfile } from '../types'
 const FIELDS: Array<{ key: keyof LandlordProfile; label: string; placeholder: string }> = [
   { key: 'name', label: 'Naam en voornamen', placeholder: 'Naam verhuurder' },
   { key: 'dateOfBirth', label: 'Geboortedatum en -plaats', placeholder: 'Geboortedatum en geboorteplaats' },
-  { key: 'nationalRegistryNumber', label: 'Rijksregisternummer', placeholder: 'Rijksregisternummer' },
   { key: 'address', label: 'Adres', placeholder: 'Straat, nummer, postcode en gemeente' },
   { key: 'phone', label: 'Telefoon / gsm', placeholder: 'Telefoonnummer' },
   { key: 'email', label: 'E-mailadres', placeholder: 'E-mailadres' },

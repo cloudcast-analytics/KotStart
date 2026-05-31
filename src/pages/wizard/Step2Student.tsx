@@ -28,7 +28,6 @@ const FIELDS: Array<{
   { field: 'email', label: 'E-mail', type: 'email', required: true },
   { field: 'phone', label: 'Telefoon', type: 'tel', required: false },
   { field: 'dateOfBirth', label: 'Geboortedatum', type: 'text', required: true },
-  { field: 'nationalRegistryNumber', label: 'Rijksregisternummer', type: 'text', required: true },
   { field: 'institution', label: 'Onderwijsinstelling', type: 'text', required: true },
   { field: 'studentNumber', label: 'Studentennummer', type: 'text', required: true },
   { field: 'primaryResidence', label: 'Hoofdverblijf (thuisadres)', type: 'text', required: true },

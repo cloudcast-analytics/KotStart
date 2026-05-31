@@ -25,7 +25,6 @@ async function fillStudent() {
   fireEvent.change(screen.getByLabelText(/achternaam/i), { target: { value: 'Janssen' } })
   fireEvent.change(screen.getByLabelText(/e-mail/i), { target: { value: 'emma@ugent.be' } })
   fireEvent.change(screen.getByLabelText(/geboortedatum/i), { target: { value: '2004-03-14' } })
-  fireEvent.change(screen.getByLabelText(/rijksregisternummer/i), { target: { value: '04.03.14-123.45' } })
   fireEvent.change(screen.getByLabelText(/onderwijsinstelling/i), { target: { value: 'UGent' } })
   fireEvent.change(screen.getByLabelText(/studentennummer/i), { target: { value: '202400001' } })
   fireEvent.change(screen.getByLabelText(/hoofdverblijf/i), { target: { value: 'Kerkstraat 1, 9000 Gent' } })

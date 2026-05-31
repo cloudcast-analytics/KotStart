@@ -5,7 +5,6 @@ export interface StudentFormData {
   phone: string
   dateOfBirth: string
   photoUrl: string | null
-  nationalRegistryNumber: string
   institution: string
   studentNumber: string
   primaryResidence: string

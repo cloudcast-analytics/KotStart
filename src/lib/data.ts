@@ -28,7 +28,6 @@ interface StudentRow {
   phone: string | null
   date_of_birth: string | null
   photo_url: string | null
-  national_registry_number: string | null
   institution: string | null
   student_number: string | null
   primary_residence: string | null
@@ -75,7 +74,6 @@ interface ContractDraftStudent {
   phone: string
   dateOfBirth: string
   photoUrl: string | null
-  nationalRegistryNumber: string
   institution: string
   studentNumber: string
   primaryResidence: string
@@ -224,7 +222,6 @@ function mapStudent(row: StudentRow): Student {
     phone: row.phone ?? '',
     dateOfBirth: row.date_of_birth ?? '',
     photoUrl: row.photo_url ?? undefined,
-    nationalRegistryNumber: row.national_registry_number ?? undefined,
     institution: row.institution ?? undefined,
     studentNumber: row.student_number ?? undefined,
     primaryResidence: row.primary_residence ?? undefined,
@@ -601,7 +598,6 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
         phone: student.phone || null,
         date_of_birth: student.dateOfBirth,
         photo_url: student.photoUrl,
-        national_registry_number: student.nationalRegistryNumber || null,
         institution: student.institution || null,
         student_number: student.studentNumber || null,
         primary_residence: student.primaryResidence || null,
