@@ -2,6 +2,7 @@
 
 create table properties (
   id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id),
   name text not null,
   address text,
   created_at timestamptz default now()
@@ -20,13 +21,13 @@ create table rooms (
 
 create table students (
   id uuid primary key default gen_random_uuid(),
+  owner_id uuid references auth.users(id),
   first_name text not null,
   last_name text not null,
   email text,
   phone text,
   date_of_birth date,
   photo_url text,
-  national_registry_number text,
   institution text,
   student_number text,
   primary_residence text,

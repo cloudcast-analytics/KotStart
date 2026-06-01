@@ -80,9 +80,9 @@ All types live in `src/types/index.ts`.
 
 | Type | Key fields | Notes |
 |------|-----------|-------|
-| `Property` | id, name, address | A building with multiple rooms |
+| `Property` | id, owner_id, name, address | A building with multiple rooms; owner_id references auth.users |
 | `Room` | propertyId, roomNumber, roomType, monthlyRent, studentTax, fixedCosts, deposit | roomType: `studio \| single \| double` |
-| `Student` | firstName, lastName, email, phone, dateOfBirth, photoUrl, nationalRegistryNumber?, institution?, studentNumber?, primaryResidence? | Photo stored in Supabase Storage |
+| `Student` | owner_id, firstName, lastName, email, phone, dateOfBirth, photoUrl, institution?, studentNumber?, primaryResidence? | Photo stored in Supabase Storage; owner_id references auth.users |
 | `LandlordProfile` | name, dateOfBirth, nationalRegistryNumber, address, phone, email, iban, bic, bank, insuranceCompany, policyNumber, epcLabel, epcNumber | Stored in localStorage; editable via SettingsPage |
 | `Contract` | roomId, schoolYear, studentId, secondStudentId?, status | status: `draft \| signed \| sent` (order matters: draft → signed → sent) |
 | `Inspection` | contractId, type, overviewPhotoUrl | type: `start \| end` |

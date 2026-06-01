@@ -122,6 +122,9 @@ function authErrorMessage(error: unknown) {
   if (message.includes('password')) {
     return 'Gebruik een sterker wachtwoord.'
   }
+  if (message.includes('database error')) {
+    return 'Er is een databasefout opgetreden. Neem contact op met de beheerder.'
+  }
 
   return error.message
 }
