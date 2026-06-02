@@ -581,6 +581,10 @@ export async function deleteRoomData(roomId: string): Promise<void> {
 export async function createContractDraft(input: CreateContractDraftInput): Promise<string | null> {
   if (!isSupabaseConfigured) return null
 
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  if (!userData.user) throw new Error('Geen ingelogde gebruiker')
+
   const studentsWithUploadedPhotos = await Promise.all(
     input.students.map(async student => ({
       ...student,
@@ -592,6 +596,7 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
     .from('students')
     .insert(
       studentsWithUploadedPhotos.map(student => ({
+        owner_id: userData.user!.id,
         first_name: student.firstName,
         last_name: student.lastName,
         email: student.email,
