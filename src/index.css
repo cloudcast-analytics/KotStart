@@ -9,6 +9,11 @@
     font-family: 'Bricolage Grotesque', system-ui, sans-serif;
   }
 
+  /* Prevent iOS auto-zoom on input focus (triggered when font-size < 16px) */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
   body {
     @apply min-h-screen;
     background: linear-gradient(135deg, #dbeafe 0%, #ede9fe 35%, #fce7f3 65%, #d1fae5 100%);
