@@ -14,7 +14,6 @@ const emptyStudent: StudentFormData = {
   institution: '',
   faculty: '',
   studentNumber: '',
-  primaryResidence: '',
   residenceStreet: '',
   residenceNumber: '',
   residenceBox: '',

@@ -8,7 +8,6 @@ export interface StudentFormData {
   institution: string
   faculty: string
   studentNumber: string
-  primaryResidence: string
   residenceStreet: string
   residenceNumber: string
   residenceBox: string

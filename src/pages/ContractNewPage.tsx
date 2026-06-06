@@ -32,7 +32,6 @@ function emptyStudent(): StudentFormData {
     institution: '',
     faculty: '',
     studentNumber: '',
-    primaryResidence: '',
     residenceStreet: '',
     residenceNumber: '',
     residenceBox: '',

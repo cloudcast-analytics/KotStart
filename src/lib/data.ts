@@ -31,7 +31,6 @@ interface StudentRow {
   institution: string | null
   faculty: string | null
   student_number: string | null
-  primary_residence: string | null
   residence_street: string | null
   residence_number: string | null
   residence_box: string | null

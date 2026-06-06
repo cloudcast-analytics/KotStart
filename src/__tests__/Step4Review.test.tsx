@@ -15,7 +15,6 @@ const student: StudentFormData = {
   institution: 'Universiteit Gent',
   faculty: '',
   studentNumber: '202400001',
-  primaryResidence: 'Kerkstraat 1, 9000 Gent',
   residenceStreet: '',
   residenceNumber: '',
   residenceBox: '',
