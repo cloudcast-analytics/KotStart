@@ -26,6 +26,7 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
           id={id}
           aria-label="Andere onderwijsinstelling"
           type="text"
+          autoComplete="off"
           value={value}
           onChange={event => onChange(event.target.value)}
           placeholder="Naam onderwijsinstelling"
@@ -56,6 +57,7 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
         id={id}
         aria-label={ariaLabel}
         type="text"
+        autoComplete="off"
         value={open ? query : value}
         onFocus={() => {
           setQuery('')
