@@ -1,4 +1,5 @@
 import type { Inspection, InspectionItem, LandlordProfile, Property, Room, Student, Contract } from '../types'
+import { formatResidence } from './residence'
 
 export interface ContractBundle {
   contract: Contract
@@ -216,8 +217,9 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <div class="field-row"><span class="field-label">Naam en voornamen:</span><span>${huurderNaam}</span></div>
 <div class="field-row"><span class="field-label">Geboortedatum:</span><span>${escapeHtml(student.dateOfBirth)}</span></div>
 ${student.institution ? `<div class="field-row"><span class="field-label">Onderwijsinstelling:</span><span>${escapeHtml(student.institution)}</span></div>` : ''}
+${student.faculty ? `<div class="field-row"><span class="field-label">Faculteit:</span><span>${escapeHtml(student.faculty)}</span></div>` : ''}
 ${student.studentNumber ? `<div class="field-row"><span class="field-label">Studentennummer:</span><span>${escapeHtml(student.studentNumber)}</span></div>` : ''}
-${student.primaryResidence ? `<div class="field-row"><span class="field-label">Hoofdverblijf:</span><span>${escapeHtml(student.primaryResidence)}</span></div>` : ''}
+${formatResidence(student) ? `<div class="field-row"><span class="field-label">Hoofdverblijf:</span><span>${escapeHtml(formatResidence(student))}</span></div>` : ''}
 <div class="field-row"><span class="field-label">Telefoon / gsm:</span><span>${escapeHtml(student.phone)}</span></div>
 <div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(student.email)}</span></div>
 
