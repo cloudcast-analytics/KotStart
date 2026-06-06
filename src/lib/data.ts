@@ -29,8 +29,14 @@ interface StudentRow {
   date_of_birth: string | null
   photo_url: string | null
   institution: string | null
+  faculty: string | null
   student_number: string | null
   primary_residence: string | null
+  residence_street: string | null
+  residence_number: string | null
+  residence_box: string | null
+  residence_postal_code: string | null
+  residence_city: string | null
   created_at: string
 }
 
@@ -75,8 +81,13 @@ interface ContractDraftStudent {
   dateOfBirth: string
   photoUrl: string | null
   institution: string
+  faculty: string
   studentNumber: string
-  primaryResidence: string
+  residenceStreet: string
+  residenceNumber: string
+  residenceBox: string
+  residencePostalCode: string
+  residenceCity: string
 }
 
 interface CreateContractDraftInput {
@@ -223,8 +234,13 @@ function mapStudent(row: StudentRow): Student {
     dateOfBirth: row.date_of_birth ?? '',
     photoUrl: row.photo_url ?? undefined,
     institution: row.institution ?? undefined,
+    faculty: row.faculty ?? undefined,
     studentNumber: row.student_number ?? undefined,
-    primaryResidence: row.primary_residence ?? undefined,
+    residenceStreet: row.residence_street ?? undefined,
+    residenceNumber: row.residence_number ?? undefined,
+    residenceBox: row.residence_box ?? undefined,
+    residencePostalCode: row.residence_postal_code ?? undefined,
+    residenceCity: row.residence_city ?? undefined,
     createdAt: row.created_at,
   }
 }
@@ -604,8 +620,13 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
         date_of_birth: student.dateOfBirth,
         photo_url: student.photoUrl,
         institution: student.institution || null,
+        faculty: student.faculty || null,
         student_number: student.studentNumber || null,
-        primary_residence: student.primaryResidence || null,
+        residence_street: student.residenceStreet || null,
+        residence_number: student.residenceNumber || null,
+        residence_box: student.residenceBox || null,
+        residence_postal_code: student.residencePostalCode || null,
+        residence_city: student.residenceCity || null,
       })),
     )
     .select()
