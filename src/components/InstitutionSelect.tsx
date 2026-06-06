@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { VLAAMSE_INSTELLINGEN } from '../lib/institutions'
+import { cn } from '../lib/cn'
 
 interface InstitutionSelectProps {
   value: string
@@ -28,7 +29,7 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
           value={value}
           onChange={event => onChange(event.target.value)}
           placeholder="Naam onderwijsinstelling"
-          className={inputClass}
+          className={cn(inputClass)}
         />
         <button
           type="button"
@@ -39,7 +40,7 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
           }}
           className="self-start text-xs font-semibold text-accent"
         >
-          &larr; Kies uit lijst
+          ← Kies uit lijst
         </button>
       </div>
     )
@@ -66,7 +67,7 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
         }}
         onBlur={() => window.setTimeout(() => setOpen(false), 120)}
         placeholder="Zoek je onderwijsinstelling"
-        className={inputClass}
+        className={cn(inputClass)}
       />
       {open && (
         <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-white/90 bg-white shadow-xl">
@@ -79,7 +80,7 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
                   setOpen(false)
                   setQuery('')
                 }}
-                className="block w-full px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-accent/10"
+                className="block w-full px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-accent/10 focus-visible:bg-accent/10 focus-visible:outline-none"
               >
                 {name}
               </button>
@@ -93,9 +94,9 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
                 setOpen(false)
                 onChange('')
               }}
-              className="block w-full border-t border-slate-100 px-3 py-2 text-left text-sm font-semibold text-accent hover:bg-accent/10"
+              className="block w-full border-t border-slate-100 px-3 py-2 text-left text-sm font-semibold text-accent hover:bg-accent/10 focus-visible:bg-accent/10 focus-visible:outline-none"
             >
-              Andere&hellip;
+              Andere…
             </button>
           </li>
         </ul>
