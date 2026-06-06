@@ -25,9 +25,16 @@ async function fillStudent() {
   fireEvent.change(screen.getByLabelText(/achternaam/i), { target: { value: 'Janssen' } })
   fireEvent.change(screen.getByLabelText(/e-mail/i), { target: { value: 'emma@ugent.be' } })
   fireEvent.change(screen.getByLabelText(/geboortedatum/i), { target: { value: '2004-03-14' } })
-  fireEvent.change(screen.getByLabelText(/onderwijsinstelling/i), { target: { value: 'UGent' } })
+  // Drive InstitutionSelect: open dropdown, filter and click the option
+  const institutionInput = screen.getByLabelText('Onderwijsinstelling')
+  fireEvent.focus(institutionInput)
+  fireEvent.change(institutionInput, { target: { value: 'Universiteit Gent' } })
+  fireEvent.click(screen.getByText('Universiteit Gent'))
   fireEvent.change(screen.getByLabelText(/studentennummer/i), { target: { value: '202400001' } })
-  fireEvent.change(screen.getByLabelText(/hoofdverblijf/i), { target: { value: 'Kerkstraat 1, 9000 Gent' } })
+  fireEvent.change(screen.getByLabelText('Straat'), { target: { value: 'Kerkstraat' } })
+  fireEvent.change(screen.getByLabelText('Huisnummer'), { target: { value: '1' } })
+  fireEvent.change(screen.getByLabelText('Postcode'), { target: { value: '9000' } })
+  fireEvent.change(screen.getByLabelText('Gemeente'), { target: { value: 'Gent' } })
 }
 
 describe('ContractNewPage', () => {

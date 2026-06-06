@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createContractDraft, getRooms } from '../lib/data'
+import { isValidBelgianPostalCode } from '../lib/residence'
 import type { Room } from '../types'
 import Step1Room from './wizard/Step1Room'
 import Step2Student from './wizard/Step2Student'
@@ -48,7 +49,10 @@ function studentIsComplete(student: StudentFormData): boolean {
       isValidDateOfBirth(student.dateOfBirth) &&
       student.institution.trim() &&
       student.studentNumber.trim() &&
-      student.primaryResidence.trim(),
+      student.residenceStreet.trim() &&
+      student.residenceNumber.trim() &&
+      isValidBelgianPostalCode(student.residencePostalCode) &&
+      student.residenceCity.trim(),
   )
 }
 

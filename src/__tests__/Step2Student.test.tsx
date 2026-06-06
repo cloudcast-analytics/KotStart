@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import Step2Student from '../pages/wizard/Step2Student'
@@ -19,6 +20,18 @@ const emptyStudent: StudentFormData = {
   residenceBox: '',
   residencePostalCode: '',
   residenceCity: '',
+}
+
+function Harness() {
+  const [students, setStudents] = useState<StudentFormData[]>([{ ...emptyStudent }])
+  return (
+    <Step2Student
+      students={students}
+      onChange={(index, field, value) =>
+        setStudents(prev => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)))
+      }
+    />
+  )
 }
 
 describe('Step2Student', () => {
@@ -74,5 +87,30 @@ describe('Step2Student', () => {
     fireEvent.blur(screen.getByLabelText(/e-mail/i))
 
     expect(screen.getByText(/geldig e-mailadres/i)).toBeInTheDocument()
+  })
+
+  it('toont de instellingkeuze en gesplitste domicilievelden', () => {
+    render(<Step2Student students={[emptyStudent]} onChange={vi.fn()} />)
+    expect(screen.getByLabelText('Onderwijsinstelling')).toBeInTheDocument()
+    expect(screen.getByLabelText('Straat')).toBeInTheDocument()
+    expect(screen.getByLabelText('Huisnummer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Bus')).toBeInTheDocument()
+    expect(screen.getByLabelText('Postcode')).toBeInTheDocument()
+    expect(screen.getByLabelText('Gemeente')).toBeInTheDocument()
+  })
+
+  it('toont een fout bij een ongeldige postcode na blur', () => {
+    render(<Harness />)
+    const postcode = screen.getByLabelText('Postcode')
+    fireEvent.change(postcode, { target: { value: '12' } })
+    fireEvent.blur(postcode)
+    expect(screen.getByText('Gebruik 4 cijfers (bijv. 9000)')).toBeInTheDocument()
+  })
+
+  it('rapporteert wijzigingen van domicilievelden aan de ouder', () => {
+    const onChange = vi.fn()
+    render(<Step2Student students={[emptyStudent]} onChange={onChange} />)
+    fireEvent.change(screen.getByLabelText('Straat'), { target: { value: 'Kerkstraat' } })
+    expect(onChange).toHaveBeenCalledWith(0, 'residenceStreet', 'Kerkstraat')
   })
 })
