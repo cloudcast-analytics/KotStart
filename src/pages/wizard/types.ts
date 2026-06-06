@@ -6,8 +6,14 @@ export interface StudentFormData {
   dateOfBirth: string
   photoUrl: string | null
   institution: string
+  faculty: string
   studentNumber: string
   primaryResidence: string
+  residenceStreet: string
+  residenceNumber: string
+  residenceBox: string
+  residencePostalCode: string
+  residenceCity: string
 }
 
 export interface SecondPartyData {

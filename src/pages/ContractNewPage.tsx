@@ -29,8 +29,14 @@ function emptyStudent(): StudentFormData {
     dateOfBirth: '',
     photoUrl: null,
     institution: '',
+    faculty: '',
     studentNumber: '',
     primaryResidence: '',
+    residenceStreet: '',
+    residenceNumber: '',
+    residenceBox: '',
+    residencePostalCode: '',
+    residenceCity: '',
   }
 }
 

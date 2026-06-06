@@ -25,8 +25,14 @@ export interface Student {
   dateOfBirth: string
   photoUrl?: string
   institution?: string
+  faculty?: string
   studentNumber?: string
   primaryResidence?: string
+  residenceStreet?: string
+  residenceNumber?: string
+  residenceBox?: string
+  residencePostalCode?: string
+  residenceCity?: string
   createdAt: string
 }
 

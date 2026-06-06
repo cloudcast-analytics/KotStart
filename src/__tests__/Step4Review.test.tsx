@@ -13,8 +13,14 @@ const student: StudentFormData = {
   dateOfBirth: '2004-03-14',
   photoUrl: null,
   institution: 'Universiteit Gent',
+  faculty: '',
   studentNumber: '202400001',
   primaryResidence: 'Kerkstraat 1, 9000 Gent',
+  residenceStreet: '',
+  residenceNumber: '',
+  residenceBox: '',
+  residencePostalCode: '',
+  residenceCity: '',
 }
 
 describe('Step4Review', () => {

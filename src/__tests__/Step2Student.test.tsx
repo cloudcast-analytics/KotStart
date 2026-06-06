@@ -11,8 +11,14 @@ const emptyStudent: StudentFormData = {
   dateOfBirth: '',
   photoUrl: null,
   institution: '',
+  faculty: '',
   studentNumber: '',
   primaryResidence: '',
+  residenceStreet: '',
+  residenceNumber: '',
+  residenceBox: '',
+  residencePostalCode: '',
+  residenceCity: '',
 }
 
 describe('Step2Student', () => {
