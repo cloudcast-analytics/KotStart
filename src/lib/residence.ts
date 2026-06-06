@@ -7,18 +7,14 @@ interface ResidenceParts {
 }
 
 export function formatResidence(parts: ResidenceParts): string {
-  const streetLine = [parts.residenceStreet, parts.residenceNumber]
-    .filter(value => value && value.trim())
-    .join(' ')
-    .trim()
-  const withBox =
-    streetLine && parts.residenceBox && parts.residenceBox.trim()
-      ? `${streetLine} bus ${parts.residenceBox.trim()}`
-      : streetLine
-  const cityLine = [parts.residencePostalCode, parts.residenceCity]
-    .filter(value => value && value.trim())
-    .join(' ')
-    .trim()
+  const street = (parts.residenceStreet ?? '').trim()
+  const number = (parts.residenceNumber ?? '').trim()
+  const box = (parts.residenceBox ?? '').trim()
+  const postal = (parts.residencePostalCode ?? '').trim()
+  const city = (parts.residenceCity ?? '').trim()
+  const streetLine = [street, number].filter(Boolean).join(' ')
+  const withBox = streetLine && box ? `${streetLine} bus ${box}` : streetLine
+  const cityLine = [postal, city].filter(Boolean).join(' ')
   return [withBox, cityLine].filter(Boolean).join(', ')
 }
 

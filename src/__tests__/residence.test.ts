@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { formatResidence, isValidBelgianPostalCode } from '../lib/residence'
 
 describe('formatResidence', () => {
-  it('composes street, number, postal code and city', () => {
+  it('stelt straat, nummer, postcode en gemeente samen', () => {
     expect(
       formatResidence({
         residenceStreet: 'Kerkstraat',
@@ -13,7 +13,7 @@ describe('formatResidence', () => {
     ).toBe('Kerkstraat 22, 9200 Dendermonde')
   })
 
-  it('includes the bus number when present', () => {
+  it('voegt het busnummer toe indien aanwezig', () => {
     expect(
       formatResidence({
         residenceStreet: 'Kerkstraat',
@@ -25,24 +25,36 @@ describe('formatResidence', () => {
     ).toBe('Kerkstraat 22 bus 3, 9200 Dendermonde')
   })
 
-  it('omits missing parts gracefully', () => {
+  it('laat ontbrekende delen netjes weg', () => {
     expect(formatResidence({ residenceStreet: 'Kerkstraat', residenceNumber: '22' })).toBe(
       'Kerkstraat 22',
     )
   })
 
-  it('returns an empty string when nothing is provided', () => {
+  it('geeft een lege string terug zonder invoer', () => {
     expect(formatResidence({})).toBe('')
+  })
+
+  it('trimt spaties rond veldwaarden', () => {
+    expect(
+      formatResidence({ residenceStreet: '  Kerkstraat  ', residenceNumber: ' 22 ' }),
+    ).toBe('Kerkstraat 22')
+  })
+
+  it('laat de bus weg zonder straatregel', () => {
+    expect(
+      formatResidence({ residenceBox: '3', residencePostalCode: '9000', residenceCity: 'Gent' }),
+    ).toBe('9000 Gent')
   })
 })
 
 describe('isValidBelgianPostalCode', () => {
-  it('accepts a 4-digit code between 1000 and 9999', () => {
+  it('aanvaardt een 4-cijferige code tussen 1000 en 9999', () => {
     expect(isValidBelgianPostalCode('9000')).toBe(true)
     expect(isValidBelgianPostalCode('1000')).toBe(true)
   })
 
-  it('rejects anything that is not 4 digits starting 1-9', () => {
+  it('weigert alles dat geen 4 cijfers is die met 1-9 starten', () => {
     expect(isValidBelgianPostalCode('900')).toBe(false)
     expect(isValidBelgianPostalCode('90000')).toBe(false)
     expect(isValidBelgianPostalCode('0999')).toBe(false)
