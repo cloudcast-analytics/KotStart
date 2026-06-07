@@ -112,4 +112,37 @@ describe('Step2Student', () => {
     fireEvent.change(screen.getByLabelText('Straat'), { target: { value: 'Kerkstraat' } })
     expect(onChange).toHaveBeenCalledWith(0, 'residenceStreet', 'Kerkstraat')
   })
+
+  it('toont voogd-subsectie enkel bij minderjarigheid', () => {
+    const { rerender } = render(
+      <Step2Student students={[{ ...emptyStudent, dateOfBirth: '2004-03-14' }]} onChange={vi.fn()} />,
+    )
+    expect(screen.queryByText('Voogd')).not.toBeInTheDocument()
+
+    rerender(<Step2Student students={[{ ...emptyStudent, dateOfBirth: '2015-01-01' }]} onChange={vi.fn()} />)
+    expect(screen.getByText('Voogd')).toBeInTheDocument()
+    expect(screen.getByLabelText(/naam voogd/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/e-mail voogd/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/telefoon voogd/i)).toBeInTheDocument()
+  })
+
+  it('valideert het e-mailformaat van de voogd na blur', () => {
+    render(
+      <Step2Student
+        students={[{ ...emptyStudent, dateOfBirth: '2015-01-01', guardianEmail: 'geen-email' }]}
+        onChange={vi.fn()}
+      />,
+    )
+    fireEvent.blur(screen.getByLabelText(/e-mail voogd/i))
+    expect(screen.getByText(/geldig e-mailadres/i)).toBeInTheDocument()
+  })
+
+  it('markeert naam en e-mail van de voogd als verplicht bij minderjarigheid', () => {
+    render(
+      <Step2Student students={[{ ...emptyStudent, dateOfBirth: '2015-01-01' }]} onChange={vi.fn()} />,
+    )
+    fireEvent.blur(screen.getByLabelText(/naam voogd/i))
+    fireEvent.blur(screen.getByLabelText(/e-mail voogd/i))
+    expect(screen.getAllByText('Dit veld is verplicht')).toHaveLength(2)
+  })
 })

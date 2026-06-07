@@ -47,8 +47,16 @@ const RESIDENCE_FIELDS: TextField[] = [
   { field: 'residenceCity', label: 'Gemeente', type: 'text', required: true },
 ]
 
+const GUARDIAN_FIELDS: TextField[] = [
+  { field: 'guardianName', label: 'Naam voogd', type: 'text', required: true },
+  { field: 'guardianEmail', label: 'E-mail voogd', type: 'email', required: true },
+  { field: 'guardianPhone', label: 'Telefoon voogd', type: 'tel', required: false },
+]
+
 function fieldError(student: StudentFormData, field: keyof StudentFormData, required: boolean): string | null {
-  if (field === 'email' && student.email && !isValidEmail(student.email)) return 'Vul een geldig e-mailadres in'
+  if ((field === 'email' || field === 'guardianEmail') && student[field] && !isValidEmail(student[field] as string)) {
+    return 'Vul een geldig e-mailadres in'
+  }
   if (field === 'dateOfBirth' && student.dateOfBirth && !isValidDateOfBirth(student.dateOfBirth)) {
     return 'Gebruik formaat dd-mm-jjjj'
   }
@@ -198,7 +206,24 @@ function StudentForm({
       {minor && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-200/60 bg-amber-50/80 px-3 py-2 text-xs font-semibold text-amber-700">
           <AlertCircle size={13} />
-          Minderjarig, voogd wordt vereist in de volgende stap
+          Minderjarig — voogdgegevens worden hieronder gevraagd
+        </div>
+      )}
+
+      {minor && (
+        <div className="flex flex-col gap-3 border-t border-white/60 pt-3">
+          <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Voogd</p>
+          {GUARDIAN_FIELDS.map(config => (
+            <TextInput
+              key={config.field}
+              student={student}
+              index={index}
+              config={config}
+              touched={Boolean(touched[config.field])}
+              onTouch={() => onTouch(config.field)}
+              onChange={onChange}
+            />
+          ))}
         </div>
       )}
 
