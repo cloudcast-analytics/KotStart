@@ -446,24 +446,39 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
 
   const html = generateContractHtml(bundle)
 
-  // Render the full HTML document in an off-screen container.
-  // Width must be set explicitly (A4 at 96dpi = 794px); without it, flex/grid
-  // content collapses to zero width and html2canvas captures a blank page.
-  const container = document.createElement('div')
-  container.innerHTML = html
-  container.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:#fff;'
-  document.body.appendChild(container)
+  // Render the full HTML document inside a hidden, on-screen iframe. An off-screen
+  // (-9999px) container or a bare <div> with innerHTML makes html2canvas capture a
+  // blank page; an iframe keeps the <head> styles intact and gives html2canvas real,
+  // positively-positioned content at A4 width (794px = A4 at 96dpi).
+  const iframe = document.createElement('iframe')
+  iframe.setAttribute('aria-hidden', 'true')
+  iframe.style.cssText =
+    'position:fixed;top:0;left:0;width:794px;height:1123px;border:0;opacity:0;pointer-events:none;z-index:-1;'
+  document.body.appendChild(iframe)
 
   try {
+    const doc = iframe.contentWindow!.document
+    doc.open()
+    doc.write(html)
+    doc.close()
+
+    // Wait for the iframe document (and its inline signature images) to be ready,
+    // otherwise html2canvas can snapshot before layout/paint and produce a blank PDF.
+    await new Promise<void>(resolve => {
+      const finish = () => window.setTimeout(resolve, 250)
+      if (doc.readyState === 'complete') finish()
+      else iframe.contentWindow!.addEventListener('load', finish, { once: true })
+    })
+
     const blob: Blob = await html2pdf()
       .set({
         margin: 0,
         filename: `huurovereenkomst_${bundle.student.firstName}_${bundle.student.lastName}.pdf`,
         image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       })
-      .from(container)
+      .from(doc.body)
       .output('blob')
 
     // Convert blob to base64
@@ -478,7 +493,7 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
       reader.readAsDataURL(blob)
     })
   } finally {
-    document.body.removeChild(container)
+    document.body.removeChild(iframe)
   }
 }
 
