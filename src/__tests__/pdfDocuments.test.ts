@@ -124,4 +124,24 @@ describe('generateContractHtml', () => {
     expect(html).toContain('Goed')
     expect(html).toContain('Matig')
   })
+
+  it('toont "ANDERZIJDS, de HUURDER:" en één infoblok zonder tweede student', () => {
+    const html = generateContractHtml(mockBundle)
+    expect(html).toContain('ANDERZIJDS, de HUURDER:')
+    expect(html).not.toContain('ANDERZIJDS, de HUURDERS:')
+    expect(html).not.toContain('Huurder 1')
+  })
+
+  it('toont "ANDERZIJDS, de HUURDERS:" en twee volledige infoblokken met tweede student', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      secondStudent: STUDENTS[1],
+    })
+    expect(html).toContain('ANDERZIJDS, de HUURDERS:')
+    expect(html).toContain('Huurder 1')
+    expect(html).toContain('Huurder 2')
+    expect(html).toContain('Janssen, Emma')
+    expect(html).toContain('Pieters, Liam')
+    expect(html).toContain('liam.pieters@student.ugent.be')
+  })
 })

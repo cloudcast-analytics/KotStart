@@ -99,6 +99,18 @@ function escapeHtml(value: string) {
     .replace(/'/g, '&#039;')
 }
 
+function renderHuurderInfoBlock(person: Student, heading?: string): string {
+  return `${heading ? `<p style="margin-top:8px;"><strong>${escapeHtml(heading)}</strong></p>` : ''}
+<div class="field-row"><span class="field-label">Naam en voornamen:</span><span>${escapeHtml(person.lastName)}, ${escapeHtml(person.firstName)}</span></div>
+<div class="field-row"><span class="field-label">Geboortedatum:</span><span>${escapeHtml(person.dateOfBirth)}</span></div>
+${person.institution ? `<div class="field-row"><span class="field-label">Onderwijsinstelling:</span><span>${escapeHtml(person.institution)}</span></div>` : ''}
+${person.faculty ? `<div class="field-row"><span class="field-label">Faculteit:</span><span>${escapeHtml(person.faculty)}</span></div>` : ''}
+${person.studentNumber ? `<div class="field-row"><span class="field-label">Studentennummer:</span><span>${escapeHtml(person.studentNumber)}</span></div>` : ''}
+${formatResidence(person) ? `<div class="field-row"><span class="field-label">Hoofdverblijf:</span><span>${escapeHtml(formatResidence(person))}</span></div>` : ''}
+<div class="field-row"><span class="field-label">Telefoon / gsm:</span><span>${escapeHtml(person.phone)}</span></div>
+<div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(person.email)}</span></div>`
+}
+
 function schoolYearStartDate(schoolYear: string): string {
   const year = parseInt(schoolYear.split('–')[0].trim(), 10)
   if (isNaN(year)) return `september ${schoolYear}`
@@ -133,9 +145,6 @@ export function generateContractHtml(bundle: ContractBundle): string {
   const startDate = schoolYearStartDate(contract.schoolYear)
   const endDate = schoolYearEndDate(contract.schoolYear)
 
-  const huurderNaam = secondStudent
-    ? `${student.lastName}, ${student.firstName} &amp; ${secondStudent.lastName}, ${secondStudent.firstName}`
-    : `${student.lastName}, ${student.firstName}`
 
   const inspectionLookup = new Map(
     inspectionItems.map(item => [`${item.category}|${item.itemName}`, item]),
@@ -222,15 +231,10 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <div class="field-row"><span class="field-label">Telefoon / gsm:</span><span>${escapeHtml(landlord.phone)}</span></div>
 <div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(landlord.email)}</span></div>
 
-<p style="margin-top:12px;"><strong>ANDERZIJDS, de HUURDER:</strong></p>
-<div class="field-row"><span class="field-label">Naam en voornamen:</span><span>${huurderNaam}</span></div>
-<div class="field-row"><span class="field-label">Geboortedatum:</span><span>${escapeHtml(student.dateOfBirth)}</span></div>
-${student.institution ? `<div class="field-row"><span class="field-label">Onderwijsinstelling:</span><span>${escapeHtml(student.institution)}</span></div>` : ''}
-${student.faculty ? `<div class="field-row"><span class="field-label">Faculteit:</span><span>${escapeHtml(student.faculty)}</span></div>` : ''}
-${student.studentNumber ? `<div class="field-row"><span class="field-label">Studentennummer:</span><span>${escapeHtml(student.studentNumber)}</span></div>` : ''}
-${formatResidence(student) ? `<div class="field-row"><span class="field-label">Hoofdverblijf:</span><span>${escapeHtml(formatResidence(student))}</span></div>` : ''}
-<div class="field-row"><span class="field-label">Telefoon / gsm:</span><span>${escapeHtml(student.phone)}</span></div>
-<div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(student.email)}</span></div>
+<p style="margin-top:12px;"><strong>ANDERZIJDS, de ${secondStudent ? 'HUURDERS' : 'HUURDER'}:</strong></p>
+${secondStudent
+  ? renderHuurderInfoBlock(student, 'Huurder 1') + renderHuurderInfoBlock(secondStudent, 'Huurder 2')
+  : renderHuurderInfoBlock(student)}
 
 <p style="margin-top:14px;"><strong>Wordt overeengekomen wat volgt:</strong></p>
 
