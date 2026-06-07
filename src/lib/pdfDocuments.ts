@@ -483,8 +483,14 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
         // PNG (lossless) instead of JPEG: JPEG's chroma subsampling introduces
         // colour noise (greens/purples/pinks) at the sharp white/black edges of
         // text and margins — PNG keeps the background pure white and text pure black.
+        // scale: 1 (not 2): html2pdf embeds one full-page PNG per page via
+        // pdf.addImage. At scale 2 those rasters became large enough that the
+        // resulting attachment intermittently broke the edge function (non-2xx)
+        // and got bounced by recipient mail servers ("content not allowed").
+        // scale 1 keeps the text crisp at A4 print size while quartering the
+        // pixel count (and therefore the PNG/attachment size).
         image: { type: 'png' },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
+        html2canvas: { scale: 1, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         // Respect the document's page-break-inside CSS so html2pdf doesn't slice
         // a field row, article, or sign block in half across a page boundary.
