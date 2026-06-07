@@ -173,21 +173,22 @@ export function generateContractHtml(bundle: ContractBundle): string {
   <meta charset="utf-8" />
   <title>Huurovereenkomst ${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}</title>
   <style>
-    @media print { @page { size: A4; margin: 2cm; } button { display: none; } }
+    @media print { @page { size: A4; margin: 0; } button { display: none; } }
     body { margin: 0; padding: 2cm; font-family: Arial, sans-serif; font-size: 10pt; color: #000; line-height: 1.5; }
-    h1 { font-size: 15pt; text-align: center; margin: 0 0 4px; }
-    h2 { font-size: 11pt; text-align: center; margin: 0 0 6px; }
+    h1 { font-size: 15pt; text-align: center; margin: 0 0 4px; page-break-inside: avoid; break-inside: avoid; }
+    h2 { font-size: 11pt; text-align: center; margin: 0 0 6px; page-break-inside: avoid; break-inside: avoid; }
     .subtitle { text-align: center; font-size: 9pt; color: #444; margin-bottom: 20px; }
-    .warning { border: 1px solid #000; padding: 10px 14px; font-size: 9pt; margin-bottom: 18px; }
-    .field-row { display: flex; gap: 8px; margin: 2px 0; font-size: 9.5pt; }
+    .warning { border: 1px solid #000; padding: 10px 14px; font-size: 9pt; margin-bottom: 18px; page-break-inside: avoid; break-inside: avoid; }
+    .field-row { display: flex; gap: 8px; margin: 2px 0; font-size: 9.5pt; page-break-inside: avoid; break-inside: avoid; }
     .field-label { min-width: 200px; color: #333; }
-    article { margin-bottom: 10px; text-align: justify; }
+    article { margin-bottom: 10px; text-align: justify; page-break-inside: avoid; break-inside: avoid; }
     .art-title { font-weight: bold; }
-    .sign-block { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
-    .sign-line { border-top: 1px solid #000; padding-top: 8px; font-size: 9pt; }
+    .sign-block { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; page-break-inside: avoid; break-inside: avoid; }
+    .sign-line { border-top: 1px solid #000; padding-top: 8px; font-size: 9pt; page-break-inside: avoid; break-inside: avoid; }
     .page-break { page-break-before: always; margin-top: 0; }
     table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 9.5pt; }
     th { background: #1e3a5f; color: #fff; padding: 7px 10px; text-align: left; }
+    tr { page-break-inside: avoid; break-inside: avoid; }
   </style>
 </head>
 <body>
@@ -477,6 +478,10 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        // Respect the document's page-break-inside CSS so html2pdf doesn't slice
+        // a field row, article, or sign block in half across a page boundary.
+        // (`pagebreak` is supported at runtime but missing from html2pdf.js's .d.ts)
+        ...({ pagebreak: { mode: ['css', 'legacy'] } } as Record<string, unknown>),
       })
       .from(doc.body)
       .output('blob')
