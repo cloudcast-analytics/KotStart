@@ -5,21 +5,18 @@ import { isValidBelgianPostalCode } from '../lib/residence'
 import type { Room } from '../types'
 import Step1Room from './wizard/Step1Room'
 import Step2Student from './wizard/Step2Student'
-import Step3SecondParty from './wizard/Step3SecondParty'
 import Step4Review from './wizard/Step4Review'
 import WizardLayout from './wizard/WizardLayout'
 import {
   isMinor,
   isValidDateOfBirth,
   isValidEmail,
-  type GuardianData,
-  type SecondPartyData,
   type StudentFormData,
 } from './wizard/types'
 
-const WIZARD_STEPS = ['Kamer', 'Student', 'Partij', 'Overzicht']
+const WIZARD_STEPS = ['Kamer', 'Student', 'Overzicht']
 
-type WizardStep = 1 | 2 | 3 | 4
+type WizardStep = 1 | 2 | 3
 
 function emptyStudent(): StudentFormData {
   return {
@@ -37,10 +34,14 @@ function emptyStudent(): StudentFormData {
     residenceBox: '',
     residencePostalCode: '',
     residenceCity: '',
+    guardianName: '',
+    guardianEmail: '',
+    guardianPhone: '',
   }
 }
 
 function studentIsComplete(student: StudentFormData): boolean {
+  const minor = isMinor(student.dateOfBirth)
   return Boolean(
     student.firstName.trim() &&
       student.lastName.trim() &&
@@ -51,18 +52,9 @@ function studentIsComplete(student: StudentFormData): boolean {
       student.residenceStreet.trim() &&
       student.residenceNumber.trim() &&
       isValidBelgianPostalCode(student.residencePostalCode) &&
-      student.residenceCity.trim(),
+      student.residenceCity.trim() &&
+      (!minor || (student.guardianName?.trim() && isValidEmail(student.guardianEmail ?? ''))),
   )
-}
-
-function secondPartyIsComplete(data: SecondPartyData | null): boolean {
-  if (!data) return true
-  return Boolean(data.name.trim() && isValidEmail(data.email))
-}
-
-function guardianIsComplete(hasMinor: boolean, guardian: GuardianData | null): boolean {
-  if (!hasMinor) return true
-  return Boolean(guardian?.name.trim() && guardian.email.trim() && isValidEmail(guardian.email))
 }
 
 export default function ContractNewPage() {
@@ -70,9 +62,6 @@ export default function ContractNewPage() {
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
   const [students, setStudents] = useState<StudentFormData[]>([emptyStudent()])
-  const [secondLandlord, setSecondLandlord] = useState<SecondPartyData | null>(null)
-  const [secondTenant, setSecondTenant] = useState<SecondPartyData | null>(null)
-  const [guardian, setGuardian] = useState<GuardianData | null>(null)
   const [isSending, setIsSending] = useState(false)
   const [rooms, setRooms] = useState<Room[]>([])
   const [loadingRooms, setLoadingRooms] = useState(true)
@@ -100,15 +89,12 @@ export default function ContractNewPage() {
 
   const propertyRooms = useMemo(() => rooms, [rooms])
   const selectedRoom: Room | null = propertyRooms.find(room => room.id === selectedRoomId) ?? null
-  const hasMinor = students.some(student => isMinor(student.dateOfBirth))
 
   function handleRoomSelect(id: string) {
     setSelectedRoomId(id)
 
     const room = propertyRooms.find(item => item.id === id)
     setStudents(room?.roomType === 'double' ? [emptyStudent(), emptyStudent()] : [emptyStudent()])
-    setSecondTenant(null)
-    setGuardian(null)
   }
 
   function handleStudentChange(index: number, field: keyof StudentFormData, value: string | null) {
@@ -123,20 +109,13 @@ export default function ContractNewPage() {
     if (loadingRooms || error) return false
     if (currentStep === 1) return selectedRoomId !== null
     if (currentStep === 2) return students.every(studentIsComplete)
-    if (currentStep === 3) {
-      return (
-        secondPartyIsComplete(secondLandlord) &&
-        secondPartyIsComplete(secondTenant) &&
-        guardianIsComplete(hasMinor, guardian)
-      )
-    }
     return Boolean(selectedRoom)
   }
 
   async function handleNext() {
     if (!canProceed()) return
 
-    if (currentStep < 4) {
+    if (currentStep < 3) {
       setCurrentStep(previous => (previous + 1) as WizardStep)
       return
     }
@@ -149,8 +128,6 @@ export default function ContractNewPage() {
         roomId: selectedRoom.id,
         schoolYear: '2025–2026',
         students,
-        secondLandlord,
-        guardian,
       })
       navigate(contractId ? `/contracts/${contractId}` : '/', { state: { savedDraft: true } })
     } catch (err) {
@@ -177,7 +154,7 @@ export default function ContractNewPage() {
         onBack={handleBack}
         onNext={handleNext}
         canProceed={canProceed()}
-        isLastStep={currentStep === 4}
+        isLastStep={currentStep === 3}
         isSending={isSending}
       >
         {error && (
@@ -200,27 +177,8 @@ export default function ContractNewPage() {
 
         {currentStep === 2 && <Step2Student students={students} onChange={handleStudentChange} />}
 
-        {currentStep === 3 && (
-          <Step3SecondParty
-            roomType={selectedRoom?.roomType ?? 'single'}
-            hasMinor={hasMinor}
-            secondLandlord={secondLandlord}
-            secondTenant={secondTenant}
-            guardian={guardian}
-            onSecondLandlordChange={setSecondLandlord}
-            onSecondTenantChange={setSecondTenant}
-            onGuardianChange={setGuardian}
-          />
-        )}
-
-        {currentStep === 4 && selectedRoom && (
-          <Step4Review
-            room={selectedRoom}
-            students={students}
-            secondLandlord={secondLandlord}
-            secondTenant={secondTenant}
-            guardian={guardian}
-          />
+        {currentStep === 3 && selectedRoom && (
+          <Step4Review room={selectedRoom} students={students} />
         )}
       </WizardLayout>
     </div>

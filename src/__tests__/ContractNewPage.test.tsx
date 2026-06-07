@@ -44,13 +44,13 @@ describe('ContractNewPage', () => {
     expect(await screen.findByText(/kies een kamer/i)).toBeInTheDocument()
   })
 
-  it('toont de stapindicator met 4 stappen', async () => {
+  it('toont de stapindicator met 3 stappen', async () => {
     renderNewContractPage()
 
     expect(screen.getByText('Kamer')).toBeInTheDocument()
     expect(screen.getByText('Student')).toBeInTheDocument()
-    expect(screen.getByText('Partij')).toBeInTheDocument()
     expect(screen.getByText('Overzicht')).toBeInTheDocument()
+    expect(screen.queryByText('Partij')).not.toBeInTheDocument()
     expect(await screen.findByText(/kies een kamer/i)).toBeInTheDocument()
   })
 
@@ -92,7 +92,6 @@ describe('ContractNewPage', () => {
     await selectFirstRoomAndContinue()
     await fillStudent()
     fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
-    fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
 
     expect(await screen.findByText('Emma Janssen')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /opslaan als concept/i })).toBeInTheDocument()
@@ -102,7 +101,6 @@ describe('ContractNewPage', () => {
     renderNewContractPage()
     await selectFirstRoomAndContinue()
     await fillStudent()
-    fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
     fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
 
     fireEvent.click(await screen.findByRole('button', { name: /opslaan als concept/i }))
