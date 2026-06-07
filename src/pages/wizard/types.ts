@@ -13,17 +13,9 @@ export interface StudentFormData {
   residenceBox: string
   residencePostalCode: string
   residenceCity: string
-}
-
-export interface SecondPartyData {
-  name: string
-  email: string
-}
-
-export interface GuardianData {
-  name: string
-  email: string
-  phone: string
+  guardianName?: string
+  guardianEmail?: string
+  guardianPhone?: string
 }
 
 export function parseDateOfBirth(value: string): Date | null {
