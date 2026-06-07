@@ -25,6 +25,16 @@ describe('StudentRow', () => {
     expect(screen.getByText('Emma Janssen')).toBeInTheDocument()
   })
 
+  it('toont gecombineerde naam wanneer er een tweede student is', () => {
+    render(
+      <StudentRow
+        {...defaultProps}
+        row={{ ...mockRow, secondFirstName: 'Liam', secondLastName: 'Pieters' }}
+      />,
+    )
+    expect(screen.getByText('Emma Janssen & Liam Pieters')).toBeInTheDocument()
+  })
+
   it('toont enkel het kamernummer (geen "Kamer" prefix)', () => {
     render(<StudentRow {...defaultProps} />)
     expect(screen.queryByText(/^kamer$/i)).not.toBeInTheDocument()

@@ -17,7 +17,7 @@ describe('DashboardPage', () => {
     expect(await screen.findByText('Emma Janssen')).toBeInTheDocument()
     expect(screen.getByText('Liam Pieters')).toBeInTheDocument()
     expect(screen.getByText('Sara Bogaert')).toBeInTheDocument()
-    expect(screen.getByText('Vincent Grobben')).toBeInTheDocument()
+    expect(screen.getByText(/^Vincent Grobben/)).toBeInTheDocument()
   })
 
   it('sorteert standaard op kamernummer oplopend', async () => {
@@ -38,7 +38,7 @@ describe('DashboardPage', () => {
   it('geeft Vincent Grobben alle dashboardacties', async () => {
     renderDashboard()
 
-    await screen.findByText('Vincent Grobben')
+    await screen.findByText(/^Vincent Grobben/)
 
     expect(screen.getAllByRole('button', { name: /startplaatsbeschrijving/i }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('button', { name: /contract verlengen/i }).length).toBeGreaterThan(0)

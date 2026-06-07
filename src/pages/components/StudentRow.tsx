@@ -36,6 +36,7 @@ export default function StudentRow({
       >
         <p className="text-sm font-semibold text-slate-900 truncate">
           {row.firstName} {row.lastName}
+          {row.secondFirstName && row.secondLastName && ` & ${row.secondFirstName} ${row.secondLastName}`}
         </p>
         <p className="text-xs text-slate-400 font-medium mt-0.5 md:hidden">{row.roomNumber}</p>
       </button>
