@@ -36,6 +36,9 @@ interface StudentRow {
   residence_box: string | null
   residence_postal_code: string | null
   residence_city: string | null
+  guardian_name: string | null
+  guardian_email: string | null
+  guardian_phone: string | null
   created_at: string
 }
 
@@ -45,11 +48,6 @@ interface ContractRow {
   school_year: string
   student_id: string
   second_student_id: string | null
-  second_landlord_name: string | null
-  second_landlord_email: string | null
-  guardian_name: string | null
-  guardian_email: string | null
-  guardian_phone: string | null
   status: Contract['status']
   created_at: string
 }
@@ -87,14 +85,15 @@ interface ContractDraftStudent {
   residenceBox: string
   residencePostalCode: string
   residenceCity: string
+  guardianName?: string
+  guardianEmail?: string
+  guardianPhone?: string
 }
 
 interface CreateContractDraftInput {
   roomId: string
   schoolYear: string
   students: ContractDraftStudent[]
-  secondLandlord: { name: string; email: string } | null
-  guardian: { name: string; email: string; phone: string } | null
 }
 
 interface SaveInspectionInput {
@@ -240,6 +239,9 @@ function mapStudent(row: StudentRow): Student {
     residenceBox: row.residence_box ?? undefined,
     residencePostalCode: row.residence_postal_code ?? undefined,
     residenceCity: row.residence_city ?? undefined,
+    guardianName: row.guardian_name ?? undefined,
+    guardianEmail: row.guardian_email ?? undefined,
+    guardianPhone: row.guardian_phone ?? undefined,
     createdAt: row.created_at,
   }
 }
@@ -258,11 +260,6 @@ function mapContract(row: ContractRow): Contract {
     schoolYear: row.school_year,
     studentId: row.student_id,
     secondStudentId: row.second_student_id ?? undefined,
-    secondLandlordName: row.second_landlord_name ?? undefined,
-    secondLandlordEmail: row.second_landlord_email ?? undefined,
-    guardianName: row.guardian_name ?? undefined,
-    guardianEmail: row.guardian_email ?? undefined,
-    guardianPhone: row.guardian_phone ?? undefined,
     status: row.status,
     createdAt: row.created_at,
   }
@@ -626,6 +623,9 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
         residence_box: student.residenceBox || null,
         residence_postal_code: student.residencePostalCode || null,
         residence_city: student.residenceCity || null,
+        guardian_name: student.guardianName || null,
+        guardian_email: student.guardianEmail || null,
+        guardian_phone: student.guardianPhone || null,
       })),
     )
     .select()
@@ -643,11 +643,6 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
       school_year: input.schoolYear,
       student_id: primaryStudent.id,
       second_student_id: students[1]?.id ?? null,
-      second_landlord_name: input.secondLandlord?.name ?? null,
-      second_landlord_email: input.secondLandlord?.email ?? null,
-      guardian_name: input.guardian?.name ?? null,
-      guardian_email: input.guardian?.email ?? null,
-      guardian_phone: input.guardian?.phone ?? null,
       status: 'draft',
     })
     .select()
