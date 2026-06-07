@@ -24,6 +24,7 @@ export const STUDENTS: Student[] = [
   { id: 's4', firstName: 'Noah', lastName: 'De Smedt', email: 'noah.desmedt@student.ugent.be', phone: '0473 00 11 22', dateOfBirth: '2004-05-18', institution: 'Universiteit Gent', faculty: 'Faculteit Recht', studentNumber: '202401237', residenceStreet: 'Stationslaan', residenceNumber: '12', residencePostalCode: '9300', residenceCity: 'Aalst', createdAt: '2025-08-18' },
   { id: 's5', firstName: 'Fien', lastName: 'Vandenberghe', email: 'fien.vandenberghe@student.ugent.be', phone: '0474 33 44 55', dateOfBirth: '2005-09-27', institution: 'Universiteit Gent', faculty: 'Faculteit Wetenschappen', studentNumber: '202401238', residenceStreet: 'Dorpsstraat', residenceNumber: '3', residencePostalCode: '9830', residenceCity: 'Sint-Martens-Latem', createdAt: '2025-08-19' },
   { id: 's-demo-student', firstName: 'Vincent', lastName: 'Grobben', email: 'vincent.grobben@example.com', phone: '0470 00 00 00', dateOfBirth: '2005-01-01', institution: 'Hogeschool Gent', faculty: '', studentNumber: 'DEMO-001', residenceStreet: 'Teststraat', residenceNumber: '1', residencePostalCode: '9000', residenceCity: 'Gent', createdAt: '2025-08-23' },
+  { id: 's-demo-second-student', firstName: 'Senne', lastName: 'Grobben', email: 'senne.grobben@example.com', phone: '0470 00 00 01', dateOfBirth: '2010-02-15', institution: 'Hogeschool Gent', faculty: '', studentNumber: 'DEMO-002', residenceStreet: 'Teststraat', residenceNumber: '1', residencePostalCode: '9000', residenceCity: 'Gent', guardianName: 'Inge Grobben', guardianEmail: 'inge.grobben@example.com', guardianPhone: '0470 00 00 02', createdAt: '2025-08-23' },
 ]
 
 export const MOCK_LANDLORD_PROFILE: LandlordProfile = {
@@ -47,7 +48,7 @@ export const CONTRACTS: Contract[] = [
   { id: 'c3', roomId: 'r4', schoolYear: '2025–2026', studentId: 's3', status: 'sent', createdAt: '2025-08-21' },
   { id: 'c4', roomId: 'r5', schoolYear: '2025–2026', studentId: 's4', status: 'draft', createdAt: '2025-08-22' },
   { id: 'c5', roomId: 'r7', schoolYear: '2025–2026', studentId: 's5', status: 'signed', createdAt: '2025-08-22' },
-  { id: 'c-demo-student', roomId: 'r6', schoolYear: '2025–2026', studentId: 's-demo-student', status: 'sent', createdAt: '2025-08-23' },
+  { id: 'c-demo-student', roomId: 'r6', schoolYear: '2025–2026', studentId: 's-demo-student', secondStudentId: 's-demo-second-student', status: 'sent', createdAt: '2025-08-23' },
 ]
 
 export function getDashboardRows(propertyId: string, schoolYear: string): StudentDashboardRow[] {
@@ -57,6 +58,7 @@ export function getDashboardRows(propertyId: string, schoolYear: string): Studen
 
   return activeContracts.map(contract => {
     const student = STUDENTS.find(s => s.id === contract.studentId)!
+    const secondStudent = contract.secondStudentId ? STUDENTS.find(s => s.id === contract.secondStudentId) : undefined
     const room = ROOMS.find(r => r.id === contract.roomId)!
     return {
       studentId: student.id,
@@ -64,6 +66,8 @@ export function getDashboardRows(propertyId: string, schoolYear: string): Studen
       lastName: student.lastName,
       roomNumber: room.roomNumber,
       contractId: contract.id,
+      secondFirstName: secondStudent?.firstName,
+      secondLastName: secondStudent?.lastName,
     }
   }).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber))
 }
