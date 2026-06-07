@@ -22,49 +22,39 @@ const student: StudentFormData = {
   residenceCity: '',
 }
 
+const minorStudent: StudentFormData = {
+  ...student,
+  dateOfBirth: '2015-01-01',
+  guardianName: 'Sofie Janssen',
+  guardianEmail: 'sofie@example.be',
+  guardianPhone: '0470 00 00 00',
+}
+
 describe('Step4Review', () => {
   it('toont kamerdetails', () => {
-    render(
-      <Step4Review
-        room={room}
-        students={[student]}
-        secondLandlord={null}
-        secondTenant={null}
-        guardian={null}
-      />,
-    )
+    render(<Step4Review room={room} students={[student]} />)
 
     expect(screen.getByText(/kamer 01/i)).toBeInTheDocument()
     expect(screen.getByText(/€ 450/)).toBeInTheDocument()
   })
 
   it('toont studentnaam', () => {
-    render(
-      <Step4Review
-        room={room}
-        students={[student]}
-        secondLandlord={null}
-        secondTenant={null}
-        guardian={null}
-      />,
-    )
+    render(<Step4Review room={room} students={[student]} />)
 
     expect(screen.getByText('Emma Janssen')).toBeInTheDocument()
   })
 
-  it('toont tweede partijen als aanwezig', () => {
-    render(
-      <Step4Review
-        room={room}
-        students={[student]}
-        secondLandlord={{ name: 'Jan Peeters', email: 'jan@peeters.be' }}
-        secondTenant={{ name: 'Noor Peeters', email: 'noor@ugent.be' }}
-        guardian={{ name: 'Sofie Janssen', email: 'sofie@example.be', phone: '0470 00 00 00' }}
-      />,
-    )
+  it('toont voogdgegevens ingebed in de studentkaart bij minderjarigheid', () => {
+    render(<Step4Review room={room} students={[minorStudent]} />)
 
-    expect(screen.getByText('Jan Peeters')).toBeInTheDocument()
-    expect(screen.getByText('Noor Peeters')).toBeInTheDocument()
+    expect(screen.getByText('Voogd')).toBeInTheDocument()
     expect(screen.getByText('Sofie Janssen')).toBeInTheDocument()
+    expect(screen.getByText('sofie@example.be')).toBeInTheDocument()
+  })
+
+  it('toont geen voogdsectie wanneer de student meerderjarig is', () => {
+    render(<Step4Review room={room} students={[student]} />)
+
+    expect(screen.queryByText('Voogd')).not.toBeInTheDocument()
   })
 })

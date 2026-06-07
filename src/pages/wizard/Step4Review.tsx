@@ -1,13 +1,10 @@
-import { Building2, Home, Shield, User } from 'lucide-react'
+import { Home, User } from 'lucide-react'
 import type { Room } from '../../types'
-import type { GuardianData, SecondPartyData, StudentFormData } from './types'
+import { isMinor, type StudentFormData } from './types'
 
 interface Step4ReviewProps {
   room: Room
   students: StudentFormData[]
-  secondLandlord: SecondPartyData | null
-  secondTenant: SecondPartyData | null
-  guardian: GuardianData | null
 }
 
 const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
@@ -47,13 +44,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export default function Step4Review({
-  room,
-  students,
-  secondLandlord,
-  secondTenant,
-  guardian,
-}: Step4ReviewProps) {
+export default function Step4Review({ room, students }: Step4ReviewProps) {
   return (
     <div className="flex flex-col gap-3 p-4">
       <SectionCard icon={Home} title="Kamer">
@@ -65,43 +56,32 @@ export default function Step4Review({
         <InfoRow label="Waarborg" value={`€ ${room.deposit}`} />
       </SectionCard>
 
-      {students.map((student, index) => (
-        <SectionCard key={index} icon={User} title={students.length > 1 ? `Student ${index + 1}` : 'Student'}>
-          {student.photoUrl && (
-            <img
-              src={student.photoUrl}
-              alt="Foto student"
-              className="mb-3 h-14 w-14 rounded-xl border-2 border-accent/20 object-cover"
-            />
-          )}
-          <InfoRow label="Naam" value={`${student.firstName} ${student.lastName}`} />
-          <InfoRow label="E-mail" value={student.email} />
-          {student.phone && <InfoRow label="Telefoon" value={student.phone} />}
-          <InfoRow label="Geboortedatum" value={student.dateOfBirth} />
-        </SectionCard>
-      ))}
-
-      {secondLandlord && (
-        <SectionCard icon={Building2} title="Tweede verhuurder">
-          <InfoRow label="Naam" value={secondLandlord.name} />
-          <InfoRow label="E-mail" value={secondLandlord.email} />
-        </SectionCard>
-      )}
-
-      {secondTenant && (
-        <SectionCard icon={User} title="Tweede bewoner">
-          <InfoRow label="Naam" value={secondTenant.name} />
-          <InfoRow label="E-mail" value={secondTenant.email} />
-        </SectionCard>
-      )}
-
-      {guardian && (
-        <SectionCard icon={Shield} title="Voogd">
-          <InfoRow label="Naam" value={guardian.name} />
-          <InfoRow label="E-mail" value={guardian.email} />
-          {guardian.phone && <InfoRow label="Telefoon" value={guardian.phone} />}
-        </SectionCard>
-      )}
+      {students.map((student, index) => {
+        const minor = isMinor(student.dateOfBirth)
+        return (
+          <SectionCard key={index} icon={User} title={students.length > 1 ? `Student ${index + 1}` : 'Student'}>
+            {student.photoUrl && (
+              <img
+                src={student.photoUrl}
+                alt="Foto student"
+                className="mb-3 h-14 w-14 rounded-xl border-2 border-accent/20 object-cover"
+              />
+            )}
+            <InfoRow label="Naam" value={`${student.firstName} ${student.lastName}`} />
+            <InfoRow label="E-mail" value={student.email} />
+            {student.phone && <InfoRow label="Telefoon" value={student.phone} />}
+            <InfoRow label="Geboortedatum" value={student.dateOfBirth} />
+            {minor && (
+              <div className="mt-2 flex flex-col gap-1 border-t border-slate-100/60 pt-2">
+                <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">Voogd</p>
+                <InfoRow label="Naam" value={student.guardianName ?? ''} />
+                <InfoRow label="E-mail" value={student.guardianEmail ?? ''} />
+                {student.guardianPhone && <InfoRow label="Telefoon" value={student.guardianPhone} />}
+              </div>
+            )}
+          </SectionCard>
+        )
+      })}
     </div>
   )
 }
