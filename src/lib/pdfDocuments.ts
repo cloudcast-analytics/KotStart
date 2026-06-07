@@ -177,6 +177,11 @@ export function generateContractHtml(bundle: ContractBundle): string {
     /* No body padding: page margins are applied per-page by the print engine's
        @page rule and by html2pdf's margin option below — body padding would
        only show at the very top of page 1 and bottom of the last page. */
+    /* Force grayscale text antialiasing: html2canvas captures the browser's
+       subpixel/ClearType RGB antialiasing as literal pixel colours, which shows
+       up as rainbow (blue/green/pink/purple) fringing behind every glyph once
+       rasterised into the PDF. Grayscale AA blends glyphs with black/white only. */
+    * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
     body { margin: 0; padding: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #000; line-height: 1.5; }
     h1 { font-size: 15pt; text-align: center; margin: 0 0 4px; page-break-inside: avoid; break-inside: avoid; }
     h2 { font-size: 11pt; text-align: center; margin: 0 0 6px; page-break-inside: avoid; break-inside: avoid; }
