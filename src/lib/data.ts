@@ -386,6 +386,10 @@ export async function getContractBundleData(contractId: string | undefined) {
 
   if (!room || !student || !property) return null
 
+  const secondStudent = contract.secondStudentId
+    ? students.find(item => item.id === contract.secondStudentId)
+    : undefined
+
   let startInspection: Inspection | undefined
   let startInspectionItems: InspectionItem[] = []
   let endInspection: Inspection | undefined
@@ -420,7 +424,7 @@ export async function getContractBundleData(contractId: string | undefined) {
   }
 
   const landlord = getLandlordProfile()
-  return { contract, room, student, property, startInspection, startInspectionItems, endInspection, endInspectionItems, landlord }
+  return { contract, room, student, secondStudent, property, startInspection, startInspectionItems, endInspection, endInspectionItems, landlord }
 }
 
 export async function getInspectionData(inspectionId: string | undefined): Promise<{ inspection: Inspection; items: InspectionItem[] } | null> {
