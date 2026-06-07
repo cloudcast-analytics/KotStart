@@ -483,7 +483,11 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
         // (`pagebreak` is supported at runtime but missing from html2pdf.js's .d.ts)
         ...({ pagebreak: { mode: ['css', 'legacy'] } } as Record<string, unknown>),
       })
-      .from(doc.body)
+      // Pass the <html> root, not <body>: html2pdf clones only the element
+      // handed to .from(), so <body> alone drops the <head>/<style> block —
+      // the clone then renders with zero custom CSS (wrong fonts/margins, and
+      // none of the page-break-inside rules above ever take effect).
+      .from(doc.documentElement)
       .output('blob')
 
     // Convert blob to base64
