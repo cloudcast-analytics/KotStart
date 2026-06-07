@@ -313,7 +313,7 @@ function buildDashboardRows(
   const activeContracts = contracts.filter(contract => roomIds.has(contract.roomId) && contract.schoolYear === schoolYear)
 
   return activeContracts
-    .map(contract => {
+    .map((contract): StudentDashboardRow | null => {
       const student = students.find(item => item.id === contract.studentId)
       const room = rooms.find(item => item.id === contract.roomId)
       if (!student || !room) return null
