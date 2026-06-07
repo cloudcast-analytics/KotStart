@@ -480,7 +480,10 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
         // @page margin). The body has no padding, so this is the only margin.
         margin: 20,
         filename: `huurovereenkomst_${bundle.student.firstName}_${bundle.student.lastName}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
+        // PNG (lossless) instead of JPEG: JPEG's chroma subsampling introduces
+        // colour noise (greens/purples/pinks) at the sharp white/black edges of
+        // text and margins — PNG keeps the background pure white and text pure black.
+        image: { type: 'png' },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         // Respect the document's page-break-inside CSS so html2pdf doesn't slice
