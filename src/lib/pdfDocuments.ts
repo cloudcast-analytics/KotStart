@@ -173,8 +173,11 @@ export function generateContractHtml(bundle: ContractBundle): string {
   <meta charset="utf-8" />
   <title>Huurovereenkomst ${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}</title>
   <style>
-    @media print { @page { size: A4; margin: 0; } button { display: none; } }
-    body { margin: 0; padding: 2cm; font-family: Arial, sans-serif; font-size: 10pt; color: #000; line-height: 1.5; }
+    @media print { @page { size: A4; margin: 2cm; } button { display: none; } }
+    /* No body padding: page margins are applied per-page by the print engine's
+       @page rule and by html2pdf's margin option below — body padding would
+       only show at the very top of page 1 and bottom of the last page. */
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; font-size: 10pt; color: #000; line-height: 1.5; }
     h1 { font-size: 15pt; text-align: center; margin: 0 0 4px; page-break-inside: avoid; break-inside: avoid; }
     h2 { font-size: 11pt; text-align: center; margin: 0 0 6px; page-break-inside: avoid; break-inside: avoid; }
     .subtitle { text-align: center; font-size: 9pt; color: #444; margin-bottom: 20px; }
@@ -473,7 +476,9 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
 
     const blob: Blob = await html2pdf()
       .set({
-        margin: 0,
+        // 20mm = 2cm on every side, applied per page (matches the print path's
+        // @page margin). The body has no padding, so this is the only margin.
+        margin: 20,
         filename: `huurovereenkomst_${bundle.student.firstName}_${bundle.student.lastName}.pdf`,
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
