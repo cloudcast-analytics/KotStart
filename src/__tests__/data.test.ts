@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getContractBundleData } from '../lib/data'
+import { getContractBundleData, getDashboardRowsData } from '../lib/data'
 
 describe('getContractBundleData', () => {
   it('lost de tweede student op wanneer secondStudentId gezet is', async () => {
@@ -13,5 +13,23 @@ describe('getContractBundleData', () => {
     const bundle = await getContractBundleData('c1')
 
     expect(bundle?.secondStudent).toBeUndefined()
+  })
+})
+
+describe('getDashboardRowsData', () => {
+  it('combineert de namen van beide studenten in de rij', async () => {
+    const rows = await getDashboardRowsData('p1', '2025–2026')
+    const row = rows.find(r => r.contractId === 'c-demo-student')
+
+    expect(row?.secondFirstName).toBe('Senne')
+    expect(row?.secondLastName).toBe('Grobben')
+  })
+
+  it('laat secondFirstName/secondLastName ongedefinieerd zonder tweede student', async () => {
+    const rows = await getDashboardRowsData('p1', '2025–2026')
+    const row = rows.find(r => r.contractId === 'c1')
+
+    expect(row?.secondFirstName).toBeUndefined()
+    expect(row?.secondLastName).toBeUndefined()
   })
 })

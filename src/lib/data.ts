@@ -318,12 +318,18 @@ function buildDashboardRows(
       const room = rooms.find(item => item.id === contract.roomId)
       if (!student || !room) return null
 
+      const secondStudent = contract.secondStudentId
+        ? students.find(item => item.id === contract.secondStudentId)
+        : undefined
+
       return {
         studentId: student.id,
         firstName: student.firstName,
         lastName: student.lastName,
         roomNumber: room.roomNumber,
         contractId: contract.id,
+        secondFirstName: secondStudent?.firstName,
+        secondLastName: secondStudent?.lastName,
       }
     })
     .filter((row): row is StudentDashboardRow => row !== null)
