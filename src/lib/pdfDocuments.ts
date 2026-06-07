@@ -145,7 +145,6 @@ export function generateContractHtml(bundle: ContractBundle): string {
   const startDate = schoolYearStartDate(contract.schoolYear)
   const endDate = schoolYearEndDate(contract.schoolYear)
 
-
   const inspectionLookup = new Map(
     inspectionItems.map(item => [`${item.category}|${item.itemName}`, item]),
   )
