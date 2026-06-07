@@ -6,6 +6,7 @@ import { cn } from '../lib/cn'
 import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student } from '../types'
 import { generateContractHtml, generateContractPdfBase64, printContractDocument } from '../lib/pdfDocuments'
 import SignatureModal from '../components/SignatureModal'
+import { isMinor } from './wizard/types'
 
 const ROOM_TYPE_LABEL = {
   studio: 'Studio',
@@ -21,6 +22,7 @@ export default function ContractDetailPage() {
     contract: Contract
     room: Room
     student: Student
+    secondStudent?: Student
     property: Property
     startInspection?: Inspection
     startInspectionItems?: InspectionItem[]
@@ -69,7 +71,7 @@ export default function ContractDetailPage() {
 
   if (!bundle) return <Navigate to="/" replace />
 
-  const { contract, room, student, property, startInspection, startInspectionItems, endInspection, landlord } = bundle
+  const { contract, room, student, secondStudent, property, startInspection, startInspectionItems, endInspection, landlord } = bundle
 
   const startDone = !!startInspection
   const signedDone = contract.status === 'signed' || contract.status === 'sent'
@@ -104,6 +106,7 @@ export default function ContractDetailPage() {
         contract,
         room,
         student,
+        secondStudent,
         property,
         inspection: startInspection,
         inspectionItems: startInspectionItems,
@@ -120,11 +123,16 @@ export default function ContractDetailPage() {
         console.error('PDF-generatie mislukt, verstuur HTML fallback:', pdfError)
       }
       setStatusMessage('Contract wordt verstuurd...')
+      const recipients = [student.email]
       await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html, pdfBase64)
+      if (secondStudent?.email) {
+        await sendContractEmail(secondStudent.email, `${secondStudent.firstName} ${secondStudent.lastName}`, html, pdfBase64)
+        recipients.push(secondStudent.email)
+      }
       await updateContractStatus(contract.id, 'sent')
       setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'sent' } } : null)
       setSendStatus('sent')
-      setStatusMessage(`Contract is verstuurd naar ${student.email}.`)
+      setStatusMessage(`Contract is verstuurd naar ${recipients.join(' en ')}.`)
     } catch (err) {
       setSendStatus('error')
       setStatusMessage(err instanceof Error ? err.message : 'Contract kon niet verstuurd worden.')
@@ -175,6 +183,11 @@ export default function ContractDetailPage() {
                 <p className="mt-1 text-sm font-medium text-slate-500">
                   Kamer {room.roomNumber}, {property.name}
                 </p>
+                {isMinor(student.dateOfBirth) && student.guardianName && (
+                  <p className="mt-1 text-xs font-semibold text-amber-600">
+                    Minderjarig — voogd: {student.guardianName}
+                  </p>
+                )}
               </div>
               <button
                 type="button"
@@ -185,6 +198,31 @@ export default function ContractDetailPage() {
                 <Trash2 size={15} className="text-red-500" />
               </button>
             </div>
+
+            {secondStudent && (
+              <div className="mt-4 flex items-start gap-4 border-t border-white/60 pt-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-accent/10">
+                  {secondStudent.photoUrl ? (
+                    <img src={secondStudent.photoUrl} alt="Student" className="h-full w-full rounded-2xl object-cover" />
+                  ) : (
+                    <User size={26} className="text-accent" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="mt-1 text-2xl font-bold text-slate-900">
+                    {secondStudent.firstName} {secondStudent.lastName}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">
+                    Kamer {room.roomNumber}, {property.name}
+                  </p>
+                  {isMinor(secondStudent.dateOfBirth) && secondStudent.guardianName && (
+                    <p className="mt-1 text-xs font-semibold text-amber-600">
+                      Minderjarig — voogd: {secondStudent.guardianName}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="mt-4 grid grid-cols-2 gap-2">
               <ActionButton
@@ -199,6 +237,7 @@ export default function ContractDetailPage() {
                   contract,
                   room,
                   student,
+                  secondStudent,
                   property,
                   inspection: startInspection,
                   inspectionItems: startInspectionItems,

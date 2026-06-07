@@ -156,4 +156,19 @@ describe('ContractDetailPage', () => {
 
     expect(await screen.findByText('Dashboard')).toBeInTheDocument()
   })
+
+  it('toont twee studentkoppen met voogdnotitie wanneer er een tweede (minderjarige) bewoner is', async () => {
+    renderPage('/contracts/c-demo-student')
+
+    expect(await screen.findByRole('heading', { name: 'Vincent Grobben' })).toBeInTheDocument()
+    expect(screen.getByText('Senne Grobben')).toBeInTheDocument()
+    expect(screen.getByText(/Minderjarig — voogd: Inge Grobben/)).toBeInTheDocument()
+  })
+
+  it('toont één studentkop zonder voogdnotitie wanneer er geen tweede bewoner is (c1)', async () => {
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Emma Janssen' })
+    expect(screen.queryByText(/Minderjarig — voogd:/)).not.toBeInTheDocument()
+  })
 })
