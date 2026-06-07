@@ -32,6 +32,9 @@ export interface Student {
   residenceBox?: string
   residencePostalCode?: string
   residenceCity?: string
+  guardianName?: string
+  guardianEmail?: string
+  guardianPhone?: string
   createdAt: string
 }
 
@@ -56,11 +59,6 @@ export interface Contract {
   schoolYear: string
   studentId: string
   secondStudentId?: string
-  secondLandlordName?: string
-  secondLandlordEmail?: string
-  guardianName?: string
-  guardianEmail?: string
-  guardianPhone?: string
   status: 'draft' | 'sent' | 'signed'
   createdAt: string
 }
@@ -89,4 +87,6 @@ export interface StudentDashboardRow {
   lastName: string
   roomNumber: string
   contractId: string
+  secondFirstName?: string
+  secondLastName?: string
 }
