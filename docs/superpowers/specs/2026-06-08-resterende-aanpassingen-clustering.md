@@ -32,9 +32,9 @@ worden — dat bespaart tokens t.o.v. één steeds langer wordende sessie.
 
 Vince wil daarnaast, los van de docx-lijst:
 
-- **N1 — Verhuurderprofiel verplaatsen**: de verhuurdergegevens die je nu bij **Instellingen**
+- ✅ **N1 — Verhuurderprofiel verplaatsen**: de verhuurdergegevens die je nu bij **Instellingen**
   (`SettingsPage.tsx`) invult, moeten naar het **profielgedeelte** van de verhuurder
-  (`AccountPage.tsx`) verhuizen.
+  (`AccountPage.tsx`) verhuizen. **Uitgevoerd in Cluster E-slice.**
 - **N2 — Aanpasbare plaatsbeschrijvingscategorieën**: in **Instellingen** zelf de categorieën
   kunnen samenstellen/bewerken die bij een plaatsbeschrijving gebruikt worden (i.p.v. vaste,
   hardcoded categorieën).
@@ -95,7 +95,7 @@ verschoven is vanuit Cluster D)*
 
 ### Nieuw Cluster E — Instellingen & Profiel
 *(volledig nieuw, ontstaan uit Vince's wensen deze sessie — niet in de docx)*
-- N1 verhuurderprofiel van Instellingen naar Profiel verplaatsen
+- ✅ N1 verhuurderprofiel van Instellingen naar Profiel verplaatsen
 - N2 zelf samen te stellen plaatsbeschrijvingscategorieën
 - N3 dark/light thema
 - N4 taalkeuze

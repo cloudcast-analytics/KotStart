@@ -129,7 +129,7 @@ export default function ContractNewPage() {
 
     if (!selectedRoom) return
     if (!isLandlordProfileComplete(landlordProfile)) {
-      setError('Vul eerst alle verhuurdergegevens in bij Instellingen voordat je een contract aanmaakt.')
+      setError('Vul eerst alle verhuurdergegevens in bij Account voordat je een contract aanmaakt.')
       return
     }
 
@@ -192,7 +192,7 @@ export default function ContractNewPage() {
           <>
             {!isLandlordProfileComplete(landlordProfile) && (
               <div role="alert" className="m-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
-                Vul eerst alle verhuurdergegevens in bij Instellingen voordat je een contract aanmaakt.
+                Vul eerst alle verhuurdergegevens in bij Account voordat je een contract aanmaakt.
               </div>
             )}
             <Step4Review room={selectedRoom} students={students} />

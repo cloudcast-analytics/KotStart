@@ -135,7 +135,7 @@ describe('ContractNewPage', () => {
     await fillStudent()
     fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/verhuurdergegevens/i)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/verhuurdergegevens.*Account/i)
     expect(screen.getByRole('button', { name: /opslaan als concept/i })).toBeDisabled()
   })
 })
