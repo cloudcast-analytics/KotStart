@@ -6,17 +6,10 @@ import { saveLandlordProfile } from '../lib/data'
 
 const completeLandlordProfile = {
   name: 'Geert Vandenberghe',
-  dateOfBirth: '15 maart 1972, Gent',
   address: 'Veldstraat 89, 9000 Gent',
   phone: '0498 12 34 56',
   email: 'geert@test.be',
   iban: 'BE12 3456 7890 1234',
-  bic: 'GEBABEBB',
-  bank: 'BNP Paribas Fortis',
-  insuranceCompany: 'AXA Belgium',
-  policyNumber: 'AXA-2025-001',
-  epcLabel: 'C',
-  epcNumber: 'EPC-2025-001',
 }
 
 function renderNewContractPage() {

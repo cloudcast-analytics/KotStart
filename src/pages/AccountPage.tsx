@@ -8,18 +8,11 @@ import { useAuth } from '../contexts/AuthContext'
 import type { LandlordProfile } from '../types'
 
 const LANDLORD_FIELDS: Array<{ key: keyof LandlordProfile; label: string; placeholder: string }> = [
-  { key: 'name', label: 'Naam en voornamen', placeholder: 'Naam verhuurder' },
-  { key: 'dateOfBirth', label: 'Geboortedatum en -plaats', placeholder: 'Geboortedatum en geboorteplaats' },
+  { key: 'name', label: 'Naam en voornaam', placeholder: 'Naam en voornaam verhuurder' },
   { key: 'address', label: 'Adres', placeholder: 'Straat, nummer, postcode en gemeente' },
-  { key: 'phone', label: 'Telefoon / gsm', placeholder: 'Telefoonnummer' },
+  { key: 'phone', label: 'Telefoonnummer', placeholder: 'Telefoonnummer' },
   { key: 'email', label: 'E-mailadres', placeholder: 'E-mailadres' },
-  { key: 'iban', label: 'IBAN (betalingsrekening)', placeholder: 'IBAN' },
-  { key: 'bic', label: 'BIC-code', placeholder: 'BIC' },
-  { key: 'bank', label: 'Bankinstelling', placeholder: 'Bankinstelling' },
-  { key: 'insuranceCompany', label: 'Verzekeringsmaatschappij', placeholder: 'Verzekeringsmaatschappij' },
-  { key: 'policyNumber', label: 'Polisnummer verzekering', placeholder: 'Polisnummer' },
-  { key: 'epcLabel', label: 'EPC-label', placeholder: 'EPC-label' },
-  { key: 'epcNumber', label: 'EPC-certificaatnummer', placeholder: 'EPC-certificaatnummer' },
+  { key: 'iban', label: 'Bankrekeningnummer', placeholder: 'IBAN' },
 ]
 
 export default function AccountPage() {

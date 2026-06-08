@@ -54,17 +54,10 @@ const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
 
 const MOCK_LANDLORD: LandlordProfile = {
   name: '',
-  dateOfBirth: '',
   address: '',
   phone: '',
   email: '',
   iban: '',
-  bic: '',
-  bank: '',
-  insuranceCompany: '',
-  policyNumber: '',
-  epcLabel: '',
-  epcNumber: '',
 }
 
 function escapeHtml(value: string) {
@@ -178,10 +171,9 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <p><strong>TUSSEN DE ONDERGETEKENDE PARTIJEN:</strong></p>
 
 <p><strong>ENERZIJDS, de VERHUURDER:</strong></p>
-<div class="field-row"><span class="field-label">Naam en voornamen:</span><span>${escapeHtml(landlord.name)}</span></div>
-<div class="field-row"><span class="field-label">Geboortedatum en -plaats:</span><span>${escapeHtml(landlord.dateOfBirth)}</span></div>
+<div class="field-row"><span class="field-label">Naam en voornaam:</span><span>${escapeHtml(landlord.name)}</span></div>
 <div class="field-row"><span class="field-label">Adres:</span><span>${escapeHtml(landlord.address)}</span></div>
-<div class="field-row"><span class="field-label">Telefoon / gsm:</span><span>${escapeHtml(landlord.phone)}</span></div>
+<div class="field-row"><span class="field-label">Telefoonnummer:</span><span>${escapeHtml(landlord.phone)}</span></div>
 <div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(landlord.email)}</span></div>
 
 <p style="margin-top:12px;"><strong>ANDERZIJDS, de ${secondStudent ? 'HUURDERS' : 'HUURDER'}:</strong></p>
@@ -226,8 +218,7 @@ ${secondStudent
   <span class="art-title">Art. 5. BETALING</span><br/>
   € ${totalMonthly},00 wordt maandelijks betaald door overschrijving, uiterlijk binnen vijf
   kalenderdagen na de aanvang van de huurmaand.<br/>
-  IBAN-rekeningnummer: <strong>${escapeHtml(landlord.iban)}</strong><br/>
-  BIC-nummer: ${escapeHtml(landlord.bic)} &nbsp;|&nbsp; Bankinstelling: ${escapeHtml(landlord.bank)}<br/>
+  Bankrekeningnummer: <strong>${escapeHtml(landlord.iban)}</strong><br/>
   Op naam van: ${escapeHtml(landlord.name)}
 </article>
 
@@ -248,8 +239,7 @@ ${secondStudent
 <article>
   <span class="art-title">Art. 8. BRANDVERZEKERING</span><br/>
   De verhuurder dekt in zijn brandverzekering de aansprakelijkheid van de huurder tegenover
-  de verhuurder en derden. De huurder zorgt zelf voor de verzekering van zijn persoonlijke inboedel.<br/>
-  Verzekeringsmaatschappij: ${escapeHtml(landlord.insuranceCompany)} &nbsp;|&nbsp; Polisnummer: ${escapeHtml(landlord.policyNumber)}
+  de verhuurder en derden. De huurder zorgt zelf voor de verzekering van zijn persoonlijke inboedel.
 </article>
 
 <article>
@@ -297,9 +287,7 @@ ${secondStudent
   <span class="art-title">Art. 15. VEILIGHEIDSVOORSCHRIFTEN EN EPC</span><br/>
   De verhuurder verklaart dat het pand uitgerust is met rookmelders conform de Vlaamse regelgeving.
   De huurder staat in voor het onderhoud van de rookmelder in zijn kamer.
-  De verhuurder overhandigt de brandveiligheidsvoorschriften aan de huurder.<br/>
-  EPC-label kamer: <strong>${escapeHtml(landlord.epcLabel)}</strong>
-  (Energieprestatiecertificaat nr. ${escapeHtml(landlord.epcNumber)})
+  De verhuurder overhandigt de brandveiligheidsvoorschriften aan de huurder.
 </article>
 
 <article>

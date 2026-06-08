@@ -40,17 +40,10 @@ export interface Student {
 
 export interface LandlordProfile {
   name: string
-  dateOfBirth: string
   address: string
   phone: string
   email: string
   iban: string
-  bic: string
-  bank: string
-  insuranceCompany: string
-  policyNumber: string
-  epcLabel: string
-  epcNumber: string
 }
 
 export interface Contract {

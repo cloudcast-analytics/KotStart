@@ -39,18 +39,21 @@ describe('AccountPage', () => {
     expect(screen.getByRole('heading', { name: 'Account' })).toBeInTheDocument()
     expect(screen.getByText('verhuurder@test.be')).toBeInTheDocument()
     expect(screen.getByText('Profiel verhuurder')).toBeInTheDocument()
-    expect(screen.getByLabelText('Naam en voornamen')).toBeInTheDocument()
-    expect(screen.getByLabelText('IBAN (betalingsrekening)')).toBeInTheDocument()
-    expect(screen.getByLabelText('EPC-certificaatnummer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Naam en voornaam')).toBeInTheDocument()
+    expect(screen.getByLabelText('Adres')).toBeInTheDocument()
+    expect(screen.getByLabelText('Telefoonnummer')).toBeInTheDocument()
+    expect(screen.getByLabelText('E-mailadres')).toBeInTheDocument()
+    expect(screen.getByLabelText('Bankrekeningnummer')).toBeInTheDocument()
+    expect(screen.queryByLabelText('EPC-certificaatnummer')).not.toBeInTheDocument()
   })
 
   it('slaat verhuurderprofiel op', () => {
     renderPage()
 
-    fireEvent.change(screen.getByLabelText('Naam en voornamen'), {
+    fireEvent.change(screen.getByLabelText('Naam en voornaam'), {
       target: { value: 'Geert Ferson' },
     })
-    fireEvent.change(screen.getByLabelText('IBAN (betalingsrekening)'), {
+    fireEvent.change(screen.getByLabelText('Bankrekeningnummer'), {
       target: { value: 'BE12 3456 7890 1234' },
     })
     fireEvent.click(screen.getByRole('button', { name: /profiel opslaan/i }))

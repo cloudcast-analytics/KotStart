@@ -485,17 +485,10 @@ export function getLandlordProfile(): LandlordProfile {
 
 const REQUIRED_LANDLORD_PROFILE_FIELDS: Array<keyof LandlordProfile> = [
   'name',
-  'dateOfBirth',
   'address',
   'phone',
   'email',
   'iban',
-  'bic',
-  'bank',
-  'insuranceCompany',
-  'policyNumber',
-  'epcLabel',
-  'epcNumber',
 ]
 
 export function isLandlordProfileComplete(profile: LandlordProfile = getLandlordProfile()): boolean {

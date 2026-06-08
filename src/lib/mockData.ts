@@ -29,17 +29,10 @@ export const STUDENTS: Student[] = [
 
 export const MOCK_LANDLORD_PROFILE: LandlordProfile = {
   name: '',
-  dateOfBirth: '',
   address: '',
   phone: '',
   email: '',
   iban: '',
-  bic: '',
-  bank: '',
-  insuranceCompany: '',
-  policyNumber: '',
-  epcLabel: '',
-  epcNumber: '',
 }
 
 export const CONTRACTS: Contract[] = [
