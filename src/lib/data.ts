@@ -56,7 +56,7 @@ interface InspectionRow {
   id: string
   contract_id: string
   type: 'start' | 'end'
-  overview_photo_url: string | null
+  overview_photo_urls: string[] | null
   created_at: string
 }
 
@@ -66,6 +66,7 @@ interface InspectionItemRow {
   category: string
   item_name: string
   condition: InspectionItem['condition']
+  key_count: number | null
   photo_url: string | null
   notes: string | null
 }
@@ -99,11 +100,12 @@ interface CreateContractDraftInput {
 interface SaveInspectionInput {
   contractId: string
   type: 'start' | 'end'
-  overviewPhotoUrl: string | null
+  overviewPhotoUrls: string[]
   items: Array<{
     category: string
     itemName: string
-    condition: 'good' | 'moderate' | 'bad' | 'unusable'
+    condition: 'good' | 'moderate' | 'bad' | 'unusable' | null
+    keyCount: number | null
     photoUrl: string | null
   }>
 }
@@ -195,6 +197,13 @@ async function resolveStorageUrl(value: string | null | undefined): Promise<stri
   return data.signedUrl
 }
 
+async function resolveStorageUrls(values: string[] | null | undefined): Promise<string[]> {
+  if (!values || values.length === 0) return []
+
+  const resolved = await Promise.all(values.map(value => resolveStorageUrl(value)))
+  return resolved.filter((url): url is string => url !== undefined)
+}
+
 function asNumber(value: number | string | null): number {
   const parsed = Number(value ?? 0)
   return Number.isFinite(parsed) ? parsed : 0
@@ -270,7 +279,7 @@ function mapInspection(row: InspectionRow): Inspection {
     id: row.id,
     contractId: row.contract_id,
     type: row.type,
-    overviewPhotoUrl: row.overview_photo_url ?? undefined,
+    overviewPhotoUrls: row.overview_photo_urls ?? [],
     createdAt: row.created_at,
   }
 }
@@ -278,7 +287,7 @@ function mapInspection(row: InspectionRow): Inspection {
 async function mapInspectionWithAssets(row: InspectionRow): Promise<Inspection> {
   return {
     ...mapInspection(row),
-    overviewPhotoUrl: await resolveStorageUrl(row.overview_photo_url),
+    overviewPhotoUrls: await resolveStorageUrls(row.overview_photo_urls),
   }
 }
 
@@ -289,6 +298,7 @@ function mapInspectionItem(row: InspectionItemRow): InspectionItem {
     category: row.category,
     itemName: row.item_name,
     condition: row.condition,
+    keyCount: row.key_count ?? undefined,
     photoUrl: row.photo_url ?? undefined,
     notes: row.notes ?? undefined,
   }
@@ -746,7 +756,10 @@ export async function deleteContractBundleData(contractId: string): Promise<void
 export async function saveInspectionData(input: SaveInspectionInput): Promise<string | null> {
   if (!isSupabaseConfigured) return null
 
-  const overviewPhotoUrl = await uploadDataUrl('inspection-photos', 'overview', input.overviewPhotoUrl)
+  const overviewPhotoUrls = (
+    await Promise.all(input.overviewPhotoUrls.map(url => uploadDataUrl('inspection-photos', 'overview', url)))
+  ).filter((url): url is string => url !== null)
+
   const itemsWithUploadedPhotos = await Promise.all(
     input.items.map(async item => ({
       ...item,
@@ -759,7 +772,7 @@ export async function saveInspectionData(input: SaveInspectionInput): Promise<st
     .insert({
       contract_id: input.contractId,
       type: input.type,
-      overview_photo_url: overviewPhotoUrl,
+      overview_photo_urls: overviewPhotoUrls,
     })
     .select()
     .single()
@@ -774,6 +787,7 @@ export async function saveInspectionData(input: SaveInspectionInput): Promise<st
         category: item.category,
         item_name: item.itemName,
         condition: item.condition,
+        key_count: item.keyCount,
         photo_url: item.photoUrl,
       })),
     )
