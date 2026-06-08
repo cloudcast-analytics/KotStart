@@ -2,6 +2,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import InspectionNewPage from '../pages/InspectionNewPage'
+import { saveInspectionData } from '../lib/data'
+
+vi.mock('../lib/data', () => ({
+  saveInspectionData: vi.fn().mockResolvedValue(null),
+}))
 
 function renderPage() {
   return render(
@@ -224,5 +229,49 @@ describe('InspectionNewPage', () => {
       expect(screen.queryByAltText('Overzichtsfoto 1')).not.toBeInTheDocument()
       expect(screen.getByText(/0\/8 foto's/)).toBeInTheDocument()
     })
+  })
+
+  it('toont een foutmelding wanneer opslaan van de plaatsbeschrijving mislukt', async () => {
+    vi.mocked(saveInspectionData).mockRejectedValueOnce(new Error('Opslaan mislukt: geen verbinding'))
+    renderPage()
+
+    const categories = [
+      { title: 'Keuken', itemCount: 7 },
+      { title: 'Badkamer', itemCount: 7 },
+      { title: 'Kamer', itemCount: 7 },
+      { title: 'Inkom', itemCount: 5 },
+      { title: 'Algemeen', itemCount: 4 },
+    ]
+
+    for (const category of categories) {
+      await screen.findByRole('heading', { name: category.title })
+      if (category.title === 'Algemeen') {
+        await rateAllExceptSleutels(category.itemCount)
+        await setSleutelsCount(1)
+      } else {
+        await selectAllGoodInCurrentCategory(category.itemCount)
+      }
+      fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
+    }
+
+    await screen.findByRole('heading', { name: /Overzichtsfoto/ })
+    for (let index = 0; index < 5; index += 1) {
+      const overviewPhotoInput = screen
+        .getAllByLabelText(/overzichtsfoto toevoegen/i)
+        .find(element => element.tagName === 'INPUT')
+      if (!overviewPhotoInput) throw new Error('Overzichtsfoto input niet gevonden')
+
+      fireEvent.change(overviewPhotoInput, {
+        target: { files: [new File([`foto${index}`], `foto${index}.png`, { type: 'image/png' })] },
+      })
+      await waitFor(() => {
+        expect(screen.getAllByAltText(/^overzichtsfoto \d+$/i)).toHaveLength(index + 1)
+      })
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: /plaatsbeschrijving afronden/i }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Opslaan mislukt: geen verbinding')
+    expect(screen.getByRole('button', { name: /plaatsbeschrijving afronden/i })).not.toBeDisabled()
   })
 })

@@ -90,6 +90,7 @@ export default function InspectionNewPage() {
   const [items, setItems] = useState(() => createInitialItems())
   const [overviewPhotoUrls, setOverviewPhotoUrls] = useState<string[]>([])
   const [isFinishing, setIsFinishing] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const isFinalStep = currentIndex === CATEGORIES.length
   const currentCategory = CATEGORIES[currentIndex]
@@ -158,6 +159,7 @@ export default function InspectionNewPage() {
     }
 
     setIsFinishing(true)
+    setSaveError(null)
     try {
       await saveInspectionData({
         contractId: inspectionContext?.contractId ?? 'c1',
@@ -169,6 +171,7 @@ export default function InspectionNewPage() {
     } catch (err) {
       console.error('Plaatsbeschrijving opslaan mislukt:', err)
       setIsFinishing(false)
+      setSaveError(err instanceof Error ? err.message : 'Plaatsbeschrijving opslaan is mislukt. Probeer het opnieuw.')
     }
   }
 
@@ -400,7 +403,13 @@ export default function InspectionNewPage() {
         </AnimatePresence>
       </div>
 
-      <div className="flex gap-3 border-t border-white/65 bg-white/38 px-4 py-3 backdrop-blur-xl">
+      <div className="flex flex-col gap-3 border-t border-white/65 bg-white/38 px-4 py-3 backdrop-blur-xl">
+        {saveError && (
+          <div role="status" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+            {saveError}
+          </div>
+        )}
+        <div className="flex gap-3">
         <button
           type="button"
           aria-label="Vorige"
@@ -436,6 +445,7 @@ export default function InspectionNewPage() {
             </>
           )}
         </button>
+        </div>
       </div>
     </div>
   )
