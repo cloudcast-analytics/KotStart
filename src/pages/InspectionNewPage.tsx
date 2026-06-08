@@ -1,7 +1,7 @@
 import { type ChangeEvent, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Camera, Check, Download, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Camera, Check, Download, Loader2, Minus, Plus, X } from 'lucide-react'
 import { cn } from '../lib/cn'
 import { saveInspectionData } from '../lib/data'
 import { printInspectionDocument } from '../lib/pdfDocuments'
@@ -17,6 +17,7 @@ interface InspectionCategory {
 
 interface InspectionItemState {
   condition: Condition | null
+  keyCount: number | null
   photoUrl: string | null
 }
 
@@ -62,7 +63,7 @@ const CONDITION_OPTIONS: Array<{
 function createInitialItems(): Record<string, InspectionItemState> {
   return CATEGORIES.reduce<Record<string, InspectionItemState>>((acc, category) => {
     category.items.forEach(item => {
-      acc[`${category.id}:${item}`] = { condition: null, photoUrl: null }
+      acc[`${category.id}:${item}`] = { condition: null, keyCount: null, photoUrl: null }
     })
     return acc
   }, {})
@@ -105,9 +106,15 @@ export default function InspectionNewPage() {
     }))
   }
 
+  function isItemComplete(categoryId: string, itemName: string) {
+    const state = items[itemKey(categoryId, itemName)]
+    if (itemName === 'Sleutels') return state.keyCount !== null
+    return state.condition !== null
+  }
+
   function currentCategoryComplete() {
     if (!currentCategory) return false
-    return currentCategory.items.every(item => items[itemKey(currentCategory.id, item)].condition)
+    return currentCategory.items.every(item => isItemComplete(currentCategory.id, item))
   }
 
   function canProceed() {
@@ -230,28 +237,55 @@ export default function InspectionNewPage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-sm font-bold text-slate-900">{item}</p>
-                        {state.condition && (
+                        {isItemComplete(currentCategory.id, item) && (
                           <Check size={16} className="mt-0.5 shrink-0 text-accent" aria-label="Ingevuld" />
                         )}
                       </div>
 
-                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        {CONDITION_OPTIONS.map(option => (
+                      {item === 'Sleutels' ? (
+                        <div className="mt-3 flex items-center justify-center gap-4 rounded-xl border border-white/80 bg-white/60 py-2">
                           <button
-                            key={option.value}
                             type="button"
-                            onClick={() => updateItem(currentCategory.id, item, { condition: option.value })}
-                            className={cn(
-                              'h-9 rounded-full border px-2 text-xs font-bold transition-colors',
-                              state.condition === option.value
-                                ? option.activeClass
-                                : 'border-white/80 bg-white/60 text-slate-500 hover:bg-white/80',
-                            )}
+                            aria-label="Aantal sleutels verminderen"
+                            disabled={(state.keyCount ?? 0) <= 0}
+                            onClick={() =>
+                              updateItem(currentCategory.id, item, { keyCount: Math.max(0, (state.keyCount ?? 0) - 1) })
+                            }
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/90 bg-white/70 text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                           >
-                            {option.label}
+                            <Minus size={15} />
                           </button>
-                        ))}
-                      </div>
+                          <span className="min-w-[5.5rem] text-center text-sm font-bold text-slate-900">
+                            {`${state.keyCount ?? 0} ${(state.keyCount ?? 0) === 1 ? 'stuk' : 'stuks'}`}
+                          </span>
+                          <button
+                            type="button"
+                            aria-label="Aantal sleutels vermeerderen"
+                            onClick={() => updateItem(currentCategory.id, item, { keyCount: (state.keyCount ?? 0) + 1 })}
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/90 bg-white/70 text-slate-600"
+                          >
+                            <Plus size={15} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          {CONDITION_OPTIONS.map(option => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => updateItem(currentCategory.id, item, { condition: option.value })}
+                              className={cn(
+                                'h-9 rounded-full border px-2 text-xs font-bold transition-colors',
+                                state.condition === option.value
+                                  ? option.activeClass
+                                  : 'border-white/80 bg-white/60 text-slate-500 hover:bg-white/80',
+                              )}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
                       <AnimatePresence initial={false}>
                         {needsPhoto && (

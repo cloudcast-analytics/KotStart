@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import InspectionNewPage from '../pages/InspectionNewPage'
@@ -17,6 +17,21 @@ async function selectAllGoodInCurrentCategory(expectedItems: number) {
   })
 
   screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
+}
+
+async function rateAllExceptSleutels(expectedItems: number) {
+  await waitFor(() => {
+    expect(screen.getAllByRole('button', { name: 'Goed' })).toHaveLength(expectedItems)
+  })
+
+  screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
+}
+
+async function setSleutelsCount(times: number) {
+  const plusButton = await screen.findByRole('button', { name: /aantal sleutels vermeerderen/i })
+  for (let i = 0; i < times; i += 1) {
+    fireEvent.click(plusButton)
+  }
 }
 
 describe('InspectionNewPage', () => {
@@ -66,6 +81,33 @@ describe('InspectionNewPage', () => {
     expect(screen.getByLabelText(/foto toevoegen voor aanrecht/i)).toBeInTheDocument()
   })
 
+  it('toont een aantal-stepper voor Sleutels i.p.v. conditieknoppen', async () => {
+    renderPage()
+
+    const categories = ['Keuken', 'Badkamer', 'Kamer', 'Inkom']
+    for (const title of categories) {
+      await screen.findByRole('heading', { name: title })
+      await selectAllGoodInCurrentCategory(title === 'Keuken' || title === 'Badkamer' || title === 'Kamer' ? 7 : 5)
+      fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
+    }
+
+    await screen.findByRole('heading', { name: 'Algemeen' })
+    const sleutelsCard = screen.getByText('Sleutels').closest('.rounded-2xl') as HTMLElement
+    expect(within(sleutelsCard).queryByRole('button', { name: 'Goed' })).not.toBeInTheDocument()
+    expect(within(sleutelsCard).queryByRole('button', { name: 'Onbruikbaar' })).not.toBeInTheDocument()
+
+    const plusButton = screen.getByRole('button', { name: /aantal sleutels vermeerderen/i })
+    const minusButton = screen.getByRole('button', { name: /aantal sleutels verminderen/i })
+    expect(screen.getByText('0 stuks')).toBeInTheDocument()
+
+    fireEvent.click(plusButton)
+    fireEvent.click(plusButton)
+    expect(screen.getByText('2 stuks')).toBeInTheDocument()
+
+    fireEvent.click(minusButton)
+    expect(screen.getByText('1 stuk')).toBeInTheDocument()
+  })
+
   it('gaat naar de laatste stap na alle categorieen', async () => {
     renderPage()
 
@@ -74,12 +116,17 @@ describe('InspectionNewPage', () => {
       { title: 'Badkamer', itemCount: 7 },
       { title: 'Kamer', itemCount: 7 },
       { title: 'Inkom', itemCount: 5 },
-      { title: 'Algemeen', itemCount: 5 },
+      { title: 'Algemeen', itemCount: 4 },
     ]
 
     for (const category of categories) {
       await screen.findByRole('heading', { name: category.title })
-      await selectAllGoodInCurrentCategory(category.itemCount)
+      if (category.title === 'Algemeen') {
+        await rateAllExceptSleutels(category.itemCount)
+        await setSleutelsCount(2)
+      } else {
+        await selectAllGoodInCurrentCategory(category.itemCount)
+      }
       fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
     }
 
@@ -96,12 +143,17 @@ describe('InspectionNewPage', () => {
       { title: 'Badkamer', itemCount: 7 },
       { title: 'Kamer', itemCount: 7 },
       { title: 'Inkom', itemCount: 5 },
-      { title: 'Algemeen', itemCount: 5 },
+      { title: 'Algemeen', itemCount: 4 },
     ]
 
     for (const category of categories) {
       await screen.findByRole('heading', { name: category.title })
-      await selectAllGoodInCurrentCategory(category.itemCount)
+      if (category.title === 'Algemeen') {
+        await rateAllExceptSleutels(category.itemCount)
+        await setSleutelsCount(2)
+      } else {
+        await selectAllGoodInCurrentCategory(category.itemCount)
+      }
       fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
     }
 
