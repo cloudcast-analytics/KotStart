@@ -77,14 +77,14 @@ export const MOCK_INSPECTIONS: Inspection[] = [
     id: 'i1',
     contractId: 'c1',
     type: 'start',
-    overviewPhotoUrl: undefined,
+    overviewPhotoUrls: [],
     createdAt: '2025-09-15T10:00:00.000Z',
   },
   {
     id: 'i2',
     contractId: 'c4',
     type: 'start',
-    overviewPhotoUrl: undefined,
+    overviewPhotoUrls: [],
     createdAt: '2025-09-16T10:00:00.000Z',
   },
 ]
@@ -94,4 +94,5 @@ export const MOCK_INSPECTION_ITEMS: InspectionItem[] = [
   { id: 'ii2', inspectionId: 'i1', category: 'Kamer', itemName: 'Muren', condition: 'moderate', photoUrl: undefined },
   { id: 'ii3', inspectionId: 'i1', category: 'Badkamer', itemName: 'Douche', condition: 'good', photoUrl: undefined },
   { id: 'ii4', inspectionId: 'i1', category: 'Badkamer', itemName: 'Toilet & toiletbril', condition: 'good', photoUrl: undefined },
+  { id: 'ii5', inspectionId: 'i1', category: 'Algemeen', itemName: 'Sleutels', condition: null, keyCount: 3, photoUrl: undefined },
 ]
