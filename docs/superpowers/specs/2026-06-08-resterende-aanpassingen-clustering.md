@@ -48,6 +48,27 @@ Vince wil daarnaast, los van de docx-lijst:
 N1–N4 horen inhoudelijk samen (allemaal Instellingen/Profiel-gerelateerd) en vormen een logisch
 nieuw cluster.
 
+Daarnaast kwamen er, tijdens het live testen van de Cluster C-feature (plaatsbeschrijving), twee
+extra wensen naar boven die niet in de docx stonden:
+
+- **N6 — PDF-knop verplaatsen**: de knop "PDF voorbeeld maken" hoort niet thuis in de
+  plaatsbeschrijvingswizard (`InspectionNewPage.tsx`, stap overzichtsfoto's). Hij moet naar
+  `InspectionDetailPage.tsx` (bereikt via een student z'n naam in het overzichtsdashboard), als
+  knop "PDF opmaken" onderaan, en pas zichtbaar/bruikbaar **nadat de plaatsbeschrijving is
+  afgerond**.
+- **N7 — Plaatsbeschrijving loskoppelen van het contract**: het contract-PDF en de
+  plaatsbeschrijving-PDF moeten twee volledig aparte documenten worden — een contractdocument dat
+  louter naar de plaatsbeschrijving *verwijst*, en een op zichzelf staand, afdrukbaar
+  plaatsbeschrijvingsdocument (vergelijkbaar met/herbruikbaar voor de eindplaatsbeschrijving),
+  i.p.v. de huidige opzet waarin `generateContractHtml` de volledige plaatsbeschrijving inline
+  in het contract rendert.
+
+N6 en N7 raken dezelfde bestanden (`pdfDocuments.ts`, `InspectionDetailPage.tsx`) en dezelfde
+onderliggende vraag — "wat bevat het contract-PDF en hoe verwijst het naar de plaatsbeschrijving"
+— als #8 (pandspecifieke contractgeneratie), die toch al in Cluster A gepland staat. Vince heeft
+bevestigd dat ze daarom bij **Cluster A** horen, als onderdeel van de contract-PDF-herziening
+(samen met #8), in plaats van een eigen cluster te vormen.
+
 ## Voorgestelde clustering voor de vervolggesprekken
 
 Met B en D klaar, blijven er drie zinvolle clusters over:
@@ -66,6 +87,9 @@ verschoven is vanuit Cluster D)*
 - #7 datum concept vs. definitief contract (+ datumcorrectie bij effectieve ondertekening)
 - #8 contracten automatisch per pand genereren (locatie-specifieke velden i.p.v. hardcoded Gent)
 - #13 verhuurdergegevens compleet vóór contract aanmaken mogelijk is
+- N6 PDF-knop verplaatsen naar `InspectionDetailPage.tsx` ("PDF opmaken", pas na afronden zichtbaar)
+- N7 contract-PDF en plaatsbeschrijving-PDF loskoppelen tot twee aparte documenten
+  *(N6/N7 horen bij de contract-PDF-herziening en starten samen met #8 — zie "Nieuwe items")*
 - (overgeërfd uit Cluster D) wie ondertekent bij minderjarigheid (student/voogd/beiden)
 
 ### Nieuw Cluster E — Instellingen & Profiel
