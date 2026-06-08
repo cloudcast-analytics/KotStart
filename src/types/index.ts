@@ -67,7 +67,7 @@ export interface Inspection {
   id: string
   contractId: string
   type: 'start' | 'end'
-  overviewPhotoUrl?: string
+  overviewPhotoUrls: string[]
   createdAt: string
 }
 
@@ -76,7 +76,8 @@ export interface InspectionItem {
   inspectionId: string
   category: string
   itemName: string
-  condition: 'good' | 'moderate' | 'bad' | 'unusable'
+  condition: 'good' | 'moderate' | 'bad' | 'unusable' | null
+  keyCount?: number | null
   photoUrl?: string
   notes?: string
 }
