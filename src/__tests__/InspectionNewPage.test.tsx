@@ -130,7 +130,7 @@ describe('InspectionNewPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
     }
 
-    expect(await screen.findByRole('heading', { name: 'Overzichtsfoto' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /Overzichtsfoto/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /plaatsbeschrijving afronden/i })).toBeDisabled()
   })
 
@@ -158,23 +158,71 @@ describe('InspectionNewPage', () => {
     }
 
     expect(await screen.findByRole('button', { name: /pdf voorbeeld maken/i })).toBeDisabled()
-    const overviewPhotoInput = screen
-      .getAllByLabelText(/overzichtsfoto toevoegen/i)
-      .find(element => element.tagName === 'INPUT')
+    expect(screen.getByText(/0\/8 foto's/)).toBeInTheDocument()
 
-    if (!overviewPhotoInput) throw new Error('Overzichtsfoto input niet gevonden')
+    for (let index = 0; index < 5; index += 1) {
+      const overviewPhotoInput = screen
+        .getAllByLabelText(/overzichtsfoto toevoegen/i)
+        .find(element => element.tagName === 'INPUT')
 
-    fireEvent.change(overviewPhotoInput, {
-      target: {
-        files: [new File(['foto'], 'foto.png', { type: 'image/png' })],
-      },
-    })
+      if (!overviewPhotoInput) throw new Error('Overzichtsfoto input niet gevonden')
 
+      fireEvent.change(overviewPhotoInput, {
+        target: { files: [new File([`foto${index}`], `foto${index}.png`, { type: 'image/png' })] },
+      })
+
+      await waitFor(() => {
+        expect(screen.getAllByAltText(/^overzichtsfoto \d+$/i)).toHaveLength(index + 1)
+      })
+    }
+
+    expect(screen.getByText(/5\/8 foto's/)).toBeInTheDocument()
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /pdf voorbeeld maken/i })).not.toBeDisabled()
     })
     fireEvent.click(screen.getByRole('button', { name: /pdf voorbeeld maken/i }))
 
     expect(write).toHaveBeenCalledWith(expect.stringContaining('Plaatsbeschrijving'))
+  })
+
+  it('laat een toegevoegde overzichtsfoto verwijderen', async () => {
+    renderPage()
+
+    const categories = [
+      { title: 'Keuken', itemCount: 7 },
+      { title: 'Badkamer', itemCount: 7 },
+      { title: 'Kamer', itemCount: 7 },
+      { title: 'Inkom', itemCount: 5 },
+      { title: 'Algemeen', itemCount: 4 },
+    ]
+
+    for (const category of categories) {
+      await screen.findByRole('heading', { name: category.title })
+      if (category.title === 'Algemeen') {
+        await rateAllExceptSleutels(category.itemCount)
+        await setSleutelsCount(1)
+      } else {
+        await selectAllGoodInCurrentCategory(category.itemCount)
+      }
+      fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
+    }
+
+    await screen.findByRole('heading', { name: /Overzichtsfoto/ })
+    const overviewPhotoInput = screen
+      .getAllByLabelText(/overzichtsfoto toevoegen/i)
+      .find(element => element.tagName === 'INPUT')
+    if (!overviewPhotoInput) throw new Error('Overzichtsfoto input niet gevonden')
+
+    fireEvent.change(overviewPhotoInput, {
+      target: { files: [new File(['foto'], 'foto.png', { type: 'image/png' })] },
+    })
+    await screen.findByAltText('Overzichtsfoto 1')
+
+    fireEvent.click(screen.getByRole('button', { name: /overzichtsfoto 1 verwijderen/i }))
+
+    await waitFor(() => {
+      expect(screen.queryByAltText('Overzichtsfoto 1')).not.toBeInTheDocument()
+      expect(screen.getByText(/0\/8 foto's/)).toBeInTheDocument()
+    })
   })
 })

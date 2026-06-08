@@ -88,7 +88,7 @@ export default function InspectionNewPage() {
   const inspectionContext = location.state as { contractId?: string; type?: 'start' | 'end' } | null
   const [currentIndex, setCurrentIndex] = useState(0)
   const [items, setItems] = useState(() => createInitialItems())
-  const [overviewPhotoUrl, setOverviewPhotoUrl] = useState<string | null>(null)
+  const [overviewPhotoUrls, setOverviewPhotoUrls] = useState<string[]>([])
   const [isFinishing, setIsFinishing] = useState(false)
 
   const isFinalStep = currentIndex === CATEGORIES.length
@@ -106,6 +106,10 @@ export default function InspectionNewPage() {
     }))
   }
 
+  function removeOverviewPhoto(index: number) {
+    setOverviewPhotoUrls(previous => previous.filter((_, photoIndex) => photoIndex !== index))
+  }
+
   function isItemComplete(categoryId: string, itemName: string) {
     const state = items[itemKey(categoryId, itemName)]
     if (itemName === 'Sleutels') return state.keyCount !== null
@@ -118,7 +122,31 @@ export default function InspectionNewPage() {
   }
 
   function canProceed() {
-    return isFinalStep ? Boolean(overviewPhotoUrl) : currentCategoryComplete()
+    return isFinalStep ? overviewPhotoUrls.length >= 5 : currentCategoryComplete()
+  }
+
+  function buildInspectionItems() {
+    return CATEGORIES.flatMap(category =>
+      category.items
+        .map(item => {
+          const state = items[itemKey(category.id, item)]
+          if (!isItemComplete(category.id, item)) return null
+          return {
+            category: category.label,
+            itemName: item,
+            condition: item === 'Sleutels' ? null : state.condition,
+            keyCount: item === 'Sleutels' ? state.keyCount : null,
+            photoUrl: state.photoUrl,
+          }
+        })
+        .filter((entry): entry is {
+          category: string
+          itemName: string
+          condition: Condition | null
+          keyCount: number | null
+          photoUrl: string | null
+        } => entry !== null),
+    )
   }
 
   async function handleNext() {
@@ -134,26 +162,8 @@ export default function InspectionNewPage() {
       await saveInspectionData({
         contractId: inspectionContext?.contractId ?? 'c1',
         type: inspectionContext?.type ?? 'start',
-        overviewPhotoUrl,
-        items: CATEGORIES.flatMap(category =>
-          category.items
-            .map(item => {
-              const state = items[itemKey(category.id, item)]
-              if (!state.condition) return null
-              return {
-                category: category.label,
-                itemName: item,
-                condition: state.condition,
-                photoUrl: state.photoUrl,
-              }
-            })
-            .filter((item): item is {
-              category: string
-              itemName: string
-              condition: Condition
-              photoUrl: string | null
-            } => item !== null),
-        ),
+        overviewPhotoUrls,
+        items: buildInspectionItems(),
       })
       window.setTimeout(() => navigate('/'), 1000)
     } catch (err) {
@@ -172,25 +182,7 @@ export default function InspectionNewPage() {
   }
 
   function inspectionDocumentItems() {
-    return CATEGORIES.flatMap(category =>
-      category.items
-        .map(item => {
-          const state = items[itemKey(category.id, item)]
-          if (!state.condition) return null
-          return {
-            category: category.label,
-            itemName: item,
-            condition: state.condition,
-            photoUrl: state.photoUrl,
-          }
-        })
-        .filter((item): item is {
-          category: string
-          itemName: string
-          condition: Condition
-          photoUrl: string | null
-        } => item !== null),
-    )
+    return buildInspectionItems()
   }
 
   return (
@@ -335,54 +327,67 @@ export default function InspectionNewPage() {
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Laatste stap
                   </p>
-                  <h1 className="mt-1 text-2xl font-bold text-slate-900">Overzichtsfoto</h1>
+                  <h1 className="mt-1 text-2xl font-bold text-slate-900">Overzichtsfoto&apos;s</h1>
                   <p className="mt-1 text-sm font-medium text-slate-500">
-                    Voeg een foto toe van de volledige ruimte om de plaatsbeschrijving af te ronden.
+                    Voeg 5 tot 8 foto&apos;s toe van de volledige ruimte om de plaatsbeschrijving af te ronden.
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
-                  {overviewPhotoUrl ? (
-                    <img
-                      src={overviewPhotoUrl}
-                      alt="Overzichtsfoto"
-                      className="mb-4 aspect-[4/3] w-full rounded-2xl object-cover"
-                    />
-                  ) : (
-                    <div className="mb-4 flex aspect-[4/3] w-full items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-100/70">
-                      <Camera size={32} className="text-slate-400" />
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {overviewPhotoUrls.map((url, index) => (
+                      <div key={url} className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                        <img
+                          src={url}
+                          alt={`Overzichtsfoto ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          aria-label={`Overzichtsfoto ${index + 1} verwijderen`}
+                          onClick={() => removeOverviewPhoto(index)}
+                          className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
 
-                  <label
-                    aria-label="Overzichtsfoto toevoegen"
-                    className="btn-primary inline-flex w-full cursor-pointer items-center justify-center gap-2 px-4 py-3 text-sm"
-                  >
-                    <Camera size={16} />
-                    {overviewPhotoUrl ? 'Overzichtsfoto wijzigen' : 'Overzichtsfoto toevoegen'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={event => readImage(event, setOverviewPhotoUrl)}
-                    />
-                  </label>
+                    {overviewPhotoUrls.length < 8 && (
+                      <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-slate-100/70 text-slate-400">
+                        <Camera size={24} />
+                        <span className="text-xs font-bold">Foto toevoegen</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          aria-label="Overzichtsfoto toevoegen"
+                          className="hidden"
+                          onChange={event => readImage(event, url => setOverviewPhotoUrls(previous => [...previous, url]))}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-xs font-semibold text-slate-500">
+                    {overviewPhotoUrls.length}/8 foto&apos;s
+                    {overviewPhotoUrls.length < 5 && ` — voeg nog minstens ${5 - overviewPhotoUrls.length} toe`}
+                  </p>
 
                   <button
                     type="button"
-                    disabled={!overviewPhotoUrl}
+                    disabled={overviewPhotoUrls.length < 5}
                     onClick={() =>
                       printInspectionDocument({
                         title: 'Plaatsbeschrijving',
                         type: inspectionContext?.type ?? 'start',
-                        overviewPhotoUrl,
+                        overviewPhotoUrls,
                         items: inspectionDocumentItems(),
                       })
                     }
                     className={cn(
                       'mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/90 bg-white/65 px-4 py-3 text-sm font-bold text-slate-700',
-                      !overviewPhotoUrl && 'cursor-not-allowed opacity-50',
+                      overviewPhotoUrls.length < 5 && 'cursor-not-allowed opacity-50',
                     )}
                   >
                     <Download size={16} />
