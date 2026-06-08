@@ -39,6 +39,13 @@ describe('InspectionDetailPage', () => {
     expect(screen.getByText('Matig')).toBeInTheDocument()
   })
 
+  it('toont het aantal sleutels i.p.v. een conditiechip voor het Sleutels-item', async () => {
+    renderPage()
+
+    expect(await screen.findByText('Sleutels')).toBeInTheDocument()
+    expect(screen.getByText('3 stuks')).toBeInTheDocument()
+  })
+
   it('bevat een PDF-knop', async () => {
     renderPage()
 

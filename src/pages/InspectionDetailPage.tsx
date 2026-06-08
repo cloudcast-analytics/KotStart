@@ -6,18 +6,30 @@ import { printInspectionDocument } from '../lib/pdfDocuments'
 import { cn } from '../lib/cn'
 import type { Inspection, InspectionItem } from '../types'
 
-const CONDITION_LABEL: Record<InspectionItem['condition'], string> = {
+type Condition = NonNullable<InspectionItem['condition']>
+
+const CONDITION_LABEL: Record<Condition, string> = {
   good: 'Goed',
   moderate: 'Matig',
   bad: 'Slecht',
   unusable: 'Onbruikbaar',
 }
 
-const CONDITION_COLOR: Record<InspectionItem['condition'], string> = {
+const CONDITION_COLOR: Record<Condition, string> = {
   good: 'bg-green-100 text-green-700',
   moderate: 'bg-yellow-100 text-yellow-700',
   bad: 'bg-orange-100 text-orange-700',
   unusable: 'bg-red-100 text-red-700',
+}
+
+function itemBadge(item: InspectionItem): { label: string; colorClass: string } {
+  if (item.itemName === 'Sleutels') {
+    const count = item.keyCount ?? 0
+    return { label: `${count} ${count === 1 ? 'stuk' : 'stuks'}`, colorClass: 'bg-slate-100 text-slate-700' }
+  }
+
+  const condition = item.condition ?? 'good'
+  return { label: CONDITION_LABEL[condition], colorClass: CONDITION_COLOR[condition] }
 }
 
 export default function InspectionDetailPage() {
@@ -104,11 +116,11 @@ export default function InspectionDetailPage() {
                   printInspectionDocument({
                     title: typeLabel,
                     type: inspection.type,
-                    overviewPhotoUrl: inspection.overviewPhotoUrl ?? null,
+                    overviewPhotoUrl: inspection.overviewPhotoUrls[0] ?? null,
                     items: items.map(item => ({
                       category: item.category,
                       itemName: item.itemName,
-                      condition: item.condition,
+                      condition: itemBadge(item).label,
                       photoUrl: item.photoUrl ?? null,
                     })),
                   })
@@ -120,12 +132,17 @@ export default function InspectionDetailPage() {
               </button>
             </div>
 
-            {inspection.overviewPhotoUrl && (
-              <img
-                src={inspection.overviewPhotoUrl}
-                alt="Overzichtsfoto"
-                className="mt-4 h-48 w-full rounded-xl object-cover"
-              />
+            {inspection.overviewPhotoUrls.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {inspection.overviewPhotoUrls.map((url, index) => (
+                  <img
+                    key={url}
+                    src={url}
+                    alt={`Overzichtsfoto ${index + 1}`}
+                    className="aspect-[4/3] w-full rounded-xl object-cover"
+                  />
+                ))}
+              </div>
             )}
           </section>
 
@@ -133,23 +150,26 @@ export default function InspectionDetailPage() {
             <section key={category} className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
               <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{category}</h2>
               <div className="flex flex-col gap-2">
-                {categoryItems.map(item => (
-                  <div key={item.id} className="rounded-xl border border-slate-100/70 bg-white/40 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-slate-800">{item.itemName}</span>
-                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold', CONDITION_COLOR[item.condition])}>
-                        {CONDITION_LABEL[item.condition]}
-                      </span>
+                {categoryItems.map(item => {
+                  const badge = itemBadge(item)
+                  return (
+                    <div key={item.id} className="rounded-xl border border-slate-100/70 bg-white/40 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-slate-800">{item.itemName}</span>
+                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold', badge.colorClass)}>
+                          {badge.label}
+                        </span>
+                      </div>
+                      {item.photoUrl && (
+                        <img
+                          src={item.photoUrl}
+                          alt={item.itemName}
+                          className="mt-2 h-32 w-full rounded-lg object-cover"
+                        />
+                      )}
                     </div>
-                    {item.photoUrl && (
-                      <img
-                        src={item.photoUrl}
-                        alt={item.itemName}
-                        className="mt-2 h-32 w-full rounded-lg object-cover"
-                      />
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           ))}
