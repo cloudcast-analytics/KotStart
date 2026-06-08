@@ -1,10 +1,9 @@
 import { type ChangeEvent, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Camera, Check, Download, Loader2, Minus, Plus, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Camera, Check, Loader2, Minus, Plus, X } from 'lucide-react'
 import { cn } from '../lib/cn'
 import { saveInspectionData } from '../lib/data'
-import { printInspectionDocument } from '../lib/pdfDocuments'
 import StepIndicator from './wizard/StepIndicator'
 
 type Condition = 'good' | 'moderate' | 'bad' | 'unusable'
@@ -182,10 +181,6 @@ export default function InspectionNewPage() {
     }
 
     setCurrentIndex(index => index - 1)
-  }
-
-  function inspectionDocumentItems() {
-    return buildInspectionItems()
   }
 
   return (
@@ -377,25 +372,6 @@ export default function InspectionNewPage() {
                     {overviewPhotoUrls.length < 5 && ` — voeg nog minstens ${5 - overviewPhotoUrls.length} toe`}
                   </p>
 
-                  <button
-                    type="button"
-                    disabled={overviewPhotoUrls.length < 5}
-                    onClick={() =>
-                      printInspectionDocument({
-                        title: 'Plaatsbeschrijving',
-                        type: inspectionContext?.type ?? 'start',
-                        overviewPhotoUrls,
-                        items: inspectionDocumentItems(),
-                      })
-                    }
-                    className={cn(
-                      'mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/90 bg-white/65 px-4 py-3 text-sm font-bold text-slate-700',
-                      overviewPhotoUrls.length < 5 && 'cursor-not-allowed opacity-50',
-                    )}
-                  >
-                    <Download size={16} />
-                    PDF voorbeeld maken
-                  </button>
                 </div>
               </section>
             )}

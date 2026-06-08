@@ -1,7 +1,23 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import ContractNewPage from '../pages/ContractNewPage'
+import { saveLandlordProfile } from '../lib/data'
+
+const completeLandlordProfile = {
+  name: 'Geert Vandenberghe',
+  dateOfBirth: '15 maart 1972, Gent',
+  address: 'Veldstraat 89, 9000 Gent',
+  phone: '0498 12 34 56',
+  email: 'geert@test.be',
+  iban: 'BE12 3456 7890 1234',
+  bic: 'GEBABEBB',
+  bank: 'BNP Paribas Fortis',
+  insuranceCompany: 'AXA Belgium',
+  policyNumber: 'AXA-2025-001',
+  epcLabel: 'C',
+  epcNumber: 'EPC-2025-001',
+}
 
 function renderNewContractPage() {
   return render(
@@ -38,6 +54,10 @@ async function fillStudent() {
 }
 
 describe('ContractNewPage', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   it('toont stap 1 bij openen', async () => {
     renderNewContractPage()
 
@@ -98,6 +118,7 @@ describe('ContractNewPage', () => {
   })
 
   it('gaat na Opslaan als concept verder naar de volgende route', async () => {
+    saveLandlordProfile(completeLandlordProfile)
     renderNewContractPage()
     await selectFirstRoomAndContinue()
     await fillStudent()
@@ -106,5 +127,15 @@ describe('ContractNewPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /opslaan als concept/i }))
 
     expect(await screen.findByText('Dashboard')).toBeInTheDocument()
+  })
+
+  it('blokkeert contractaanmaak zolang verhuurdergegevens ontbreken', async () => {
+    renderNewContractPage()
+    await selectFirstRoomAndContinue()
+    await fillStudent()
+    fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/verhuurdergegevens/i)
+    expect(screen.getByRole('button', { name: /opslaan als concept/i })).toBeDisabled()
   })
 })

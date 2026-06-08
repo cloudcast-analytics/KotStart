@@ -16,7 +16,7 @@ worden — dat bespaart tokens t.o.v. één steeds langer wordende sessie.
 | 2 | "Sleutel"-onderdeel: aantal sleutels i.p.v. staat | → **Cluster C** |
 | 3 | Verstuurd contract is blanco, moet ingevuld zijn | ✅ **al afgerond** — weglaten |
 | 4 | E-mail via geert.lovani.be i.p.v. Cloudcast | **later** — pas bij de echte/productieversie zodra het juiste mailadres er is |
-| 5 | Accountaanmaak moet geverifieerd worden | → **Cluster A** |
+| 5 | Accountaanmaak moet geverifieerd worden | **later** — uitgesteld, voorlopig niet meenemen in Cluster A |
 | 6 | Betalingen voor kotbaas | **later** — eerst verder bespreken met de "codebaas" over waarvoor dit precies dient, voorlopig niet clusteren |
 | 7 | Datum concept én (definitief) contract apart tonen; datum van het echte contract aanpassen bij effectieve ondertekening (na het versturen van een concept) | → **Cluster A** (toevoegen — hoort bij de bredere herziening van de ondertekenings-/verzendflow die daar toch al gepland stond) |
 | 8 | Contracten per pand automatisch genereren met locatie-specifieke velden (nu hardcoded op Gent) | → **Cluster A** (voorlopig; kan afgesplitst worden tot eigen cluster als A te groot wordt — zie "Open vragen") |
@@ -83,14 +83,15 @@ B → D → **C** → A)*
 *(grootste resterende cluster — bevat alles wat met de ondertekenings-/verzend-/aanmaakflow van
 het contract te maken heeft; was toch al de plek waar "wie ondertekent bij minderjarigheid" naartoe
 verschoven is vanuit Cluster D)*
-- #5 accountverificatie
 - #7 datum concept vs. definitief contract (+ datumcorrectie bij effectieve ondertekening)
 - #8 contracten automatisch per pand genereren (locatie-specifieke velden i.p.v. hardcoded Gent)
 - #13 verhuurdergegevens compleet vóór contract aanmaken mogelijk is
 - N6 PDF-knop verplaatsen naar `InspectionDetailPage.tsx` ("PDF opmaken", pas na afronden zichtbaar)
 - N7 contract-PDF en plaatsbeschrijving-PDF loskoppelen tot twee aparte documenten
   *(N6/N7 horen bij de contract-PDF-herziening en starten samen met #8 — zie "Nieuwe items")*
-- (overgeërfd uit Cluster D) wie ondertekent bij minderjarigheid (student/voogd/beiden)
+- (overgeërfd uit Cluster D) wie ondertekent bij minderjarigheid:
+  wettelijke vertegenwoordiger/voogd verplicht; student eventueel mee als akkoord/kennisname,
+  maar niet als enige rechtsbasis
 
 ### Nieuw Cluster E — Instellingen & Profiel
 *(volledig nieuw, ontstaan uit Vince's wensen deze sessie — niet in de docx)*
@@ -103,6 +104,7 @@ verschoven is vanuit Cluster D)*
 
 ### Niet geclusterd / bewust uitgesteld
 - #4 e-maildomein → wacht op de echte/productie-mailbox
+- #5 accountverificatie → uitgesteld, voorlopig niet meenemen in Cluster A
 - #6 kotbaas-betalingen → eerst bespreken met de codebaas over het doel ervan
 - #14 undo-knop → niet implementeren, laten zoals het is
 - #3, #10 → al afgerond / vervallen, geen verdere actie

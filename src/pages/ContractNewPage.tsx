@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createContractDraft, getRooms } from '../lib/data'
+import { createContractDraft, getLandlordProfile, getRooms, isLandlordProfileComplete } from '../lib/data'
 import { isValidBelgianPostalCode } from '../lib/residence'
 import type { Room } from '../types'
+import type { LandlordProfile } from '../types'
 import Step1Room from './wizard/Step1Room'
 import Step2Student from './wizard/Step2Student'
 import Step4Review from './wizard/Step4Review'
@@ -64,6 +65,7 @@ export default function ContractNewPage() {
   const [students, setStudents] = useState<StudentFormData[]>([emptyStudent()])
   const [isSending, setIsSending] = useState(false)
   const [rooms, setRooms] = useState<Room[]>([])
+  const [landlordProfile, setLandlordProfile] = useState<LandlordProfile>(getLandlordProfile)
   const [loadingRooms, setLoadingRooms] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -87,6 +89,10 @@ export default function ContractNewPage() {
     return () => { cancelled = true }
   }, [])
 
+  useEffect(() => {
+    setLandlordProfile(getLandlordProfile())
+  }, [currentStep])
+
   const propertyRooms = useMemo(() => rooms, [rooms])
   const selectedRoom: Room | null = propertyRooms.find(room => room.id === selectedRoomId) ?? null
 
@@ -109,6 +115,7 @@ export default function ContractNewPage() {
     if (loadingRooms || error) return false
     if (currentStep === 1) return selectedRoomId !== null
     if (currentStep === 2) return students.every(studentIsComplete)
+    if (currentStep === 3) return Boolean(selectedRoom) && isLandlordProfileComplete(landlordProfile)
     return Boolean(selectedRoom)
   }
 
@@ -121,6 +128,10 @@ export default function ContractNewPage() {
     }
 
     if (!selectedRoom) return
+    if (!isLandlordProfileComplete(landlordProfile)) {
+      setError('Vul eerst alle verhuurdergegevens in bij Instellingen voordat je een contract aanmaakt.')
+      return
+    }
 
     setIsSending(true)
     try {
@@ -178,7 +189,14 @@ export default function ContractNewPage() {
         {currentStep === 2 && <Step2Student students={students} onChange={handleStudentChange} />}
 
         {currentStep === 3 && selectedRoom && (
-          <Step4Review room={selectedRoom} students={students} />
+          <>
+            {!isLandlordProfileComplete(landlordProfile) && (
+              <div role="alert" className="m-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                Vul eerst alle verhuurdergegevens in bij Instellingen voordat je een contract aanmaakt.
+              </div>
+            )}
+            <Step4Review room={selectedRoom} students={students} />
+          </>
         )}
       </WizardLayout>
     </div>

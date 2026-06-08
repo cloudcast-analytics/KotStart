@@ -67,39 +67,6 @@ const MOCK_LANDLORD: LandlordProfile = {
   epcNumber: '',
 }
 
-const DEFAULT_INSPECTION_ITEMS: Array<{ category: string; itemName: string }> = [
-  { category: 'Keuken', itemName: 'Aanrecht' },
-  { category: 'Keuken', itemName: 'Gootsteen & kraan' },
-  { category: 'Keuken', itemName: 'Kookplaat' },
-  { category: 'Keuken', itemName: 'Koelkast' },
-  { category: 'Keuken', itemName: 'Microgolfoven' },
-  { category: 'Keuken', itemName: 'Kasten' },
-  { category: 'Keuken', itemName: 'Vloer' },
-  { category: 'Badkamer', itemName: 'Wastafel & kraan' },
-  { category: 'Badkamer', itemName: 'Douche' },
-  { category: 'Badkamer', itemName: 'Toilet & toiletbril' },
-  { category: 'Badkamer', itemName: 'Spiegel' },
-  { category: 'Badkamer', itemName: 'Vloer' },
-  { category: 'Kamer', itemName: 'Vloer' },
-  { category: 'Kamer', itemName: 'Muren' },
-  { category: 'Kamer', itemName: 'Plafond' },
-  { category: 'Kamer', itemName: 'Raam/ramen' },
-  { category: 'Kamer', itemName: 'Gordijnen' },
-  { category: 'Kamer', itemName: 'Deur' },
-  { category: 'Kamer', itemName: 'Kledingkast' },
-  { category: 'Kamer', itemName: 'Bureau & stoel' },
-  { category: 'Inkom', itemName: 'Vloer' },
-  { category: 'Inkom', itemName: 'Muren' },
-  { category: 'Inkom', itemName: 'Voordeur' },
-  { category: 'Inkom', itemName: 'Brievenbus' },
-  { category: 'Inkom', itemName: 'Deurbel' },
-  { category: 'Algemeen', itemName: 'Verwarming' },
-  { category: 'Algemeen', itemName: 'Elektriciteitsmeter' },
-  { category: 'Algemeen', itemName: 'Watermeter' },
-  { category: 'Algemeen', itemName: 'Rookmelder' },
-  { category: 'Algemeen', itemName: 'Sleutels' },
-]
-
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -107,6 +74,11 @@ function escapeHtml(value: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
+}
+
+function cityFromAddress(address: string): string {
+  const match = address.match(/\b\d{4}\s+([^,]+)\s*$/)
+  return match?.[1]?.trim() || ''
 }
 
 function renderHuurderInfoBlock(person: Student, heading?: string): string {
@@ -143,8 +115,6 @@ export function generateContractHtml(bundle: ContractBundle): string {
     property,
     student,
     secondStudent,
-    inspection,
-    inspectionItems = [],
     signatureDataUrl,
     landlordSignatureDataUrl,
     studentSignatureDataUrl,
@@ -155,35 +125,9 @@ export function generateContractHtml(bundle: ContractBundle): string {
   const startDate = schoolYearStartDate(contract.schoolYear)
   const endDate = schoolYearEndDate(contract.schoolYear)
 
-  const inspectionLookup = new Map(
-    inspectionItems.map(item => [`${item.category}|${item.itemName}`, item]),
-  )
-
-  const categories = [...new Set(DEFAULT_INSPECTION_ITEMS.map(i => i.category))]
-
-  const inspectionTableRows = categories
-    .map(category => {
-      const items = DEFAULT_INSPECTION_ITEMS.filter(i => i.category === category)
-      const headerRow = `<tr style="background:#dce6f0;"><td colspan="3" style="padding:6px 10px;font-weight:bold;">${escapeHtml(category)}</td></tr>`
-      const itemRows = items
-        .map(defaultItem => {
-          const found = inspectionLookup.get(`${defaultItem.category}|${defaultItem.itemName}`)
-          const valueLabel = found ? inspectionValueLabel(found.itemName, found.condition, found.keyCount) : ''
-          const notes = found?.notes ?? ''
-          return `<tr>
-            <td style="padding:5px 10px;border-bottom:1px solid #e2e8f0;">${escapeHtml(defaultItem.itemName)}</td>
-            <td style="padding:5px 10px;border-bottom:1px solid #e2e8f0;text-align:center;">${escapeHtml(valueLabel)}</td>
-            <td style="padding:5px 10px;border-bottom:1px solid #e2e8f0;color:#555;">${escapeHtml(notes)}</td>
-          </tr>`
-        })
-        .join('')
-      return headerRow + itemRows
-    })
-    .join('')
-
-  const bijlageTitle = inspection
-    ? `Bijlage A — ${inspection.type === 'start' ? 'Beginplaatsbeschrijving' : 'Eindplaatsbeschrijving'}`
-    : 'Bijlage A — Plaatsbeschrijving'
+  const contractCity = cityFromAddress(property.address)
+  const signingPlace = contractCity || '_____________________'
+  const studentTaxAuthority = contractCity ? `Stad ${contractCity}` : 'de bevoegde gemeente'
 
   return `<!doctype html>
 <html lang="nl">
@@ -258,7 +202,8 @@ ${secondStudent
 
 <article>
   <span class="art-title">Art. 2. INVENTARIS VAN HET GEHUURDE GOED</span><br/>
-  De inventaris van het gehuurde goed is opgenomen in Bijlage A (plaatsbeschrijving).
+  De inventaris van het gehuurde goed wordt vastgelegd in een afzonderlijke, tegensprekelijke
+  plaatsbeschrijving. Dat document wordt apart opgemaakt, ondertekend en geregistreerd.
 </article>
 
 <article>
@@ -272,7 +217,7 @@ ${secondStudent
   <span class="art-title">Art. 4. HUURPRIJS EN KOSTEN</span><br/>
   De huurprijs bedraagt <strong>€ ${room.monthlyRent},00 per maand</strong>.<br/>
   Vaste kosten per maand: € ${room.fixedCosts},00 (water, elektriciteit, verwarming en internet).<br/>
-  Studentenbelasting (Stad Gent): € ${room.studentTax},00 per maand.<br/>
+  Studentenbelasting (${escapeHtml(studentTaxAuthority)}): € ${room.studentTax},00 per maand.<br/>
   <strong>Totaal maandelijkse betaling: € ${totalMonthly},00</strong><br/>
   Conform art. 60 Vlaams Woninghuurdecreet dienen alle kosten en lasten verrekend te worden.
 </article>
@@ -295,9 +240,9 @@ ${secondStudent
 </article>
 
 <article>
-  <span class="art-title">Art. 7. BELASTING OP TWEEDE VERBLIJVEN (STAD GENT)</span><br/>
+  <span class="art-title">Art. 7. BELASTING OP TWEEDE VERBLIJVEN</span><br/>
   De belasting op tweede verblijven is niet inbegrepen in de huurprijs en wordt door de huurder
-  rechtstreeks verrekend. Het geldende studententarief van de Stad Gent is van toepassing.
+  rechtstreeks verrekend. Het geldende studententarief van ${escapeHtml(studentTaxAuthority)} is van toepassing.
 </article>
 
 <article>
@@ -310,8 +255,8 @@ ${secondStudent
 <article>
   <span class="art-title">Art. 9. PLAATSBESCHRIJVING</span><br/>
   Gedurende de eerste maand worden beide partijen verplicht een omstandige en tegensprekelijke
-  beginplaatsbeschrijving op te maken. De plaatsbeschrijving maakt integraal deel uit van deze
-  huurovereenkomst (Bijlage A).
+  beginplaatsbeschrijving op te maken. De plaatsbeschrijving wordt als afzonderlijk document
+  bewaard en maakt geen inline onderdeel uit van dit contract-PDF.
 </article>
 
 <article>
@@ -384,7 +329,7 @@ ${secondStudent
 </article>
 
 <p style="margin-top:20px;"><strong>ONDERTEKENING</strong><br/>
-Opgemaakt te Gent, in twee originelen. Elke partij erkent één exemplaar ontvangen te hebben.</p>
+Opgemaakt te ${escapeHtml(signingPlace)}, in twee originelen. Elke partij erkent één exemplaar ontvangen te hebben.</p>
 
 <div class="sign-block">
   <div class="sign-line">
@@ -392,7 +337,7 @@ Opgemaakt te Gent, in twee originelen. Elke partij erkent één exemplaar ontvan
     ${landlordSignature ? `<img src="${landlordSignature}" alt="Handtekening verhuurder" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
     Naam: ${escapeHtml(landlord.name)}<br/>
     Datum: _____ / _____ / _____<br/>
-    Plaats: Gent
+    Plaats: ${escapeHtml(signingPlace)}
   </div>
   <div class="sign-line">
     <strong>Handtekening huurder</strong><br/>
@@ -402,40 +347,6 @@ Opgemaakt te Gent, in twee originelen. Elke partij erkent één exemplaar ontvan
     Plaats: _____________________
   </div>
 </div>
-
-<div class="page-break"></div>
-
-<h1>${escapeHtml(bijlageTitle)}</h1>
-<p style="margin-bottom:12px;font-size:9.5pt;">
-  Opgemaakt op _____ / _____ / _____ — Kamer ${escapeHtml(room.roomNumber)}, ${escapeHtml(property.address)}
-</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="width:45%;">Onderdeel</th>
-      <th style="width:20%;text-align:center;">Toestand</th>
-      <th style="width:35%;">Opmerkingen</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${inspectionTableRows}
-  </tbody>
-</table>
-
-<div class="sign-block" style="margin-top:32px;">
-  <div class="sign-line">
-    <strong>Handtekening verhuurder</strong><br/><br/><br/>
-    Naam: ${escapeHtml(landlord.name)}<br/>
-    Datum: _____ / _____ / _____
-  </div>
-  <div class="sign-line">
-    <strong>Handtekening huurder</strong><br/><br/><br/>
-    Naam: ${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}<br/>
-    Datum: _____ / _____ / _____
-  </div>
-</div>
-
 </body>
 </html>`
 }

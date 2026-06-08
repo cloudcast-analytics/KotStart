@@ -483,6 +483,25 @@ export function getLandlordProfile(): LandlordProfile {
   return MOCK_LANDLORD_PROFILE
 }
 
+const REQUIRED_LANDLORD_PROFILE_FIELDS: Array<keyof LandlordProfile> = [
+  'name',
+  'dateOfBirth',
+  'address',
+  'phone',
+  'email',
+  'iban',
+  'bic',
+  'bank',
+  'insuranceCompany',
+  'policyNumber',
+  'epcLabel',
+  'epcNumber',
+]
+
+export function isLandlordProfileComplete(profile: LandlordProfile = getLandlordProfile()): boolean {
+  return REQUIRED_LANDLORD_PROFILE_FIELDS.every(field => profile[field].trim().length > 0)
+}
+
 export function saveLandlordProfile(profile: LandlordProfile): void {
   localStorage.setItem(LANDLORD_PROFILE_KEY, JSON.stringify(profile))
 }

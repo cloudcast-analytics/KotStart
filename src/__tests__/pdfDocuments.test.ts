@@ -34,11 +34,12 @@ describe('generateContractHtml', () => {
     expect(html).toContain('<span></span>')
   })
 
-  it('bevat een plaatsbeschrijvingstabel met standaarditems ook zonder inspectie', () => {
+  it('verwijst naar een afzonderlijke plaatsbeschrijving zonder inspectietabel', () => {
     const html = generateContractHtml(mockBundle)
-    expect(html).toContain('Plaatsbeschrijving')
-    expect(html).toContain('Aanrecht')
-    expect(html).toContain('Rookmelder')
+    expect(html).toContain('afzonderlijke, tegensprekelijke')
+    expect(html).toContain('maakt geen inline onderdeel uit van dit contract-PDF')
+    expect(html).not.toContain('Aanrecht')
+    expect(html).not.toContain('Rookmelder')
   })
 
   it('bevat de onderwijsinstelling van de student', () => {
@@ -91,7 +92,7 @@ describe('generateContractHtml', () => {
     expect(html).toContain('alt="Handtekening huurder"')
   })
 
-  it('vult de inspectietoestand in wanneer er items zijn', () => {
+  it('laat inspectietoestanden uit het contractdocument wanneer er items zijn', () => {
     const bundleWithInspection = {
       ...mockBundle,
       inspection: {
@@ -121,11 +122,13 @@ describe('generateContractHtml', () => {
       ],
     }
     const html = generateContractHtml(bundleWithInspection)
-    expect(html).toContain('Goed')
-    expect(html).toContain('Matig')
+    expect(html).not.toContain('Goed')
+    expect(html).not.toContain('Matig')
+    expect(html).not.toContain('Aanrecht')
+    expect(html).not.toContain('Douche')
   })
 
-  it('toont het aantal sleutels i.p.v. een conditielabel in de plaatsbeschrijvingstabel', () => {
+  it('neemt inspectie-items niet meer inline op in het contractdocument', () => {
     const bundleWithKeys = {
       ...mockBundle,
       inspection: {
@@ -148,7 +151,8 @@ describe('generateContractHtml', () => {
       ],
     }
     const html = generateContractHtml(bundleWithKeys)
-    expect(html).toContain('2 stuks')
+    expect(html).not.toContain('2 stuks')
+    expect(html).not.toContain('Sleutels')
   })
 
   it('toont "ANDERZIJDS, de HUURDER:" en één infoblok zonder tweede student', () => {

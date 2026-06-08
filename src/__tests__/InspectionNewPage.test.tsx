@@ -40,20 +40,6 @@ async function setSleutelsCount(times: number) {
 }
 
 describe('InspectionNewPage', () => {
-  function mockPrintWindow() {
-    const write = vi.fn()
-    vi.spyOn(window, 'open').mockReturnValue({
-      document: {
-        open: vi.fn(),
-        write,
-        close: vi.fn(),
-      },
-      focus: vi.fn(),
-      print: vi.fn(),
-    } as unknown as Window)
-    return { write }
-  }
-
   it('toont de eerste categorie en onderdelen', () => {
     renderPage()
 
@@ -139,8 +125,7 @@ describe('InspectionNewPage', () => {
     expect(screen.getByRole('button', { name: /plaatsbeschrijving afronden/i })).toBeDisabled()
   })
 
-  it('toont een PDF voorbeeld knop op de laatste stap', async () => {
-    const { write } = mockPrintWindow()
+  it('toont geen PDF voorbeeld knop op de laatste stap', async () => {
     renderPage()
 
     const categories = [
@@ -162,32 +147,9 @@ describe('InspectionNewPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
     }
 
-    expect(await screen.findByRole('button', { name: /pdf voorbeeld maken/i })).toBeDisabled()
-    expect(screen.getByText(/0\/8 foto's/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /pdf voorbeeld maken/i })).not.toBeInTheDocument()
 
-    for (let index = 0; index < 5; index += 1) {
-      const overviewPhotoInput = screen
-        .getAllByLabelText(/overzichtsfoto toevoegen/i)
-        .find(element => element.tagName === 'INPUT')
-
-      if (!overviewPhotoInput) throw new Error('Overzichtsfoto input niet gevonden')
-
-      fireEvent.change(overviewPhotoInput, {
-        target: { files: [new File([`foto${index}`], `foto${index}.png`, { type: 'image/png' })] },
-      })
-
-      await waitFor(() => {
-        expect(screen.getAllByAltText(/^overzichtsfoto \d+$/i)).toHaveLength(index + 1)
-      })
-    }
-
-    expect(screen.getByText(/5\/8 foto's/)).toBeInTheDocument()
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /pdf voorbeeld maken/i })).not.toBeDisabled()
-    })
-    fireEvent.click(screen.getByRole('button', { name: /pdf voorbeeld maken/i }))
-
-    expect(write).toHaveBeenCalledWith(expect.stringContaining('Plaatsbeschrijving'))
+    expect(screen.queryByRole('button', { name: /pdf voorbeeld maken/i })).not.toBeInTheDocument()
   })
 
   it('laat een toegevoegde overzichtsfoto verwijderen', async () => {
