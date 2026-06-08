@@ -98,7 +98,7 @@ describe('generateContractHtml', () => {
         id: 'i1',
         contractId: 'c1',
         type: 'start' as const,
-        overviewPhotoUrl: undefined,
+        overviewPhotoUrls: [],
         createdAt: '2025-09-23',
       },
       inspectionItems: [
@@ -123,6 +123,32 @@ describe('generateContractHtml', () => {
     const html = generateContractHtml(bundleWithInspection)
     expect(html).toContain('Goed')
     expect(html).toContain('Matig')
+  })
+
+  it('toont het aantal sleutels i.p.v. een conditielabel in de plaatsbeschrijvingstabel', () => {
+    const bundleWithKeys = {
+      ...mockBundle,
+      inspection: {
+        id: 'i1',
+        contractId: 'c1',
+        type: 'start' as const,
+        overviewPhotoUrls: [],
+        createdAt: '2025-09-23',
+      },
+      inspectionItems: [
+        {
+          id: 'ii1',
+          inspectionId: 'i1',
+          category: 'Algemeen',
+          itemName: 'Sleutels',
+          condition: null,
+          keyCount: 2,
+          photoUrl: undefined,
+        },
+      ],
+    }
+    const html = generateContractHtml(bundleWithKeys)
+    expect(html).toContain('2 stuks')
   })
 
   it('toont "ANDERZIJDS, de HUURDER:" en één infoblok zonder tweede student', () => {

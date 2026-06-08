@@ -116,11 +116,12 @@ export default function InspectionDetailPage() {
                   printInspectionDocument({
                     title: typeLabel,
                     type: inspection.type,
-                    overviewPhotoUrl: inspection.overviewPhotoUrls[0] ?? null,
+                    overviewPhotoUrls: inspection.overviewPhotoUrls,
                     items: items.map(item => ({
                       category: item.category,
                       itemName: item.itemName,
-                      condition: itemBadge(item).label,
+                      condition: item.condition,
+                      keyCount: item.keyCount ?? null,
                       photoUrl: item.photoUrl ?? null,
                     })),
                   })

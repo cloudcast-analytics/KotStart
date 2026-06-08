@@ -18,14 +18,15 @@ export interface ContractBundle {
 interface InspectionDocumentItem {
   category: string
   itemName: string
-  condition: string
+  condition: string | null
+  keyCount: number | null
   photoUrl: string | null
 }
 
 interface InspectionDocumentData {
   title: string
   type: 'start' | 'end'
-  overviewPhotoUrl: string | null
+  overviewPhotoUrls: string[]
   items: InspectionDocumentItem[]
 }
 
@@ -34,6 +35,15 @@ const CONDITION_LABEL: Record<string, string> = {
   moderate: 'Matig',
   bad: 'Slecht',
   unusable: 'Onbruikbaar',
+}
+
+function inspectionValueLabel(itemName: string, condition: string | null, keyCount: number | null | undefined): string {
+  if (itemName === 'Sleutels') {
+    const count = keyCount ?? 0
+    return `${count} ${count === 1 ? 'stuk' : 'stuks'}`
+  }
+
+  return condition ? (CONDITION_LABEL[condition] ?? condition) : ''
 }
 
 const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
@@ -158,11 +168,11 @@ export function generateContractHtml(bundle: ContractBundle): string {
       const itemRows = items
         .map(defaultItem => {
           const found = inspectionLookup.get(`${defaultItem.category}|${defaultItem.itemName}`)
-          const conditionLabel = found ? (CONDITION_LABEL[found.condition] ?? '') : ''
+          const valueLabel = found ? inspectionValueLabel(found.itemName, found.condition, found.keyCount) : ''
           const notes = found?.notes ?? ''
           return `<tr>
             <td style="padding:5px 10px;border-bottom:1px solid #e2e8f0;">${escapeHtml(defaultItem.itemName)}</td>
-            <td style="padding:5px 10px;border-bottom:1px solid #e2e8f0;text-align:center;">${escapeHtml(conditionLabel)}</td>
+            <td style="padding:5px 10px;border-bottom:1px solid #e2e8f0;text-align:center;">${escapeHtml(valueLabel)}</td>
             <td style="padding:5px 10px;border-bottom:1px solid #e2e8f0;color:#555;">${escapeHtml(notes)}</td>
           </tr>`
         })
@@ -528,18 +538,26 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
   }
 }
 
-export function printInspectionDocument({ title, type, overviewPhotoUrl, items }: InspectionDocumentData) {
+export function printInspectionDocument({ title, type, overviewPhotoUrls, items }: InspectionDocumentData) {
   const grouped = items.reduce<Record<string, InspectionDocumentItem[]>>((acc, item) => {
     acc[item.category] = [...(acc[item.category] ?? []), item]
     return acc
   }, {})
+
+  const overviewGallery = overviewPhotoUrls.length
+    ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;">
+        ${overviewPhotoUrls
+          .map(url => `<img style="width:100%;height:160px;object-fit:cover;border-radius:6px;" src="${url}" alt="Overzichtsfoto" />`)
+          .join('')}
+      </div>`
+    : ''
 
   const body = `
     <main style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:2cm;">
       <h1 style="font-size:15pt;">${escapeHtml(title)}</h1>
       <p style="color:#444;">${type === 'start' ? 'Startplaatsbeschrijving' : 'Eindplaatsbeschrijving'} — ${new Date().toLocaleDateString('nl-BE')}</p>
 
-      ${overviewPhotoUrl ? `<img style="width:100%;max-height:260px;object-fit:cover;margin:12px 0;" src="${overviewPhotoUrl}" alt="Overzichtsfoto" />` : ''}
+      ${overviewGallery}
 
       ${Object.entries(grouped)
         .map(
@@ -551,7 +569,7 @@ export function printInspectionDocument({ title, type, overviewPhotoUrl, items }
               <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;">
                 <div style="display:flex;justify-content:space-between;">
                   <span style="font-weight:bold;">${escapeHtml(item.itemName)}</span>
-                  <span>${escapeHtml(CONDITION_LABEL[item.condition] ?? item.condition)}</span>
+                  <span>${escapeHtml(inspectionValueLabel(item.itemName, item.condition, item.keyCount))}</span>
                 </div>
                 ${item.photoUrl ? `<img style="width:100%;max-height:220px;object-fit:cover;margin-top:8px;border-radius:6px;" src="${item.photoUrl}" alt="${escapeHtml(item.itemName)}" />` : ''}
               </div>
