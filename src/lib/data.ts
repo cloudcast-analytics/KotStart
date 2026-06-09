@@ -213,6 +213,14 @@ function asNumber(value: number | string | null): number {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function isMissingColumnError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const maybeError = error as { code?: string; message?: string }
+  return maybeError.code === '42703' ||
+    maybeError.code === 'PGRST204' ||
+    Boolean(maybeError.message?.includes('column') && maybeError.message.includes('schema cache'))
+}
+
 function mapProperty(row: PropertyRow): Property {
   return {
     id: row.id,
@@ -557,6 +565,21 @@ export async function createPropertyData(input: PropertyInput): Promise<Property
     .select()
     .single()
 
+  if (isMissingColumnError(error)) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('properties')
+      .insert({
+        owner_id: userData.user.id,
+        name: input.name,
+        address: input.address || null,
+      })
+      .select()
+      .single()
+
+    if (fallbackError) throw fallbackError
+    return mapProperty(fallbackData as PropertyRow)
+  }
+
   if (error) throw error
   return mapProperty(data as PropertyRow)
 }
@@ -574,6 +597,21 @@ export async function updatePropertyData(property: Property): Promise<Property> 
     .eq('id', property.id)
     .select()
     .single()
+
+  if (isMissingColumnError(error)) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('properties')
+      .update({
+        name: property.name,
+        address: property.address || null,
+      })
+      .eq('id', property.id)
+      .select()
+      .single()
+
+    if (fallbackError) throw fallbackError
+    return mapProperty(fallbackData as PropertyRow)
+  }
 
   if (error) throw error
   return mapProperty(data as PropertyRow)
@@ -705,6 +743,17 @@ export async function updateContractStatus(contractId: string, status: Contract[
     .from('contracts')
     .update(patch)
     .eq('id', contractId)
+
+  if (isMissingColumnError(error)) {
+    const { error: fallbackError } = await supabase
+      .from('contracts')
+      .update({ status })
+      .eq('id', contractId)
+
+    if (fallbackError) throw fallbackError
+    return
+  }
+
   if (error) throw error
 }
 
