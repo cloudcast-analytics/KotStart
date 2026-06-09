@@ -16,6 +16,7 @@ create table properties (
   owner_id uuid references auth.users(id),
   name text not null,
   address text,
+  contract_city text,
   created_at timestamptz default now()
 );
 
@@ -57,6 +58,8 @@ create table contracts (
   guardian_email text,
   guardian_phone text,
   status text check (status in ('draft','sent','signed')) default 'draft',
+  signed_at timestamptz,
+  sent_at timestamptz,
   created_at timestamptz default now()
 );
 

@@ -14,6 +14,20 @@ const ROOM_TYPE_LABEL = {
   double: 'Dubbel',
 }
 
+function signatureLabelFor(student: Student, secondStudent?: Student): string {
+  const guardians = [student, secondStudent]
+    .filter((person): person is Student => Boolean(person?.guardianName))
+    .map(person => person.guardianName!)
+
+  if (guardians.length > 0) {
+    return `Handtekening wettelijke vertegenwoordiger (${guardians.join(' en ')})`
+  }
+
+  return secondStudent
+    ? `Handtekening huurders (${student.firstName} ${student.lastName} en ${secondStudent.firstName} ${secondStudent.lastName})`
+    : `Handtekening student (${student.firstName} ${student.lastName})`
+}
+
 export default function ContractDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -76,6 +90,10 @@ export default function ContractDetailPage() {
   const startDone = !!startInspection
   const signedDone = contract.status === 'signed' || contract.status === 'sent'
   const sentDone = contract.status === 'sent'
+  const requiresGuardianSignature = [student, secondStudent].some(person => Boolean(person?.guardianName))
+  const signatureProgressLabel = requiresGuardianSignature
+    ? 'Handtekeningen verhuurder en wettelijke vertegenwoordiger'
+    : 'Handtekeningen verhuurder en student'
   const savedDraft = (location.state as { savedDraft?: boolean } | null)?.savedDraft === true
 
   async function handleSignatureConfirm(signatures: { landlord: string; student: string }) {
@@ -85,7 +103,7 @@ export default function ContractDetailPage() {
       await updateContractStatus(contract.id, 'signed')
       setLandlordSignatureDataUrl(signatures.landlord)
       setStudentSignatureDataUrl(signatures.student)
-      setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'signed' } } : null)
+      setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'signed', signedAt: new Date().toISOString() } } : null)
       setSignStatus('idle')
     } catch (err) {
       setSignStatus('error')
@@ -130,7 +148,8 @@ export default function ContractDetailPage() {
         recipients.push(secondStudent.email)
       }
       await updateContractStatus(contract.id, 'sent')
-      setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'sent' } } : null)
+      const sentAt = new Date().toISOString()
+      setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, status: 'sent', sentAt, signedAt: prev.contract.signedAt ?? sentAt } } : null)
       setSendStatus('sent')
       setStatusMessage(`Contract is verstuurd naar ${recipients.join(' en ')}.`)
     } catch (err) {
@@ -271,6 +290,7 @@ export default function ContractDetailPage() {
                 label="Contract aangemaakt"
                 done={true}
                 date={contract.createdAt}
+                datePrefix="Concept"
               />
               <ProgressRow
                 label="Startplaatsbeschrijving"
@@ -278,9 +298,11 @@ export default function ContractDetailPage() {
                 date={startInspection?.createdAt}
               />
               <ProgressRow
-                label="Handtekeningen verhuurder en student"
+                label={signatureProgressLabel}
                 done={signedDone}
                 blocked={!startDone}
+                date={contract.signedAt}
+                datePrefix="Definitief contract"
                 primaryAction={!signedDone && startDone ? () => setShowSignatureModal(true) : undefined}
                 primaryLabel={!signedDone && startDone ? 'Handtekeningen opslaan' : undefined}
               />
@@ -288,6 +310,8 @@ export default function ContractDetailPage() {
                 label="Versturen naar student"
                 done={sentDone}
                 blocked={!signedDone}
+                date={contract.sentAt}
+                datePrefix="Verstuurd"
                 primaryAction={signedDone && !sentDone ? handleSend : undefined}
                 primaryLabel={signedDone && !sentDone ? (sendStatus === 'sending' ? 'Versturen...' : 'Versturen') : undefined}
               />
@@ -364,6 +388,7 @@ export default function ContractDetailPage() {
       {showSignatureModal && (
         <SignatureModal
           studentName={`${student.firstName} ${student.lastName}`}
+          studentSignatureLabel={signatureLabelFor(student, secondStudent)}
           onConfirm={handleSignatureConfirm}
           onClose={() => setShowSignatureModal(false)}
         />
@@ -447,6 +472,7 @@ function ProgressRow({
   done,
   blocked,
   date,
+  datePrefix,
   primaryAction,
   primaryLabel,
   secondaryAction,
@@ -456,6 +482,7 @@ function ProgressRow({
   done: boolean
   blocked?: boolean
   date?: string
+  datePrefix?: string
   primaryAction?: () => void
   primaryLabel?: string
   secondaryAction?: () => void
@@ -473,6 +500,7 @@ function ProgressRow({
           <p className={cn('text-sm font-bold', blocked && !done ? 'text-slate-400' : 'text-slate-800')}>{label}</p>
           {done && date && (
             <p className="text-xs text-slate-500">
+              {datePrefix ? `${datePrefix}: ` : ''}
               {new Date(date).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           )}

@@ -46,10 +46,10 @@ describe('InspectionDetailPage', () => {
     expect(screen.getByText('3 stuks')).toBeInTheDocument()
   })
 
-  it('bevat een PDF-knop', async () => {
+  it('bevat onderaan een PDF opmaken-knop', async () => {
     renderPage()
 
-    expect(await screen.findByRole('button', { name: /pdf/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /pdf opmaken/i })).toBeInTheDocument()
   })
 
   it('navigeert terug naar het contract via de terugknop', async () => {

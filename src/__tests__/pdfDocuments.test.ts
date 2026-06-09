@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateContractHtml } from '../lib/pdfDocuments'
+import { generateContractHtml, generateInspectionHtml } from '../lib/pdfDocuments'
 import { CONTRACTS, PROPERTIES, ROOMS, STUDENTS } from '../lib/mockData'
 
 const mockBundle = {
@@ -22,6 +22,20 @@ describe('generateContractHtml', () => {
   it('bevat het adres van het pand', () => {
     const html = generateContractHtml(mockBundle)
     expect(html).toContain('Lindestraat 12, 9000 Gent')
+  })
+
+  it('gebruikt de contractgemeente van het pand voor locatie-specifieke contractvelden', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      property: {
+        ...PROPERTIES[0],
+        address: 'Markt 1',
+        contractCity: 'Leuven',
+      },
+    })
+
+    expect(html).toContain('Opgemaakt te Leuven')
+    expect(html).toContain('Studentenbelasting (Stad Leuven)')
   })
 
   it('bevat de huurprijs', () => {
@@ -84,6 +98,18 @@ describe('generateContractHtml', () => {
     expect(html).toContain('data:image/png;base64,landlord')
     expect(html).toContain('data:image/png;base64,student')
     expect(html).toContain('alt="Handtekening huurder"')
+  })
+
+  it('toont wettelijke vertegenwoordiger als ondertekenaar bij een minderjarige student', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      student: STUDENTS.find(student => student.id === 's-demo-second-student')!,
+      contract: { ...CONTRACTS[0], signedAt: '2025-09-14T10:00:00.000Z' },
+    })
+
+    expect(html).toContain('Handtekening wettelijke vertegenwoordiger / huurder')
+    expect(html).toContain('Inge Grobben')
+    expect(html).toContain('14/09/2025')
   })
 
   it('laat inspectietoestanden uit het contractdocument wanneer er items zijn', () => {
@@ -167,5 +193,32 @@ describe('generateContractHtml', () => {
     expect(html).toContain('Janssen, Emma')
     expect(html).toContain('Pieters, Liam')
     expect(html).toContain('liam.pieters@student.ugent.be')
+  })
+})
+
+describe('generateInspectionHtml', () => {
+  it('maakt een apart plaatsbeschrijvingsdocument met sleutelaantal', () => {
+    const html = generateInspectionHtml({
+      title: 'Startplaatsbeschrijving',
+      type: 'start',
+      createdAt: '2025-09-15T10:00:00.000Z',
+      overviewPhotoUrls: ['data:image/png;base64,overview'],
+      items: [
+        {
+          category: 'Algemeen',
+          itemName: 'Sleutels',
+          condition: null,
+          keyCount: 3,
+          photoUrl: null,
+        },
+      ],
+    })
+
+    expect(html).toContain('<title>Startplaatsbeschrijving</title>')
+    expect(html).toContain('Startplaatsbeschrijving')
+    expect(html).toContain('15/9/2025')
+    expect(html).toContain('Sleutels')
+    expect(html).toContain('3 stuks')
+    expect(html).toContain('data:image/png;base64,overview')
   })
 })

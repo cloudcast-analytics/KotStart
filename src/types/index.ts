@@ -2,6 +2,7 @@ export interface Property {
   id: string
   name: string
   address: string
+  contractCity?: string
   createdAt: string
 }
 
@@ -54,6 +55,8 @@ export interface Contract {
   secondStudentId?: string
   status: 'draft' | 'sent' | 'signed'
   createdAt: string
+  signedAt?: string
+  sentAt?: string
 }
 
 export interface Inspection {

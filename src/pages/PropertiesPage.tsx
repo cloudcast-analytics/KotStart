@@ -40,12 +40,14 @@ interface EditableRoom {
 interface EditableProperty {
   name: string
   address: string
+  contractCity: string
 }
 
 function toEditableProperty(property?: Property): EditableProperty {
   return {
     name: property?.name ?? '',
     address: property?.address ?? '',
+    contractCity: property?.contractCity ?? '',
   }
 }
 
@@ -217,6 +219,7 @@ function PropertyEditModal({
     onSave({
       name: form.name.trim(),
       address: form.address.trim(),
+      contractCity: form.contractCity.trim(),
     })
   }
 
@@ -261,6 +264,17 @@ function PropertyEditModal({
               value={form.address}
               onChange={event => updateField('address', event.target.value)}
               placeholder="Straat, nummer, postcode en gemeente"
+              className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Contractgemeente</span>
+            <input
+              aria-label="Contractgemeente"
+              value={form.contractCity}
+              onChange={event => updateField('contractCity', event.target.value)}
+              placeholder="Bijv. Gent"
               className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
             />
           </label>
@@ -420,6 +434,7 @@ export default function PropertiesPage() {
           ...editingProperty,
           name: input.name,
           address: input.address,
+          contractCity: input.contractCity,
         })
         setProperties(previous => previous.map(property => (
           property.id === savedProperty.id ? savedProperty : property

@@ -3,8 +3,8 @@ import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, R
 export const SCHOOL_YEARS = ['2024–2025', '2025–2026']
 
 export const PROPERTIES: Property[] = [
-  { id: 'p1', name: 'Residentie De Linde', address: 'Lindestraat 12, 9000 Gent', createdAt: '2024-08-01' },
-  { id: 'p2', name: 'Kot Guldensporenstraat', address: 'Guldensporenstraat 45, 9000 Gent', createdAt: '2024-08-01' },
+  { id: 'p1', name: 'Residentie De Linde', address: 'Lindestraat 12, 9000 Gent', contractCity: 'Gent', createdAt: '2024-08-01' },
+  { id: 'p2', name: 'Kot Guldensporenstraat', address: 'Guldensporenstraat 45, 9000 Gent', contractCity: 'Gent', createdAt: '2024-08-01' },
 ]
 
 export const ROOMS: Room[] = [
@@ -36,12 +36,12 @@ export const MOCK_LANDLORD_PROFILE: LandlordProfile = {
 }
 
 export const CONTRACTS: Contract[] = [
-  { id: 'c1', roomId: 'r1', schoolYear: '2025–2026', studentId: 's1', status: 'signed', createdAt: '2025-08-20' },
-  { id: 'c2', roomId: 'r2', schoolYear: '2025–2026', studentId: 's2', status: 'signed', createdAt: '2025-08-20' },
-  { id: 'c3', roomId: 'r4', schoolYear: '2025–2026', studentId: 's3', status: 'sent', createdAt: '2025-08-21' },
+  { id: 'c1', roomId: 'r1', schoolYear: '2025–2026', studentId: 's1', status: 'signed', createdAt: '2025-08-20', signedAt: '2025-09-12T10:00:00.000Z' },
+  { id: 'c2', roomId: 'r2', schoolYear: '2025–2026', studentId: 's2', status: 'signed', createdAt: '2025-08-20', signedAt: '2025-09-12T10:00:00.000Z' },
+  { id: 'c3', roomId: 'r4', schoolYear: '2025–2026', studentId: 's3', status: 'sent', createdAt: '2025-08-21', signedAt: '2025-09-13T10:00:00.000Z', sentAt: '2025-09-13T10:05:00.000Z' },
   { id: 'c4', roomId: 'r5', schoolYear: '2025–2026', studentId: 's4', status: 'draft', createdAt: '2025-08-22' },
   { id: 'c5', roomId: 'r7', schoolYear: '2025–2026', studentId: 's5', status: 'signed', createdAt: '2025-08-22' },
-  { id: 'c-demo-student', roomId: 'r6', schoolYear: '2025–2026', studentId: 's-demo-student', secondStudentId: 's-demo-second-student', status: 'sent', createdAt: '2025-08-23' },
+  { id: 'c-demo-student', roomId: 'r6', schoolYear: '2025–2026', studentId: 's-demo-student', secondStudentId: 's-demo-second-student', status: 'sent', createdAt: '2025-08-23', signedAt: '2025-09-14T10:00:00.000Z', sentAt: '2025-09-14T10:05:00.000Z' },
 ]
 
 export function getDashboardRows(propertyId: string, schoolYear: string): StudentDashboardRow[] {

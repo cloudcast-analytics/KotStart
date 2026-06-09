@@ -43,8 +43,10 @@ describe('ContractDetailPage', () => {
 
     await screen.findByRole('heading', { name: 'Emma Janssen' })
     expect(screen.getByText('Contract aangemaakt')).toBeInTheDocument()
+    expect(screen.getByText(/Concept: 20 augustus 2025/i)).toBeInTheDocument()
     expect(screen.getAllByText('Startplaatsbeschrijving')).not.toHaveLength(0)
     expect(screen.getByText('Handtekeningen verhuurder en student')).toBeInTheDocument()
+    expect(screen.getByText(/Definitief contract: 12 september 2025/i)).toBeInTheDocument()
     expect(screen.getByText('Versturen naar student')).toBeInTheDocument()
   })
 
@@ -163,6 +165,7 @@ describe('ContractDetailPage', () => {
     expect(await screen.findByRole('heading', { name: 'Vincent Grobben' })).toBeInTheDocument()
     expect(screen.getByText('Senne Grobben')).toBeInTheDocument()
     expect(screen.getByText(/Minderjarig — voogd: Inge Grobben/)).toBeInTheDocument()
+    expect(screen.getByText('Handtekeningen verhuurder en wettelijke vertegenwoordiger')).toBeInTheDocument()
   })
 
   it('toont één studentkop zonder voogdnotitie wanneer er geen tweede bewoner is (c1)', async () => {

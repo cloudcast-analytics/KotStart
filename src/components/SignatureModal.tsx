@@ -4,11 +4,12 @@ import { X } from 'lucide-react'
 
 interface SignatureModalProps {
   studentName: string
+  studentSignatureLabel?: string
   onConfirm: (signatures: { landlord: string; student: string }) => void
   onClose: () => void
 }
 
-export default function SignatureModal({ studentName, onConfirm, onClose }: SignatureModalProps) {
+export default function SignatureModal({ studentName, studentSignatureLabel, onConfirm, onClose }: SignatureModalProps) {
   const landlordCanvasRef = useRef<HTMLCanvasElement>(null)
   const studentCanvasRef = useRef<HTMLCanvasElement>(null)
   const landlordPadRef = useRef<SignaturePad | null>(null)
@@ -97,7 +98,7 @@ export default function SignatureModal({ studentName, onConfirm, onClose }: Sign
           onClear={() => handleClear('landlord')}
         />
         <SignatureBox
-          label={`Handtekening student (${studentName})`}
+          label={studentSignatureLabel ?? `Handtekening student (${studentName})`}
           canvasRef={studentCanvasRef}
           isEmpty={emptyState.student}
           onClear={() => handleClear('student')}

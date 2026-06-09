@@ -15,7 +15,7 @@ export interface ContractBundle {
   studentSignatureDataUrl?: string
 }
 
-interface InspectionDocumentItem {
+export interface InspectionDocumentItem {
   category: string
   itemName: string
   condition: string | null
@@ -23,9 +23,10 @@ interface InspectionDocumentItem {
   photoUrl: string | null
 }
 
-interface InspectionDocumentData {
+export interface InspectionDocumentData {
   title: string
   type: 'start' | 'end'
+  createdAt?: string
   overviewPhotoUrls: string[]
   items: InspectionDocumentItem[]
 }
@@ -101,6 +102,34 @@ function schoolYearEndDate(schoolYear: string): string {
   return isNaN(endYear) ? '30 juni' : `30 juni ${endYear}`
 }
 
+function formatDocumentDate(value: string | undefined): string {
+  if (!value) return '_____ / _____ / _____'
+  return new Date(value).toLocaleDateString('nl-BE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+}
+
+function signaturePartyLabel(student: Student, secondStudent?: Student): { title: string; name: string } {
+  const students = [student, secondStudent].filter((person): person is Student => Boolean(person))
+  const guardians = students
+    .filter(person => person.guardianName)
+    .map(person => person.guardianName!)
+
+  if (guardians.length > 0) {
+    return {
+      title: 'Handtekening wettelijke vertegenwoordiger / huurder',
+      name: guardians.join(' en '),
+    }
+  }
+
+  return {
+    title: secondStudent ? 'Handtekening huurders' : 'Handtekening huurder',
+    name: students.map(person => `${person.firstName} ${person.lastName}`).join(' en '),
+  }
+}
+
 export function generateContractHtml(bundle: ContractBundle): string {
   const {
     contract,
@@ -117,8 +146,10 @@ export function generateContractHtml(bundle: ContractBundle): string {
   const totalMonthly = room.monthlyRent + room.fixedCosts
   const startDate = schoolYearStartDate(contract.schoolYear)
   const endDate = schoolYearEndDate(contract.schoolYear)
+  const signedDate = formatDocumentDate(contract.signedAt)
+  const signatureParty = signaturePartyLabel(student, secondStudent)
 
-  const contractCity = cityFromAddress(property.address)
+  const contractCity = property.contractCity?.trim() || cityFromAddress(property.address)
   const signingPlace = contractCity || '_____________________'
   const studentTaxAuthority = contractCity ? `Stad ${contractCity}` : 'de bevoegde gemeente'
 
@@ -328,10 +359,10 @@ Opgemaakt te ${escapeHtml(signingPlace)}, in twee originelen. Elke partij erkent
     Plaats: ${escapeHtml(signingPlace)}
   </div>
   <div class="sign-line">
-    <strong>Handtekening huurder</strong><br/>
-    ${studentSignatureDataUrl ? `<img src="${studentSignatureDataUrl}" alt="Handtekening huurder" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
-    Naam: ${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}<br/>
-    Datum: _____ / _____ / _____<br/>
+    <strong>${escapeHtml(signatureParty.title)}</strong><br/>
+    ${studentSignatureDataUrl ? `<img src="${studentSignatureDataUrl}" alt="${escapeHtml(signatureParty.title)}" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
+    Naam: ${escapeHtml(signatureParty.name)}<br/>
+    Datum: ${escapeHtml(signedDate)}<br/>
     Plaats: _____________________
   </div>
 </div>
@@ -437,7 +468,7 @@ export async function generateContractPdfBase64(bundle: ContractBundle): Promise
   }
 }
 
-export function printInspectionDocument({ title, type, overviewPhotoUrls, items }: InspectionDocumentData) {
+export function generateInspectionHtml({ title, type, createdAt, overviewPhotoUrls, items }: InspectionDocumentData): string {
   const grouped = items.reduce<Record<string, InspectionDocumentItem[]>>((acc, item) => {
     acc[item.category] = [...(acc[item.category] ?? []), item]
     return acc
@@ -454,7 +485,7 @@ export function printInspectionDocument({ title, type, overviewPhotoUrls, items 
   const body = `
     <main style="font-family:Arial,sans-serif;font-size:10pt;color:#000;margin:2cm;">
       <h1 style="font-size:15pt;">${escapeHtml(title)}</h1>
-      <p style="color:#444;">${type === 'start' ? 'Startplaatsbeschrijving' : 'Eindplaatsbeschrijving'} — ${new Date().toLocaleDateString('nl-BE')}</p>
+      <p style="color:#444;">${type === 'start' ? 'Startplaatsbeschrijving' : 'Eindplaatsbeschrijving'} — ${new Date(createdAt ?? Date.now()).toLocaleDateString('nl-BE')}</p>
 
       ${overviewGallery}
 
@@ -485,5 +516,9 @@ export function printInspectionDocument({ title, type, overviewPhotoUrls, items 
       </div>
     </main>`
 
-  openPrintableDocument(title, `<!doctype html><html lang="nl"><head><meta charset="utf-8"/><title>${escapeHtml(title)}</title><style>@media print{@page{size:A4;margin:2cm;}button{display:none;}}</style></head><body>${body}</body></html>`)
+  return `<!doctype html><html lang="nl"><head><meta charset="utf-8"/><title>${escapeHtml(title)}</title><style>@media print{@page{size:A4;margin:2cm;}button{display:none;}}</style></head><body>${body}</body></html>`
+}
+
+export function printInspectionDocument(data: InspectionDocumentData) {
+  openPrintableDocument(data.title, generateInspectionHtml(data))
 }

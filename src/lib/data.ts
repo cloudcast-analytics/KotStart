@@ -6,6 +6,7 @@ interface PropertyRow {
   id: string
   name: string
   address: string | null
+  contract_city?: string | null
   created_at: string
 }
 
@@ -50,6 +51,8 @@ interface ContractRow {
   second_student_id: string | null
   status: Contract['status']
   created_at: string
+  signed_at?: string | null
+  sent_at?: string | null
 }
 
 interface InspectionRow {
@@ -113,6 +116,7 @@ interface SaveInspectionInput {
 interface PropertyInput {
   name: string
   address: string
+  contractCity?: string
 }
 
 interface RoomInput {
@@ -214,6 +218,7 @@ function mapProperty(row: PropertyRow): Property {
     id: row.id,
     name: row.name,
     address: row.address ?? '',
+    contractCity: row.contract_city ?? undefined,
     createdAt: row.created_at,
   }
 }
@@ -271,6 +276,8 @@ function mapContract(row: ContractRow): Contract {
     secondStudentId: row.second_student_id ?? undefined,
     status: row.status,
     createdAt: row.created_at,
+    signedAt: row.signed_at ?? undefined,
+    sentAt: row.sent_at ?? undefined,
   }
 }
 
@@ -530,6 +537,7 @@ export async function createPropertyData(input: PropertyInput): Promise<Property
     id: crypto.randomUUID(),
     name: input.name,
     address: input.address,
+    contractCity: input.contractCity,
     createdAt: new Date().toISOString(),
   }
   if (!isSupabaseConfigured) return fallbackProperty
@@ -544,6 +552,7 @@ export async function createPropertyData(input: PropertyInput): Promise<Property
       owner_id: userData.user.id,
       name: input.name,
       address: input.address || null,
+      contract_city: input.contractCity || null,
     })
     .select()
     .single()
@@ -560,6 +569,7 @@ export async function updatePropertyData(property: Property): Promise<Property> 
     .update({
       name: property.name,
       address: property.address || null,
+      contract_city: property.contractCity || null,
     })
     .eq('id', property.id)
     .select()
@@ -686,9 +696,14 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
 
 export async function updateContractStatus(contractId: string, status: Contract['status']): Promise<void> {
   if (!isSupabaseConfigured) return
+  const timestamp = new Date().toISOString()
+  const patch: Partial<ContractRow> = { status }
+  if (status === 'signed') patch.signed_at = timestamp
+  if (status === 'sent') patch.sent_at = timestamp
+
   const { error } = await supabase
     .from('contracts')
-    .update({ status })
+    .update(patch)
     .eq('id', contractId)
   if (error) throw error
 }
