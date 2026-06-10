@@ -67,6 +67,21 @@ export interface Inspection {
   createdAt: string
 }
 
+export type InspectionItemType = 'condition' | 'count' | 'meter'
+export type InspectionMeterUnit = 'kWh' | 'm³'
+
+export interface InspectionTemplateItem {
+  name: string
+  type: InspectionItemType
+  unit?: InspectionMeterUnit
+}
+
+export interface InspectionTemplateCategory {
+  id: string
+  label: string
+  items: InspectionTemplateItem[]
+}
+
 export interface InspectionItem {
   id: string
   inspectionId: string
@@ -74,6 +89,8 @@ export interface InspectionItem {
   itemName: string
   condition: 'good' | 'moderate' | 'bad' | 'unusable' | null
   keyCount?: number | null
+  meterValue?: number | null
+  meterUnit?: InspectionMeterUnit | null
   photoUrl?: string
   notes?: string
 }
