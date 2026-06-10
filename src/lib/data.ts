@@ -1,5 +1,5 @@
-import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
-import { CONTRACTS, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
+import type { Contract, Inspection, InspectionItem, InspectionMeterUnit, InspectionTemplateCategory, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
+import { CONTRACTS, DEFAULT_INSPECTION_CATEGORIES, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
 import { isSupabaseConfigured, supabase } from './supabase'
 
 interface PropertyRow {
@@ -70,6 +70,8 @@ interface InspectionItemRow {
   item_name: string
   condition: InspectionItem['condition']
   key_count: number | null
+  meter_value: number | string | null
+  meter_unit: string | null
   photo_url: string | null
   notes: string | null
 }
@@ -109,6 +111,8 @@ interface SaveInspectionInput {
     itemName: string
     condition: 'good' | 'moderate' | 'bad' | 'unusable' | null
     keyCount: number | null
+    meterValue: number | null
+    meterUnit: InspectionMeterUnit | null
     photoUrl: string | null
   }>
 }
@@ -314,6 +318,8 @@ function mapInspectionItem(row: InspectionItemRow): InspectionItem {
     itemName: row.item_name,
     condition: row.condition,
     keyCount: row.key_count ?? undefined,
+    meterValue: row.meter_value !== null && row.meter_value !== undefined ? Number(row.meter_value) : undefined,
+    meterUnit: (row.meter_unit as InspectionMeterUnit | null) ?? undefined,
     photoUrl: row.photo_url ?? undefined,
     notes: row.notes ?? undefined,
   }
@@ -512,6 +518,35 @@ export function isLandlordProfileComplete(profile: LandlordProfile = getLandlord
 
 export function saveLandlordProfile(profile: LandlordProfile): void {
   localStorage.setItem(LANDLORD_PROFILE_KEY, JSON.stringify(profile))
+}
+
+export async function getInspectionCategories(): Promise<InspectionTemplateCategory[]> {
+  if (!isSupabaseConfigured) return DEFAULT_INSPECTION_CATEGORIES
+
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return DEFAULT_INSPECTION_CATEGORIES
+
+  const { data, error } = await supabase
+    .from('inspection_templates')
+    .select('categories')
+    .eq('owner_id', userData.user.id)
+    .maybeSingle()
+
+  if (error || !data) return DEFAULT_INSPECTION_CATEGORIES
+  return data.categories as InspectionTemplateCategory[]
+}
+
+export async function saveInspectionCategories(categories: InspectionTemplateCategory[]): Promise<void> {
+  if (!isSupabaseConfigured) return
+
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return
+
+  const { error } = await supabase
+    .from('inspection_templates')
+    .upsert({ owner_id: userData.user.id, categories }, { onConflict: 'owner_id' })
+
+  if (error) throw error
 }
 
 export async function sendContractEmail(
@@ -864,6 +899,8 @@ export async function saveInspectionData(input: SaveInspectionInput): Promise<st
         item_name: item.itemName,
         condition: item.condition,
         key_count: item.keyCount,
+        meter_value: item.meterValue,
+        meter_unit: item.meterUnit,
         photo_url: item.photoUrl,
       })),
     )

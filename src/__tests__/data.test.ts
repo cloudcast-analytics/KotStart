@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getContractBundleData, getDashboardRowsData } from '../lib/data'
+import { getContractBundleData, getDashboardRowsData, getInspectionCategories, saveInspectionCategories } from '../lib/data'
+import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
 
 describe('getContractBundleData', () => {
   it('lost de tweede student op wanneer secondStudentId gezet is', async () => {
@@ -31,5 +32,18 @@ describe('getDashboardRowsData', () => {
 
     expect(row?.secondFirstName).toBeUndefined()
     expect(row?.secondLastName).toBeUndefined()
+  })
+})
+
+describe('getInspectionCategories', () => {
+  it('geeft DEFAULT_INSPECTION_CATEGORIES terug in demo-modus', async () => {
+    const categories = await getInspectionCategories()
+    expect(categories).toEqual(DEFAULT_INSPECTION_CATEGORIES)
+  })
+})
+
+describe('saveInspectionCategories', () => {
+  it('doet niets in demo-modus (geen Supabase)', async () => {
+    await expect(saveInspectionCategories(DEFAULT_INSPECTION_CATEGORIES)).resolves.toBeUndefined()
   })
 })
