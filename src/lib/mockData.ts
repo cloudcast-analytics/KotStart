@@ -153,4 +153,5 @@ export const MOCK_INSPECTION_ITEMS: InspectionItem[] = [
   { id: 'ii3', inspectionId: 'i1', category: 'Badkamer', itemName: 'Douche', condition: 'good', photoUrl: undefined },
   { id: 'ii4', inspectionId: 'i1', category: 'Badkamer', itemName: 'Toilet & toiletbril', condition: 'good', photoUrl: undefined },
   { id: 'ii5', inspectionId: 'i1', category: 'Algemeen', itemName: 'Sleutels', condition: null, keyCount: 3, photoUrl: undefined },
+  { id: 'ii6', inspectionId: 'i1', category: 'Algemeen', itemName: 'Elektriciteitsmeter', condition: null, meterValue: 1234, meterUnit: 'kWh', photoUrl: undefined },
 ]

@@ -46,6 +46,13 @@ describe('InspectionDetailPage', () => {
     expect(screen.getByText('3 stuks')).toBeInTheDocument()
   })
 
+  it('toont meterstand met eenheid voor meter-items', async () => {
+    renderPage()
+
+    expect(await screen.findByText('Elektriciteitsmeter')).toBeInTheDocument()
+    expect(screen.getByText('1234 kWh')).toBeInTheDocument()
+  })
+
   it('bevat onderaan een PDF opmaken-knop', async () => {
     renderPage()
 

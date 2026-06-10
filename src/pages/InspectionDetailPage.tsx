@@ -23,6 +23,10 @@ const CONDITION_COLOR: Record<Condition, string> = {
 }
 
 function itemBadge(item: InspectionItem): { label: string; colorClass: string } {
+  if (item.meterValue != null) {
+    return { label: `${item.meterValue} ${item.meterUnit ?? ''}`.trim(), colorClass: 'bg-blue-100 text-blue-700' }
+  }
+
   if (item.itemName === 'Sleutels') {
     const count = item.keyCount ?? 0
     return { label: `${count} ${count === 1 ? 'stuk' : 'stuks'}`, colorClass: 'bg-slate-100 text-slate-700' }
@@ -43,6 +47,8 @@ function printInspection(inspection: Inspection, items: InspectionItem[], title:
       itemName: item.itemName,
       condition: item.condition,
       keyCount: item.keyCount ?? null,
+      meterValue: item.meterValue ?? null,
+      meterUnit: item.meterUnit ?? null,
       photoUrl: item.photoUrl ?? null,
     })),
   })

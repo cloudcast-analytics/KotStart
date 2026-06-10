@@ -1,4 +1,4 @@
-import type { Inspection, InspectionItem, LandlordProfile, Property, Room, Student, Contract } from '../types'
+import type { Inspection, InspectionItem, InspectionMeterUnit, LandlordProfile, Property, Room, Student, Contract } from '../types'
 import { formatResidence } from './residence'
 
 export interface ContractBundle {
@@ -20,6 +20,8 @@ export interface InspectionDocumentItem {
   itemName: string
   condition: string | null
   keyCount: number | null
+  meterValue: number | null
+  meterUnit: InspectionMeterUnit | null
   photoUrl: string | null
 }
 
@@ -38,7 +40,17 @@ const CONDITION_LABEL: Record<string, string> = {
   unusable: 'Onbruikbaar',
 }
 
-function inspectionValueLabel(itemName: string, condition: string | null, keyCount: number | null | undefined): string {
+function inspectionValueLabel(
+  itemName: string,
+  condition: string | null,
+  keyCount: number | null | undefined,
+  meterValue?: number | null,
+  meterUnit?: string | null,
+): string {
+  if (meterValue != null) {
+    return `${meterValue} ${meterUnit ?? ''}`.trim()
+  }
+
   if (itemName === 'Sleutels') {
     const count = keyCount ?? 0
     return `${count} ${count === 1 ? 'stuk' : 'stuks'}`
@@ -499,7 +511,7 @@ export function generateInspectionHtml({ title, type, createdAt, overviewPhotoUr
               <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;">
                 <div style="display:flex;justify-content:space-between;">
                   <span style="font-weight:bold;">${escapeHtml(item.itemName)}</span>
-                  <span>${escapeHtml(inspectionValueLabel(item.itemName, item.condition, item.keyCount))}</span>
+                  <span>${escapeHtml(inspectionValueLabel(item.itemName, item.condition, item.keyCount, item.meterValue, item.meterUnit))}</span>
                 </div>
                 ${item.photoUrl ? `<img style="width:100%;max-height:220px;object-fit:cover;margin-top:8px;border-radius:6px;" src="${item.photoUrl}" alt="${escapeHtml(item.itemName)}" />` : ''}
               </div>

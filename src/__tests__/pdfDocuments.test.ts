@@ -209,6 +209,8 @@ describe('generateInspectionHtml', () => {
           itemName: 'Sleutels',
           condition: null,
           keyCount: 3,
+          meterValue: null,
+          meterUnit: null,
           photoUrl: null,
         },
       ],
@@ -220,5 +222,28 @@ describe('generateInspectionHtml', () => {
     expect(html).toContain('Sleutels')
     expect(html).toContain('3 stuks')
     expect(html).toContain('data:image/png;base64,overview')
+  })
+
+  it('toont meterstand met eenheid in plaats van conditie of stuks', () => {
+    const html = generateInspectionHtml({
+      title: 'Startplaatsbeschrijving',
+      type: 'start',
+      createdAt: '2025-09-15T10:00:00.000Z',
+      overviewPhotoUrls: [],
+      items: [
+        {
+          category: 'Algemeen',
+          itemName: 'Elektriciteitsmeter',
+          condition: null,
+          keyCount: null,
+          meterValue: 1234,
+          meterUnit: 'kWh',
+          photoUrl: null,
+        },
+      ],
+    })
+
+    expect(html).toContain('Elektriciteitsmeter')
+    expect(html).toContain('1234 kWh')
   })
 })
