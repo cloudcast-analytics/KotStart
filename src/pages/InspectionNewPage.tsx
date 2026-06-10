@@ -1,52 +1,21 @@
-import { type ChangeEvent, useMemo, useState } from 'react'
+import { type ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Camera, Check, Loader2, Minus, Plus, X } from 'lucide-react'
 import { cn } from '../lib/cn'
-import { saveInspectionData } from '../lib/data'
+import { getInspectionCategories, saveInspectionData } from '../lib/data'
+import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
+import type { InspectionMeterUnit, InspectionTemplateCategory, InspectionTemplateItem } from '../types'
 import StepIndicator from './wizard/StepIndicator'
 
 type Condition = 'good' | 'moderate' | 'bad' | 'unusable'
 
-interface InspectionCategory {
-  id: string
-  label: string
-  items: string[]
-}
-
 interface InspectionItemState {
   condition: Condition | null
   keyCount: number | null
+  meterValue: number | null
   photoUrl: string | null
 }
-
-const CATEGORIES: InspectionCategory[] = [
-  {
-    id: 'kitchen',
-    label: 'Keuken',
-    items: ['Aanrecht', 'Gootsteen & kraan', 'Oven/kookplaat', 'Koelkast', 'Microgolf', 'Kasten', 'Vloer'],
-  },
-  {
-    id: 'bathroom',
-    label: 'Badkamer',
-    items: ['Wastafel & kraan', 'Douche/bad', 'Toilet', 'Toiletbril', 'Spiegel', 'Afvoer', 'Vloer'],
-  },
-  {
-    id: 'living',
-    label: 'Kamer',
-    items: ['Vloer', 'Muren', 'Plafond', 'Raam/ramen', 'Gordijnen/rolgordijnen', 'Deur', 'Kledingkast'],
-  },
-  {
-    id: 'hall',
-    label: 'Inkom',
-    items: ['Vloer', 'Muren', 'Voordeur', 'Brievenbus', 'Deurbel'],
-  },
-  {
-    id: 'general',
-    label: 'Algemeen',
-    items: ['Verwarming', 'Elektriciteitsmeter', 'Watermeter', 'Rookmelder', 'Sleutels'],
-  },
-]
 
 const CONDITION_OPTIONS: Array<{
   value: Condition
@@ -59,10 +28,10 @@ const CONDITION_OPTIONS: Array<{
   { value: 'unusable', label: 'Onbruikbaar', activeClass: 'bg-red-100 text-red-800 border-red-300' },
 ]
 
-function createInitialItems(): Record<string, InspectionItemState> {
-  return CATEGORIES.reduce<Record<string, InspectionItemState>>((acc, category) => {
+function createInitialItems(categories: InspectionTemplateCategory[]): Record<string, InspectionItemState> {
+  return categories.reduce<Record<string, InspectionItemState>>((acc, category) => {
     category.items.forEach(item => {
-      acc[`${category.id}:${item}`] = { condition: null, keyCount: null, photoUrl: null }
+      acc[itemKey(category.id, item.name)] = { condition: null, keyCount: null, meterValue: null, photoUrl: null }
     })
     return acc
   }, {})
@@ -85,15 +54,37 @@ export default function InspectionNewPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const inspectionContext = location.state as { contractId?: string; type?: 'start' | 'end' } | null
+  const [categories, setCategories] = useState<InspectionTemplateCategory[]>([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [items, setItems] = useState(() => createInitialItems())
+  const [items, setItems] = useState<Record<string, InspectionItemState>>({})
   const [overviewPhotoUrls, setOverviewPhotoUrls] = useState<string[]>([])
   const [isFinishing, setIsFinishing] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const isFinalStep = currentIndex === CATEGORIES.length
-  const currentCategory = CATEGORIES[currentIndex]
-  const steps = useMemo(() => [...CATEGORIES.map(category => category.label), 'Foto'], [])
+  useEffect(() => {
+    let cancelled = false
+
+    async function load() {
+      let loaded: InspectionTemplateCategory[]
+      try {
+        loaded = await getInspectionCategories()
+      } catch {
+        loaded = DEFAULT_INSPECTION_CATEGORIES
+      }
+      if (cancelled) return
+      setCategories(loaded)
+      setItems(createInitialItems(loaded))
+      setCategoriesLoading(false)
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [])
+
+  const isFinalStep = categories.length > 0 && currentIndex === categories.length
+  const currentCategory = categories[currentIndex]
+  const steps = useMemo(() => [...categories.map(category => category.label), 'Foto'], [categories])
 
   function updateItem(categoryId: string, itemName: string, patch: Partial<InspectionItemState>) {
     const key = itemKey(categoryId, itemName)
@@ -110,9 +101,11 @@ export default function InspectionNewPage() {
     setOverviewPhotoUrls(previous => previous.filter((_, photoIndex) => photoIndex !== index))
   }
 
-  function isItemComplete(categoryId: string, itemName: string) {
-    const state = items[itemKey(categoryId, itemName)]
-    if (itemName === 'Sleutels') return state.keyCount !== null
+  function isItemComplete(categoryId: string, item: InspectionTemplateItem) {
+    const state = items[itemKey(categoryId, item.name)]
+    if (!state) return false
+    if (item.type === 'count') return state.keyCount !== null
+    if (item.type === 'meter') return state.meterValue !== null
     return state.condition !== null
   }
 
@@ -122,20 +115,23 @@ export default function InspectionNewPage() {
   }
 
   function canProceed() {
+    if (categoriesLoading) return false
     return isFinalStep ? overviewPhotoUrls.length >= 5 : currentCategoryComplete()
   }
 
   function buildInspectionItems() {
-    return CATEGORIES.flatMap(category =>
+    return categories.flatMap(category =>
       category.items
         .map(item => {
-          const state = items[itemKey(category.id, item)]
+          const state = items[itemKey(category.id, item.name)]
           if (!isItemComplete(category.id, item)) return null
           return {
             category: category.label,
-            itemName: item,
-            condition: item === 'Sleutels' ? null : state.condition,
-            keyCount: item === 'Sleutels' ? state.keyCount : null,
+            itemName: item.name,
+            condition: item.type === 'condition' ? state.condition : null,
+            keyCount: item.type === 'count' ? state.keyCount : null,
+            meterValue: item.type === 'meter' ? state.meterValue : null,
+            meterUnit: item.type === 'meter' ? (item.unit ?? null) : null,
             photoUrl: state.photoUrl,
           }
         })
@@ -144,6 +140,8 @@ export default function InspectionNewPage() {
           itemName: string
           condition: Condition | null
           keyCount: number | null
+          meterValue: number | null
+          meterUnit: InspectionMeterUnit | null
           photoUrl: string | null
         } => entry !== null),
     )
@@ -183,6 +181,10 @@ export default function InspectionNewPage() {
     setCurrentIndex(index => index - 1)
   }
 
+  if (categoriesLoading) {
+    return <div className="p-8 text-sm font-semibold text-slate-500">Plaatsbeschrijving laden...</div>
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <div className="border-b border-white/65 bg-white/38 backdrop-blur-xl">
@@ -216,7 +218,7 @@ export default function InspectionNewPage() {
                 </div>
 
                 {currentCategory.items.map(item => {
-                  const key = itemKey(currentCategory.id, item)
+                  const key = itemKey(currentCategory.id, item.name)
                   const state = items[key]
                   const needsPhoto = state.condition === 'bad' || state.condition === 'unusable'
 
@@ -226,20 +228,20 @@ export default function InspectionNewPage() {
                       className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl"
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-bold text-slate-900">{item}</p>
+                        <p className="text-sm font-bold text-slate-900">{item.name}</p>
                         {isItemComplete(currentCategory.id, item) && (
                           <Check size={16} className="mt-0.5 shrink-0 text-accent" aria-label="Ingevuld" />
                         )}
                       </div>
 
-                      {item === 'Sleutels' ? (
+                      {item.type === 'count' ? (
                         <div className="mt-3 flex items-center justify-center gap-4 rounded-xl border border-white/80 bg-white/60 py-2">
                           <button
                             type="button"
-                            aria-label="Aantal sleutels verminderen"
+                            aria-label={`Aantal ${item.name.toLowerCase()} verminderen`}
                             disabled={(state.keyCount ?? 0) <= 0}
                             onClick={() =>
-                              updateItem(currentCategory.id, item, { keyCount: Math.max(0, (state.keyCount ?? 0) - 1) })
+                              updateItem(currentCategory.id, item.name, { keyCount: Math.max(0, (state.keyCount ?? 0) - 1) })
                             }
                             className="flex h-9 w-9 items-center justify-center rounded-full border border-white/90 bg-white/70 text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                           >
@@ -250,12 +252,28 @@ export default function InspectionNewPage() {
                           </span>
                           <button
                             type="button"
-                            aria-label="Aantal sleutels vermeerderen"
-                            onClick={() => updateItem(currentCategory.id, item, { keyCount: (state.keyCount ?? 0) + 1 })}
+                            aria-label={`Aantal ${item.name.toLowerCase()} vermeerderen`}
+                            onClick={() => updateItem(currentCategory.id, item.name, { keyCount: (state.keyCount ?? 0) + 1 })}
                             className="flex h-9 w-9 items-center justify-center rounded-full border border-white/90 bg-white/70 text-slate-600"
                           >
                             <Plus size={15} />
                           </button>
+                        </div>
+                      ) : item.type === 'meter' ? (
+                        <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/80 bg-white/60 px-3 py-2">
+                          <input
+                            type="number"
+                            min={0}
+                            inputMode="decimal"
+                            aria-label={`Meterstand voor ${item.name}`}
+                            value={state.meterValue ?? ''}
+                            onChange={event => {
+                              const raw = event.target.value
+                              updateItem(currentCategory.id, item.name, { meterValue: raw === '' ? null : Number(raw) })
+                            }}
+                            className="w-full rounded-lg border border-white/90 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-accent/50 focus:ring-2 focus:ring-accent/20"
+                          />
+                          <span className="shrink-0 text-sm font-bold text-slate-500">{item.unit}</span>
                         </div>
                       ) : (
                         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -263,7 +281,7 @@ export default function InspectionNewPage() {
                             <button
                               key={option.value}
                               type="button"
-                              onClick={() => updateItem(currentCategory.id, item, { condition: option.value })}
+                              onClick={() => updateItem(currentCategory.id, item.name, { condition: option.value })}
                               className={cn(
                                 'h-9 rounded-full border px-2 text-xs font-bold transition-colors',
                                 state.condition === option.value
@@ -289,12 +307,12 @@ export default function InspectionNewPage() {
                               {state.photoUrl ? (
                                 <img
                                   src={state.photoUrl}
-                                  alt={`Foto ${item}`}
+                                  alt={`Foto ${item.name}`}
                                   className="mb-3 h-28 w-full rounded-xl object-cover"
                                 />
                               ) : null}
                               <label
-                                aria-label={`Foto toevoegen voor ${item}`}
+                                aria-label={`Foto toevoegen voor ${item.name}`}
                                 className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/75 px-3 py-2 text-xs font-bold text-orange-700"
                               >
                                 <Camera size={14} />
@@ -305,7 +323,7 @@ export default function InspectionNewPage() {
                                   capture="environment"
                                   className="hidden"
                                   onChange={event =>
-                                    readImage(event, url => updateItem(currentCategory.id, item, { photoUrl: url }))
+                                    readImage(event, url => updateItem(currentCategory.id, item.name, { photoUrl: url }))
                                   }
                                 />
                               </label>

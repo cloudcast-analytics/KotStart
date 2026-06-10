@@ -4,9 +4,13 @@ import { describe, expect, it, vi } from 'vitest'
 import InspectionNewPage from '../pages/InspectionNewPage'
 import { saveInspectionData } from '../lib/data'
 
-vi.mock('../lib/data', () => ({
-  saveInspectionData: vi.fn().mockResolvedValue(null),
-}))
+vi.mock('../lib/data', async () => {
+  const actual = await vi.importActual<typeof import('../lib/data')>('../lib/data')
+  return {
+    ...actual,
+    saveInspectionData: vi.fn().mockResolvedValue(null),
+  }
+})
 
 function renderPage() {
   return render(
@@ -24,14 +28,6 @@ async function selectAllGoodInCurrentCategory(expectedItems: number) {
   screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
 }
 
-async function rateAllExceptSleutels(expectedItems: number) {
-  await waitFor(() => {
-    expect(screen.getAllByRole('button', { name: 'Goed' })).toHaveLength(expectedItems)
-  })
-
-  screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
-}
-
 async function setSleutelsCount(times: number) {
   const plusButton = await screen.findByRole('button', { name: /aantal sleutels vermeerderen/i })
   for (let i = 0; i < times; i += 1) {
@@ -39,18 +35,26 @@ async function setSleutelsCount(times: number) {
   }
 }
 
+async function fillMeterValues(values: Record<string, string>) {
+  for (const [label, value] of Object.entries(values)) {
+    const input = await screen.findByLabelText(new RegExp(`meterstand voor ${label}`, 'i'))
+    fireEvent.change(input, { target: { value } })
+  }
+}
+
 describe('InspectionNewPage', () => {
-  it('toont de eerste categorie en onderdelen', () => {
+  it('toont de eerste categorie en onderdelen', async () => {
     renderPage()
 
-    expect(screen.getByRole('heading', { name: 'Keuken' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Keuken' })).toBeInTheDocument()
     expect(screen.getByText('Aanrecht')).toBeInTheDocument()
     expect(screen.getByText('Gootsteen & kraan')).toBeInTheDocument()
   })
 
-  it('blokkeert Volgende tot alle onderdelen een toestand hebben', () => {
+  it('blokkeert Volgende tot alle onderdelen een toestand hebben', async () => {
     renderPage()
 
+    await screen.findByRole('heading', { name: 'Keuken' })
     expect(screen.getByRole('button', { name: /volgende/i })).toBeDisabled()
 
     screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
@@ -58,9 +62,10 @@ describe('InspectionNewPage', () => {
     expect(screen.getByRole('button', { name: /volgende/i })).not.toBeDisabled()
   })
 
-  it('toont foto-upload bij slechte toestand', () => {
+  it('toont foto-upload bij slechte toestand', async () => {
     renderPage()
 
+    await screen.findByRole('heading', { name: 'Keuken' })
     const aanrecht = screen.getByText('Aanrecht').closest('div')?.parentElement
     const slecht = Array.from(aanrecht?.querySelectorAll('button') ?? []).find(button =>
       button.textContent?.includes('Slecht'),
@@ -113,7 +118,11 @@ describe('InspectionNewPage', () => {
     for (const category of categories) {
       await screen.findByRole('heading', { name: category.title })
       if (category.title === 'Algemeen') {
-        await rateAllExceptSleutels(category.itemCount)
+        await waitFor(() => {
+          expect(screen.getAllByRole('button', { name: 'Goed' })).toHaveLength(2)
+        })
+        screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
+        await fillMeterValues({ Elektriciteitsmeter: '1234', Gasmeter: '56', Watermeter: '78' })
         await setSleutelsCount(2)
       } else {
         await selectAllGoodInCurrentCategory(category.itemCount)
@@ -139,7 +148,11 @@ describe('InspectionNewPage', () => {
     for (const category of categories) {
       await screen.findByRole('heading', { name: category.title })
       if (category.title === 'Algemeen') {
-        await rateAllExceptSleutels(category.itemCount)
+        await waitFor(() => {
+          expect(screen.getAllByRole('button', { name: 'Goed' })).toHaveLength(2)
+        })
+        screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
+        await fillMeterValues({ Elektriciteitsmeter: '1234', Gasmeter: '56', Watermeter: '78' })
         await setSleutelsCount(2)
       } else {
         await selectAllGoodInCurrentCategory(category.itemCount)
@@ -166,7 +179,11 @@ describe('InspectionNewPage', () => {
     for (const category of categories) {
       await screen.findByRole('heading', { name: category.title })
       if (category.title === 'Algemeen') {
-        await rateAllExceptSleutels(category.itemCount)
+        await waitFor(() => {
+          expect(screen.getAllByRole('button', { name: 'Goed' })).toHaveLength(2)
+        })
+        screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
+        await fillMeterValues({ Elektriciteitsmeter: '1234', Gasmeter: '56', Watermeter: '78' })
         await setSleutelsCount(1)
       } else {
         await selectAllGoodInCurrentCategory(category.itemCount)
@@ -208,7 +225,11 @@ describe('InspectionNewPage', () => {
     for (const category of categories) {
       await screen.findByRole('heading', { name: category.title })
       if (category.title === 'Algemeen') {
-        await rateAllExceptSleutels(category.itemCount)
+        await waitFor(() => {
+          expect(screen.getAllByRole('button', { name: 'Goed' })).toHaveLength(2)
+        })
+        screen.getAllByRole('button', { name: 'Goed' }).forEach(button => fireEvent.click(button))
+        await fillMeterValues({ Elektriciteitsmeter: '1234', Gasmeter: '56', Watermeter: '78' })
         await setSleutelsCount(1)
       } else {
         await selectAllGoodInCurrentCategory(category.itemCount)
@@ -235,5 +256,22 @@ describe('InspectionNewPage', () => {
 
     expect(await screen.findByRole('status')).toHaveTextContent('Opslaan mislukt: geen verbinding')
     expect(screen.getByRole('button', { name: /plaatsbeschrijving afronden/i })).not.toBeDisabled()
+  })
+
+  it('toont een meterstand-invoerveld met eenheid voor Elektriciteitsmeter en Gasmeter', async () => {
+    renderPage()
+
+    const categories = ['Keuken', 'Badkamer', 'Kamer', 'Inkom']
+    for (const title of categories) {
+      await screen.findByRole('heading', { name: title })
+      await selectAllGoodInCurrentCategory(title === 'Inkom' ? 5 : 7)
+      fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
+    }
+
+    await screen.findByRole('heading', { name: 'Algemeen' })
+    expect(screen.getByLabelText(/meterstand voor elektriciteitsmeter/i)).toBeInTheDocument()
+    expect(screen.getByText('kWh')).toBeInTheDocument()
+    expect(screen.getByLabelText(/meterstand voor gasmeter/i)).toBeInTheDocument()
+    expect(screen.getAllByText('m³').length).toBeGreaterThanOrEqual(1)
   })
 })
