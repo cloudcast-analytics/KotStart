@@ -1,4 +1,4 @@
-import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
+import type { Contract, Inspection, InspectionItem, InspectionTemplateCategory, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
 
 export const SCHOOL_YEARS = ['2024–2025', '2025–2026']
 
@@ -25,6 +25,71 @@ export const STUDENTS: Student[] = [
   { id: 's5', firstName: 'Fien', lastName: 'Vandenberghe', email: 'fien.vandenberghe@student.ugent.be', phone: '0474 33 44 55', dateOfBirth: '2005-09-27', institution: 'Universiteit Gent', faculty: 'Faculteit Wetenschappen', studentNumber: '202401238', residenceStreet: 'Dorpsstraat', residenceNumber: '3', residencePostalCode: '9830', residenceCity: 'Sint-Martens-Latem', createdAt: '2025-08-19' },
   { id: 's-demo-student', firstName: 'Vincent', lastName: 'Grobben', email: 'vincent.grobben@example.com', phone: '0470 00 00 00', dateOfBirth: '2005-01-01', institution: 'Hogeschool Gent', faculty: '', studentNumber: 'DEMO-001', residenceStreet: 'Teststraat', residenceNumber: '1', residencePostalCode: '9000', residenceCity: 'Gent', createdAt: '2025-08-23' },
   { id: 's-demo-second-student', firstName: 'Senne', lastName: 'Grobben', email: 'senne.grobben@example.com', phone: '0470 00 00 01', dateOfBirth: '2010-02-15', institution: 'Hogeschool Gent', faculty: '', studentNumber: 'DEMO-002', residenceStreet: 'Teststraat', residenceNumber: '1', residencePostalCode: '9000', residenceCity: 'Gent', guardianName: 'Inge Grobben', guardianEmail: 'inge.grobben@example.com', guardianPhone: '0470 00 00 02', createdAt: '2025-08-23' },
+]
+
+export const DEFAULT_INSPECTION_CATEGORIES: InspectionTemplateCategory[] = [
+  {
+    id: 'kitchen',
+    label: 'Keuken',
+    items: [
+      { name: 'Aanrecht', type: 'condition' },
+      { name: 'Gootsteen & kraan', type: 'condition' },
+      { name: 'Oven/kookplaat', type: 'condition' },
+      { name: 'Koelkast', type: 'condition' },
+      { name: 'Microgolf', type: 'condition' },
+      { name: 'Kasten', type: 'condition' },
+      { name: 'Vloer', type: 'condition' },
+    ],
+  },
+  {
+    id: 'bathroom',
+    label: 'Badkamer',
+    items: [
+      { name: 'Wastafel & kraan', type: 'condition' },
+      { name: 'Douche/bad', type: 'condition' },
+      { name: 'Toilet', type: 'condition' },
+      { name: 'Toiletbril', type: 'condition' },
+      { name: 'Spiegel', type: 'condition' },
+      { name: 'Afvoer', type: 'condition' },
+      { name: 'Vloer', type: 'condition' },
+    ],
+  },
+  {
+    id: 'living',
+    label: 'Kamer',
+    items: [
+      { name: 'Vloer', type: 'condition' },
+      { name: 'Muren', type: 'condition' },
+      { name: 'Plafond', type: 'condition' },
+      { name: 'Raam/ramen', type: 'condition' },
+      { name: 'Gordijnen/rolgordijnen', type: 'condition' },
+      { name: 'Deur', type: 'condition' },
+      { name: 'Kledingkast', type: 'condition' },
+    ],
+  },
+  {
+    id: 'hall',
+    label: 'Inkom',
+    items: [
+      { name: 'Vloer', type: 'condition' },
+      { name: 'Muren', type: 'condition' },
+      { name: 'Voordeur', type: 'condition' },
+      { name: 'Brievenbus', type: 'condition' },
+      { name: 'Deurbel', type: 'condition' },
+    ],
+  },
+  {
+    id: 'general',
+    label: 'Algemeen',
+    items: [
+      { name: 'Verwarming', type: 'condition' },
+      { name: 'Elektriciteitsmeter', type: 'meter', unit: 'kWh' },
+      { name: 'Gasmeter', type: 'meter', unit: 'm³' },
+      { name: 'Watermeter', type: 'meter', unit: 'm³' },
+      { name: 'Rookmelder', type: 'condition' },
+      { name: 'Sleutels', type: 'count' },
+    ],
+  },
 ]
 
 export const MOCK_LANDLORD_PROFILE: LandlordProfile = {
