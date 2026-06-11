@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, saveInspectionCategories } from '../lib/data'
+import { getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, nextSchoolYear, saveInspectionCategories } from '../lib/data'
 import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
 
 describe('getContractBundleData', () => {
@@ -56,5 +56,15 @@ describe('getContracts', () => {
     expect(c1?.monthlyRent).toBe(450)
     expect(c1?.fixedCosts).toBe(60)
     expect(c1?.studentTax).toBe(12)
+  })
+})
+
+describe('nextSchoolYear', () => {
+  it('telt beide jaartallen op met 1', () => {
+    expect(nextSchoolYear('2025–2026')).toBe('2026–2027')
+  })
+
+  it('geeft de input ongewijzigd terug bij een onverwacht formaat', () => {
+    expect(nextSchoolYear('onbekend')).toBe('onbekend')
   })
 })

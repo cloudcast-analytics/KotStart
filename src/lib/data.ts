@@ -366,7 +366,7 @@ async function mapInspectionItemWithAssets(row: InspectionItemRow): Promise<Insp
   }
 }
 
-function nextSchoolYear(current: string): string {
+export function nextSchoolYear(current: string): string {
   const match = current.match(/^(\d{4})[–-](\d{4})$/)
   if (!match) return current
 
