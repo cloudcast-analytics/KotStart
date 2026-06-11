@@ -64,6 +64,9 @@ export interface Contract {
   createdAt: string
   signedAt?: string
   sentAt?: string
+  monthlyRent?: number
+  fixedCosts?: number
+  studentTax?: number
 }
 
 export interface Inspection {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getContractBundleData, getDashboardRowsData, getInspectionCategories, saveInspectionCategories } from '../lib/data'
+import { getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, saveInspectionCategories } from '../lib/data'
 import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
 
 describe('getContractBundleData', () => {
@@ -45,5 +45,16 @@ describe('getInspectionCategories', () => {
 describe('saveInspectionCategories', () => {
   it('doet niets in demo-modus (geen Supabase)', async () => {
     await expect(saveInspectionCategories('p1', DEFAULT_INSPECTION_CATEGORIES)).resolves.toBeUndefined()
+  })
+})
+
+describe('getContracts', () => {
+  it('geeft de prijssnapshot van elk contract door', async () => {
+    const contracts = await getContracts()
+    const c1 = contracts.find(c => c.id === 'c1')
+
+    expect(c1?.monthlyRent).toBe(450)
+    expect(c1?.fixedCosts).toBe(60)
+    expect(c1?.studentTax).toBe(12)
   })
 })

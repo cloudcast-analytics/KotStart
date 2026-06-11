@@ -1,6 +1,6 @@
 import type { Contract, Inspection, InspectionItem, InspectionTemplateCategory, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
 
-export const SCHOOL_YEARS = ['2024–2025', '2025–2026']
+export const SCHOOL_YEARS = ['2024–2025', '2025–2026', '2026–2027', '2027–2028']
 
 export const PROPERTIES: Property[] = [
   { id: 'p1', name: 'Residentie De Linde', street: 'Lindestraat', number: '12', postalCode: '9000', city: 'Gent', createdAt: '2024-08-01' },
@@ -106,12 +106,12 @@ export const MOCK_LANDLORD_PROFILE: LandlordProfile = {
 }
 
 export const CONTRACTS: Contract[] = [
-  { id: 'c1', roomId: 'r1', schoolYear: '2025–2026', studentId: 's1', status: 'signed', createdAt: '2025-08-20', signedAt: '2025-09-12T10:00:00.000Z' },
-  { id: 'c2', roomId: 'r2', schoolYear: '2025–2026', studentId: 's2', status: 'signed', createdAt: '2025-08-20', signedAt: '2025-09-12T10:00:00.000Z' },
-  { id: 'c3', roomId: 'r4', schoolYear: '2025–2026', studentId: 's3', status: 'sent', createdAt: '2025-08-21', signedAt: '2025-09-13T10:00:00.000Z', sentAt: '2025-09-13T10:05:00.000Z' },
-  { id: 'c4', roomId: 'r5', schoolYear: '2025–2026', studentId: 's4', status: 'draft', createdAt: '2025-08-22' },
-  { id: 'c5', roomId: 'r7', schoolYear: '2025–2026', studentId: 's5', status: 'signed', createdAt: '2025-08-22' },
-  { id: 'c-demo-student', roomId: 'r6', schoolYear: '2025–2026', studentId: 's-demo-student', secondStudentId: 's-demo-second-student', status: 'sent', createdAt: '2025-08-23', signedAt: '2025-09-14T10:00:00.000Z', sentAt: '2025-09-14T10:05:00.000Z' },
+  { id: 'c1', roomId: 'r1', schoolYear: '2025–2026', studentId: 's1', status: 'signed', createdAt: '2025-08-20', signedAt: '2025-09-12T10:00:00.000Z', monthlyRent: 450, fixedCosts: 60, studentTax: 12 },
+  { id: 'c2', roomId: 'r2', schoolYear: '2025–2026', studentId: 's2', status: 'signed', createdAt: '2025-08-20', signedAt: '2025-09-12T10:00:00.000Z', monthlyRent: 470, fixedCosts: 60, studentTax: 12 },
+  { id: 'c3', roomId: 'r4', schoolYear: '2025–2026', studentId: 's3', status: 'sent', createdAt: '2025-08-21', signedAt: '2025-09-13T10:00:00.000Z', sentAt: '2025-09-13T10:05:00.000Z', monthlyRent: 450, fixedCosts: 60, studentTax: 12 },
+  { id: 'c4', roomId: 'r5', schoolYear: '2025–2026', studentId: 's4', status: 'draft', createdAt: '2025-08-22', monthlyRent: 460, fixedCosts: 60, studentTax: 12 },
+  { id: 'c5', roomId: 'r7', schoolYear: '2025–2026', studentId: 's5', status: 'signed', createdAt: '2025-08-22', monthlyRent: 450, fixedCosts: 60, studentTax: 12 },
+  { id: 'c-demo-student', roomId: 'r6', schoolYear: '2025–2026', studentId: 's-demo-student', secondStudentId: 's-demo-second-student', status: 'sent', createdAt: '2025-08-23', signedAt: '2025-09-14T10:00:00.000Z', sentAt: '2025-09-14T10:05:00.000Z', monthlyRent: 600, fixedCosts: 80, studentTax: 24 },
 ]
 
 export function getDashboardRows(propertyId: string, schoolYear: string): StudentDashboardRow[] {
