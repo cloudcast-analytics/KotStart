@@ -2,28 +2,18 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Loader2, Send } from 'lucide-react'
 import StepIndicator from './wizard/StepIndicator'
-import { SCHOOL_YEARS } from '../lib/mockData'
-import { getContractBundleData } from '../lib/data'
+import { createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, nextSchoolYear } from '../lib/data'
 import { cn } from '../lib/cn'
 import type { Contract, Property, Room, Student } from '../types'
 
 interface RenewForm {
+  roomId: string
   monthlyRent: string
   fixedCosts: string
   studentTax: string
-  schoolYear: string
 }
 
 const STEPS = ['Gegevens', 'Overzicht']
-
-function nextSchoolYear(current: string) {
-  const match = current.match(/^(\d{4})[–-](\d{4})$/)
-  if (!match) return SCHOOL_YEARS[SCHOOL_YEARS.length - 1] ?? current
-
-  const start = Number(match[1]) + 1
-  const end = Number(match[2]) + 1
-  return `${start}–${end}`
-}
 
 export default function ContractRenewPage() {
   const { id } = useParams()
@@ -34,13 +24,14 @@ export default function ContractRenewPage() {
     student: Student
     property: Property
   } | null>(null)
+  const [availableRooms, setAvailableRooms] = useState<Room[]>([])
   const [step, setStep] = useState<1 | 2>(1)
   const [isSending, setIsSending] = useState(false)
   const [form, setForm] = useState<RenewForm>({
+    roomId: '',
     monthlyRent: '',
     fixedCosts: '',
     studentTax: '',
-    schoolYear: '',
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -56,11 +47,16 @@ export default function ContractRenewPage() {
         if (cancelled) return
         setBundle(nextBundle)
         if (nextBundle) {
+          const upcomingSchoolYear = nextSchoolYear(nextBundle.contract.schoolYear)
+          const rooms = await getAvailableRoomsForRenewal(nextBundle.property.id, upcomingSchoolYear, nextBundle.contract.id)
+          if (cancelled) return
+          setAvailableRooms(rooms)
+          const defaultRoom = rooms.find(room => room.id === nextBundle.room.id) ?? rooms[0]
           setForm({
-            monthlyRent: String(nextBundle.room.monthlyRent),
-            fixedCosts: String(nextBundle.room.fixedCosts),
-            studentTax: String(nextBundle.room.studentTax),
-            schoolYear: nextSchoolYear(nextBundle.contract.schoolYear),
+            roomId: defaultRoom?.id ?? '',
+            monthlyRent: String(defaultRoom?.monthlyRent ?? nextBundle.room.monthlyRent),
+            fixedCosts: String(defaultRoom?.fixedCosts ?? nextBundle.room.fixedCosts),
+            studentTax: String(defaultRoom?.studentTax ?? nextBundle.room.studentTax),
           })
         }
       } catch (err) {
@@ -87,16 +83,29 @@ export default function ContractRenewPage() {
   if (!bundle) return <Navigate to="/" replace />
 
   const { contract, room, student, property } = bundle
+  const upcomingSchoolYear = nextSchoolYear(contract.schoolYear)
+  const selectedRoom = availableRooms.find(availableRoom => availableRoom.id === form.roomId)
 
   function updateField<K extends keyof RenewForm>(field: K, value: RenewForm[K]) {
     setForm(previous => ({ ...previous, [field]: value }))
   }
 
-  function canProceed() {
-    return Boolean(form.monthlyRent && form.fixedCosts && form.studentTax && form.schoolYear)
+  function handleRoomChange(roomId: string) {
+    const selected = availableRooms.find(availableRoom => availableRoom.id === roomId)
+    if (!selected) return
+    setForm({
+      roomId: selected.id,
+      monthlyRent: String(selected.monthlyRent),
+      fixedCosts: String(selected.fixedCosts),
+      studentTax: String(selected.studentTax),
+    })
   }
 
-  function handleNext() {
+  function canProceed() {
+    return Boolean(form.roomId && form.monthlyRent && form.fixedCosts && form.studentTax)
+  }
+
+  async function handleNext() {
     if (!canProceed()) return
     if (step === 1) {
       setStep(2)
@@ -104,7 +113,24 @@ export default function ContractRenewPage() {
     }
 
     setIsSending(true)
-    window.setTimeout(() => navigate('/'), 1200)
+    try {
+      const newContractId = await createContractRenewal({
+        previousContractId: contract.id,
+        roomId: form.roomId,
+        schoolYear: upcomingSchoolYear,
+        monthlyRent: Number(form.monthlyRent),
+        fixedCosts: Number(form.fixedCosts),
+        studentTax: Number(form.studentTax),
+      })
+      if (newContractId) {
+        navigate(`/contracts/${newContractId}`, { state: { savedDraft: true } })
+      } else {
+        window.setTimeout(() => navigate('/'), 1200)
+      }
+    } catch (err) {
+      setIsSending(false)
+      setError(err instanceof Error ? err.message : 'Verlenging opslaan mislukt')
+    }
   }
 
   return (
@@ -133,33 +159,35 @@ export default function ContractRenewPage() {
               <div className="grid gap-3">
                 <div className="grid grid-cols-2 gap-3">
                   <ReadonlyField label="Student" value={`${student.firstName} ${student.lastName}`} />
-                  <ReadonlyField label="Kamer" value={room.roomNumber} />
+                  <ReadonlyField label="Huidig schooljaar" value={contract.schoolYear} />
                 </div>
-                <ReadonlyField label="Huidig schooljaar" value={contract.schoolYear} />
+                <ReadonlyField label="Nieuw schooljaar" value={upcomingSchoolYear} />
               </div>
             </div>
 
             <div className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
               <div className="grid gap-3">
-                <label className="grid gap-1">
-                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
-                    Nieuw schooljaar
-                  </span>
-                  <select
-                    aria-label="Nieuw schooljaar"
-                    value={form.schoolYear}
-                    onChange={event => updateField('schoolYear', event.target.value)}
-                    className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
-                  >
-                    {[...SCHOOL_YEARS, nextSchoolYear(contract.schoolYear)]
-                      .filter((year, index, years) => years.indexOf(year) === index)
-                      .map(year => (
-                        <option key={year} value={year}>
-                          {year}
+                {availableRooms.length === 0 ? (
+                  <p className="rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-700">
+                    Geen beschikbare kamers voor het volgende schooljaar.
+                  </p>
+                ) : (
+                  <label className="grid gap-1">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Kamer</span>
+                    <select
+                      aria-label="Kamer"
+                      value={form.roomId}
+                      onChange={event => handleRoomChange(event.target.value)}
+                      className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    >
+                      {availableRooms.map(availableRoom => (
+                        <option key={availableRoom.id} value={availableRoom.id}>
+                          Kamer {availableRoom.roomNumber}
                         </option>
                       ))}
-                  </select>
-                </label>
+                    </select>
+                  </label>
+                )}
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <MoneyField
@@ -192,8 +220,8 @@ export default function ContractRenewPage() {
               rows={[
                 ['Student', `${student.firstName} ${student.lastName}`],
                 ['Pand', property.name],
-                ['Kamer', room.roomNumber],
-                ['Schooljaar', form.schoolYear],
+                ['Kamer', selectedRoom?.roomNumber ?? room.roomNumber],
+                ['Schooljaar', upcomingSchoolYear],
                 ['Huurprijs', `€ ${form.monthlyRent}/maand`],
                 ['Vaste kosten', `€ ${form.fixedCosts}/maand`],
                 ['Studentenbelasting', `€ ${form.studentTax}/maand`],
