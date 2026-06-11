@@ -55,9 +55,9 @@ export default function StudentRow({
           type="button"
           aria-label="Startplaatsbeschrijving"
           onClick={() => onStartInspection(row.contractId)}
-          className="btn-action btn-action-start"
+          className={cn('btn-action', row.startInspectionDone ? 'btn-action-start-done' : 'btn-action-start')}
         >
-          <ClipboardList size={15} className="text-start-green" />
+          <ClipboardList size={15} className={row.startInspectionDone ? 'text-green-100' : 'text-start-green'} />
           <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-green-400 to-green-600 text-white text-[7px] font-black flex items-center justify-center border-[1.5px] border-white">
             S
           </span>
@@ -67,18 +67,18 @@ export default function StudentRow({
           type="button"
           aria-label="Contract verlengen"
           onClick={() => onRenew(row.contractId)}
-          className="btn-action btn-action-renew"
+          className={cn('btn-action', row.renewDone ? 'btn-action-renew-done' : 'btn-action-renew')}
         >
-          <CalendarPlus size={15} className="text-renew-blue" />
+          <CalendarPlus size={15} className={row.renewDone ? 'text-blue-100' : 'text-renew-blue'} />
         </button>
 
         <button
           type="button"
           aria-label="Eindplaatsbeschrijving"
           onClick={() => onEndInspection(row.contractId)}
-          className="btn-action btn-action-end"
+          className={cn('btn-action', row.endInspectionDone ? 'btn-action-end-done' : 'btn-action-end')}
         >
-          <ClipboardCheck size={15} className="text-end-purple" />
+          <ClipboardCheck size={15} className={row.endInspectionDone ? 'text-purple-100' : 'text-end-purple'} />
           <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-purple-400 to-purple-700 text-white text-[7px] font-black flex items-center justify-center border-[1.5px] border-white">
             E
           </span>

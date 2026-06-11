@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import SettingsPage from '../pages/SettingsPage'
 import { saveInspectionCategories } from '../lib/data'
+import { PROPERTIES } from '../lib/mockData'
 
 vi.mock('../lib/data', async () => {
   const actual = await vi.importActual<typeof import('../lib/data')>('../lib/data')
@@ -20,21 +21,36 @@ function renderPage() {
   )
 }
 
+async function selectFirstProperty() {
+  await waitFor(() => {
+    expect(screen.getByRole('button', { name: new RegExp(PROPERTIES[0].name) })).toBeInTheDocument()
+  })
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(PROPERTIES[0].name) }))
+}
+
 describe('SettingsPage', () => {
   it('toont app-instellingen zonder verhuurderformulier', async () => {
     renderPage()
 
     expect(screen.getByRole('heading', { name: 'Instellingen' })).toBeInTheDocument()
-    expect(screen.getByText(/plaatsbeschrijvingscategorieen/i)).toBeInTheDocument()
-    expect(screen.getByText(/verhuurdergegevens staan voortaan bij account/i)).toBeInTheDocument()
     expect(screen.queryByLabelText('Naam en voornamen')).not.toBeInTheDocument()
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Plaatsbeschrijvingscategorieën' })).toBeInTheDocument()
+      expect(screen.getByText('Plaatsbeschrijving aanpassen')).toBeInTheDocument()
     })
   })
 
-  it('laadt de standaardcategorieën met Algemeen en meterstand-items', async () => {
+  it('toont een lijst van panden om te kiezen', async () => {
     renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: new RegExp(PROPERTIES[0].name) })).toBeInTheDocument()
+    })
+    expect(screen.getByRole('button', { name: new RegExp(PROPERTIES[1].name) })).toBeInTheDocument()
+  })
+
+  it('laadt de standaardcategorieën met Algemeen en meterstand-items na pandkeuze', async () => {
+    renderPage()
+    await selectFirstProperty()
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Algemeen')).toBeInTheDocument()
@@ -44,8 +60,24 @@ describe('SettingsPage', () => {
     expect(screen.getByDisplayValue('Watermeter')).toBeInTheDocument()
   })
 
+  it('gaat terug naar de pandkeuze via "Ander pand"', async () => {
+    renderPage()
+    await selectFirstProperty()
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Algemeen')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /ander pand/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: new RegExp(PROPERTIES[0].name) })).toBeInTheDocument()
+    })
+  })
+
   it('voegt een nieuwe categorie toe', async () => {
     renderPage()
+    await selectFirstProperty()
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Algemeen')).toBeInTheDocument()
@@ -58,6 +90,7 @@ describe('SettingsPage', () => {
 
   it('verwijdert een item uit een categorie', async () => {
     renderPage()
+    await selectFirstProperty()
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Gasmeter')).toBeInTheDocument()
@@ -70,6 +103,7 @@ describe('SettingsPage', () => {
 
   it('zet eenheid standaard op kWh wanneer itemtype naar Meterstand wijzigt', async () => {
     renderPage()
+    await selectFirstProperty()
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Verwarming')).toBeInTheDocument()
@@ -87,6 +121,7 @@ describe('SettingsPage', () => {
 
   it('toont reset-bevestiging en herstelt de standaardtemplate', async () => {
     renderPage()
+    await selectFirstProperty()
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Gasmeter')).toBeInTheDocument()
@@ -103,8 +138,9 @@ describe('SettingsPage', () => {
     expect(screen.getByDisplayValue('Gasmeter')).toBeInTheDocument()
   })
 
-  it('roept saveInspectionCategories aan bij Wijzigingen opslaan', async () => {
+  it('roept saveInspectionCategories aan met het gekozen pand bij Wijzigingen opslaan', async () => {
     renderPage()
+    await selectFirstProperty()
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Algemeen')).toBeInTheDocument()
@@ -113,13 +149,14 @@ describe('SettingsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /wijzigingen opslaan/i }))
 
     await waitFor(() => {
-      expect(saveInspectionCategories).toHaveBeenCalled()
+      expect(saveInspectionCategories).toHaveBeenCalledWith(PROPERTIES[0].id, expect.any(Array))
     })
     expect(screen.getByRole('button', { name: /opgeslagen/i })).toBeInTheDocument()
   })
 
   it('schakelt Wijzigingen opslaan uit bij een lege itemnaam', async () => {
     renderPage()
+    await selectFirstProperty()
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('Verwarming')).toBeInTheDocument()

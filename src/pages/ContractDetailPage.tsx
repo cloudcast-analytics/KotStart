@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Building2, CalendarPlus, Check, ClipboardList, Download, Home, Trash2, User } from 'lucide-react'
 import { deleteContractBundleData, getContractBundleData, sendContractEmail, updateContractStatus } from '../lib/data'
 import { cn } from '../lib/cn'
+import { formatAddress } from '../lib/residence'
 import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student } from '../types'
 import { generateContractHtml, generateContractPdfBase64, printContractDocument } from '../lib/pdfDocuments'
 import SignatureModal from '../components/SignatureModal'
@@ -339,7 +340,7 @@ export default function ContractDetailPage() {
               title="Kamer"
               rows={[
                 ['Pand', property.name],
-                ['Adres', property.address],
+                ['Adres', formatAddress(property)],
                 ['Kamer', room.roomNumber],
                 ['Type', ROOM_TYPE_LABEL[room.roomType]],
               ]}

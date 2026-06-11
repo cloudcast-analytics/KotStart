@@ -37,13 +37,13 @@ describe('getDashboardRowsData', () => {
 
 describe('getInspectionCategories', () => {
   it('geeft DEFAULT_INSPECTION_CATEGORIES terug in demo-modus', async () => {
-    const categories = await getInspectionCategories()
+    const categories = await getInspectionCategories('p1')
     expect(categories).toEqual(DEFAULT_INSPECTION_CATEGORIES)
   })
 })
 
 describe('saveInspectionCategories', () => {
   it('doet niets in demo-modus (geen Supabase)', async () => {
-    await expect(saveInspectionCategories(DEFAULT_INSPECTION_CATEGORIES)).resolves.toBeUndefined()
+    await expect(saveInspectionCategories('p1', DEFAULT_INSPECTION_CATEGORIES)).resolves.toBeUndefined()
   })
 })

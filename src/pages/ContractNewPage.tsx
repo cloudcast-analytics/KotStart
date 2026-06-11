@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createContractDraft, getLandlordProfile, getRooms, isLandlordProfileComplete } from '../lib/data'
+import { MOCK_LANDLORD_PROFILE } from '../lib/mockData'
 import { isValidBelgianPostalCode } from '../lib/residence'
 import type { Room } from '../types'
 import type { LandlordProfile } from '../types'
@@ -65,7 +66,7 @@ export default function ContractNewPage() {
   const [students, setStudents] = useState<StudentFormData[]>([emptyStudent()])
   const [isSending, setIsSending] = useState(false)
   const [rooms, setRooms] = useState<Room[]>([])
-  const [landlordProfile, setLandlordProfile] = useState<LandlordProfile>(getLandlordProfile)
+  const [landlordProfile, setLandlordProfile] = useState<LandlordProfile>(MOCK_LANDLORD_PROFILE)
   const [loadingRooms, setLoadingRooms] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -90,7 +91,13 @@ export default function ContractNewPage() {
   }, [])
 
   useEffect(() => {
-    setLandlordProfile(getLandlordProfile())
+    let cancelled = false
+
+    getLandlordProfile().then(profile => {
+      if (!cancelled) setLandlordProfile(profile)
+    })
+
+    return () => { cancelled = true }
   }, [currentStep])
 
   const propertyRooms = useMemo(() => rooms, [rooms])

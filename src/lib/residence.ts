@@ -21,3 +21,20 @@ export function formatResidence(parts: ResidenceParts): string {
 export function isValidBelgianPostalCode(value: string): boolean {
   return /^[1-9]\d{3}$/.test(value.trim())
 }
+
+interface AddressParts {
+  street?: string
+  number?: string
+  postalCode?: string
+  city?: string
+}
+
+export function formatAddress(parts: AddressParts): string {
+  const street = (parts.street ?? '').trim()
+  const number = (parts.number ?? '').trim()
+  const postal = (parts.postalCode ?? '').trim()
+  const city = (parts.city ?? '').trim()
+  const streetLine = [street, number].filter(Boolean).join(' ')
+  const cityLine = [postal, city].filter(Boolean).join(' ')
+  return [streetLine, cityLine].filter(Boolean).join(', ')
+}

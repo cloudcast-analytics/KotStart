@@ -62,6 +62,11 @@ extra wensen naar boven die niet in de docx stonden:
   plaatsbeschrijvingsdocument (vergelijkbaar met/herbruikbaar voor de eindplaatsbeschrijving),
   i.p.v. de huidige opzet waarin `generateContractHtml` de volledige plaatsbeschrijving inline
   in het contract rendert.
+- **N8 — E-mailadres/wachtwoord wijzigen functioneel maken**: in `AccountPage.tsx` is een nieuw
+  blok "Accountgegevens" toegevoegd met een "Inlog e-mailadres"-veld (incl. "Wijzigen"-knop) en een
+  "Wachtwoord wijzigen"-knop. Voorlopig is dit **enkel UI-structuur** (beide knoppen disabled,
+  "Binnenkort beschikbaar"). Nog te implementeren: de werkelijke `supabase.auth.updateUser()`-flow
+  voor het wijzigen van e-mailadres en wachtwoord, inclusief bevestigingsmails via Resend.
 
 N6 en N7 raken dezelfde bestanden (`pdfDocuments.ts`, `InspectionDetailPage.tsx`) en dezelfde
 onderliggende vraag — "wat bevat het contract-PDF en hoe verwijst het naar de plaatsbeschrijving"
@@ -100,6 +105,8 @@ verschoven is vanuit Cluster D)*
 - N3 dark/light thema
 - N4 taalkeuze
 - N5 (nog te specifiëren — eerst aan Vince vragen bij start van dit cluster)
+- N8 e-mailadres/wachtwoord wijzigen functioneel maken (UI-structuur staat al in `AccountPage.tsx`,
+  via `supabase.auth.updateUser()` + bevestigingsmails Resend)
 - mogelijk #15 (backup/herstel) — zie "Open vragen"
 
 ### Niet geclusterd / bewust uitgesteld

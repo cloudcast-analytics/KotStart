@@ -14,6 +14,7 @@ import {
   updatePropertyData,
   updateRoomData,
 } from '../lib/data'
+import { formatAddress } from '../lib/residence'
 import type { Contract, Property, Room, Student } from '../types'
 
 const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
@@ -39,15 +40,19 @@ interface EditableRoom {
 
 interface EditableProperty {
   name: string
-  address: string
-  contractCity: string
+  street: string
+  number: string
+  postalCode: string
+  city: string
 }
 
 function toEditableProperty(property?: Property): EditableProperty {
   return {
     name: property?.name ?? '',
-    address: property?.address ?? '',
-    contractCity: property?.contractCity ?? '',
+    street: property?.street ?? '',
+    number: property?.number ?? '',
+    postalCode: property?.postalCode ?? '',
+    city: property?.city ?? '',
   }
 }
 
@@ -218,8 +223,10 @@ function PropertyEditModal({
   function handleSave() {
     onSave({
       name: form.name.trim(),
-      address: form.address.trim(),
-      contractCity: form.contractCity.trim(),
+      street: form.street.trim(),
+      number: form.number.trim(),
+      postalCode: form.postalCode.trim(),
+      city: form.city.trim(),
     })
   }
 
@@ -257,27 +264,53 @@ function PropertyEditModal({
             />
           </label>
 
-          <label className="grid gap-1">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Adres</span>
-            <input
-              aria-label="Adres"
-              value={form.address}
-              onChange={event => updateField('address', event.target.value)}
-              placeholder="Straat, nummer, postcode en gemeente"
-              className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
-            />
-          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="grid min-w-0 gap-1">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Straat</span>
+              <input
+                aria-label="Straat"
+                value={form.street}
+                onChange={event => updateField('street', event.target.value)}
+                placeholder="Straatnaam"
+                className="w-full min-w-0 rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+              />
+            </label>
 
-          <label className="grid gap-1">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Contractgemeente</span>
-            <input
-              aria-label="Contractgemeente"
-              value={form.contractCity}
-              onChange={event => updateField('contractCity', event.target.value)}
-              placeholder="Bijv. Gent"
-              className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
-            />
-          </label>
+            <label className="grid min-w-0 gap-1">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Nummer</span>
+              <input
+                aria-label="Nummer"
+                value={form.number}
+                onChange={event => updateField('number', event.target.value)}
+                placeholder="Nr."
+                className="w-full min-w-0 rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="grid min-w-0 gap-1">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Postcode</span>
+              <input
+                aria-label="Postcode"
+                value={form.postalCode}
+                onChange={event => updateField('postalCode', event.target.value)}
+                placeholder="Postcode"
+                className="w-full min-w-0 rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+              />
+            </label>
+
+            <label className="grid min-w-0 gap-1">
+              <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Gemeente</span>
+              <input
+                aria-label="Gemeente"
+                value={form.city}
+                onChange={event => updateField('city', event.target.value)}
+                placeholder="Bijv. Gent"
+                className="w-full min-w-0 rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+              />
+            </label>
+          </div>
         </div>
 
         <div className="mt-5 flex gap-3">
@@ -433,8 +466,10 @@ export default function PropertiesPage() {
         const savedProperty = await updatePropertyData({
           ...editingProperty,
           name: input.name,
-          address: input.address,
-          contractCity: input.contractCity,
+          street: input.street,
+          number: input.number,
+          postalCode: input.postalCode,
+          city: input.city,
         })
         setProperties(previous => previous.map(property => (
           property.id === savedProperty.id ? savedProperty : property
@@ -553,7 +588,7 @@ export default function PropertiesPage() {
                       <h2 className="text-lg font-bold text-slate-900">{property.name}</h2>
                       <p className="mt-2 flex items-start gap-1.5 text-sm font-medium text-slate-500">
                         <MapPin size={14} className="mt-0.5 shrink-0" />
-                        {property.address || 'Geen adres ingevuld'}
+                        {formatAddress(property) || 'Geen adres ingevuld'}
                       </p>
                       <div className="mt-4 grid grid-cols-2 gap-2">
                         <div className="rounded-xl bg-white/45 p-3">
@@ -584,7 +619,7 @@ export default function PropertiesPage() {
                   <div className="min-w-0">
                     <h1 className="text-xl font-bold text-slate-900">{selectedProperty.name}</h1>
                     <p className="mt-1 text-sm font-medium text-slate-500">
-                      {selectedProperty.address || 'Geen adres ingevuld'}
+                      {formatAddress(selectedProperty) || 'Geen adres ingevuld'}
                     </p>
                   </div>
                   <div className="ml-auto flex shrink-0 items-center gap-2">

@@ -37,29 +37,57 @@ describe('AccountPage', () => {
     renderPage()
 
     expect(screen.getByRole('heading', { name: 'Account' })).toBeInTheDocument()
-    expect(screen.getByText('verhuurder@test.be')).toBeInTheDocument()
     expect(screen.getByText('Profiel verhuurder')).toBeInTheDocument()
-    expect(screen.getByLabelText('Naam en voornaam')).toBeInTheDocument()
-    expect(screen.getByLabelText('Adres')).toBeInTheDocument()
+    expect(screen.getByLabelText('Voornaam')).toBeInTheDocument()
+    expect(screen.getByLabelText('Naam')).toBeInTheDocument()
+    expect(screen.getByLabelText('Straat')).toBeInTheDocument()
+    expect(screen.getByLabelText('Nummer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Postcode')).toBeInTheDocument()
+    expect(screen.getByLabelText('Gemeente')).toBeInTheDocument()
     expect(screen.getByLabelText('Telefoonnummer')).toBeInTheDocument()
     expect(screen.getByLabelText('E-mailadres')).toBeInTheDocument()
     expect(screen.getByLabelText('Bankrekeningnummer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Landcode rekeningnummer')).toBeInTheDocument()
     expect(screen.queryByLabelText('EPC-certificaatnummer')).not.toBeInTheDocument()
   })
 
-  it('slaat verhuurderprofiel op', () => {
+  it('toont accountgegevens met inlog e-mailadres en geblokkeerde wijzig-acties', () => {
     renderPage()
 
-    fireEvent.change(screen.getByLabelText('Naam en voornaam'), {
-      target: { value: 'Geert Ferson' },
+    expect(screen.getByText('Accountgegevens')).toBeInTheDocument()
+    expect(screen.getByLabelText('Inlog e-mailadres')).toHaveValue('verhuurder@test.be')
+    expect(screen.getByLabelText('Inlog e-mailadres')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Wijzigen' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Wachtwoord wijzigen' })).toBeDisabled()
+  })
+
+  it('slaat verhuurderprofiel op en toont naam/voornaam read-only in profiel verhuurder', async () => {
+    renderPage()
+
+    fireEvent.change(screen.getByLabelText('Voornaam'), {
+      target: { value: 'Geert' },
+    })
+    fireEvent.change(screen.getByLabelText('Naam'), {
+      target: { value: 'Ferson' },
+    })
+    fireEvent.change(screen.getByLabelText('Landcode rekeningnummer'), {
+      target: { value: 'NL' },
     })
     fireEvent.change(screen.getByLabelText('Bankrekeningnummer'), {
-      target: { value: 'BE12 3456 7890 1234' },
+      target: { value: '12 3456 7890 1234' },
     })
+
+    expect(screen.getByText('Geert')).toBeInTheDocument()
+    expect(screen.getByText('Ferson')).toBeInTheDocument()
+
     fireEvent.click(screen.getByRole('button', { name: /profiel opslaan/i }))
 
-    expect(localStorage.getItem('kotstart_landlord_profile')).toContain('Geert Ferson')
-    expect(screen.getByRole('button', { name: /opgeslagen/i })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /opgeslagen/i })).toBeInTheDocument()
+
+    const stored = localStorage.getItem('kotstart_landlord_profile')
+    expect(stored).toContain('Geert')
+    expect(stored).toContain('Ferson')
+    expect(stored).toContain('NL')
   })
 
   it('logt uit via de sessieknop', async () => {

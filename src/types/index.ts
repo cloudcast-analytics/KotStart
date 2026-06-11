@@ -1,8 +1,10 @@
 export interface Property {
   id: string
   name: string
-  address: string
-  contractCity?: string
+  street: string
+  number: string
+  postalCode: string
+  city: string
   createdAt: string
 }
 
@@ -40,10 +42,15 @@ export interface Student {
 }
 
 export interface LandlordProfile {
-  name: string
-  address: string
+  firstName: string
+  lastName: string
+  street: string
+  number: string
+  postalCode: string
+  city: string
   phone: string
   email: string
+  ibanCountry: 'BE' | 'NL'
   iban: string
 }
 
@@ -103,4 +110,7 @@ export interface StudentDashboardRow {
   contractId: string
   secondFirstName?: string
   secondLastName?: string
+  startInspectionDone?: boolean
+  renewDone?: boolean
+  endInspectionDone?: boolean
 }

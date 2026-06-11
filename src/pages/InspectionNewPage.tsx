@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Camera, Check, Loader2, Minus, Plus, X } from 'lucide-react'
 import { cn } from '../lib/cn'
-import { getInspectionCategories, saveInspectionData } from '../lib/data'
+import { getContractBundleData, getInspectionCategories, saveInspectionData } from '../lib/data'
 import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
 import type { InspectionMeterUnit, InspectionTemplateCategory, InspectionTemplateItem } from '../types'
 import StepIndicator from './wizard/StepIndicator'
@@ -68,7 +68,8 @@ export default function InspectionNewPage() {
     async function load() {
       let loaded: InspectionTemplateCategory[]
       try {
-        loaded = await getInspectionCategories()
+        const bundle = await getContractBundleData(inspectionContext?.contractId)
+        loaded = bundle ? await getInspectionCategories(bundle.property.id) : DEFAULT_INSPECTION_CATEGORIES
       } catch {
         loaded = DEFAULT_INSPECTION_CATEGORIES
       }
@@ -80,7 +81,7 @@ export default function InspectionNewPage() {
 
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [inspectionContext?.contractId])
 
   const isFinalStep = categories.length > 0 && currentIndex === categories.length
   const currentCategory = categories[currentIndex]

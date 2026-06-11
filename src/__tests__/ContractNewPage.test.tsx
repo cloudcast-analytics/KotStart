@@ -5,11 +5,16 @@ import ContractNewPage from '../pages/ContractNewPage'
 import { saveLandlordProfile } from '../lib/data'
 
 const completeLandlordProfile = {
-  name: 'Geert Vandenberghe',
-  address: 'Veldstraat 89, 9000 Gent',
+  firstName: 'Geert',
+  lastName: 'Vandenberghe',
+  street: 'Veldstraat',
+  number: '89',
+  postalCode: '9000',
+  city: 'Gent',
   phone: '0498 12 34 56',
   email: 'geert@test.be',
-  iban: 'BE12 3456 7890 1234',
+  ibanCountry: 'BE' as const,
+  iban: '12 3456 7890 1234',
 }
 
 function renderNewContractPage() {
@@ -111,7 +116,7 @@ describe('ContractNewPage', () => {
   })
 
   it('gaat na Opslaan als concept verder naar de volgende route', async () => {
-    saveLandlordProfile(completeLandlordProfile)
+    await saveLandlordProfile(completeLandlordProfile)
     renderNewContractPage()
     await selectFirstRoomAndContinue()
     await fillStudent()

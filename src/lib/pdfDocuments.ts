@@ -1,5 +1,5 @@
 import type { Inspection, InspectionItem, InspectionMeterUnit, LandlordProfile, Property, Room, Student, Contract } from '../types'
-import { formatResidence } from './residence'
+import { formatAddress, formatResidence } from './residence'
 
 export interface ContractBundle {
   contract: Contract
@@ -66,11 +66,31 @@ const ROOM_TYPE_LABEL: Record<Room['roomType'], string> = {
 }
 
 const MOCK_LANDLORD: LandlordProfile = {
-  name: '',
-  address: '',
+  firstName: '',
+  lastName: '',
+  street: '',
+  number: '',
+  postalCode: '',
+  city: '',
   phone: '',
   email: '',
+  ibanCountry: 'BE',
   iban: '',
+}
+
+function formatLandlordName(landlord: LandlordProfile): string {
+  const first = landlord.firstName.trim()
+  const last = landlord.lastName.trim()
+  if (!first && !last) return ''
+  if (!first) return last
+  if (!last) return first
+  return `${last}, ${first}`
+}
+
+function formatIban(landlord: LandlordProfile): string {
+  const rest = landlord.iban.trim()
+  if (!rest) return ''
+  return `${landlord.ibanCountry}${rest}`
 }
 
 function escapeHtml(value: string) {
@@ -80,11 +100,6 @@ function escapeHtml(value: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
-}
-
-function cityFromAddress(address: string): string {
-  const match = address.match(/\b\d{4}\s+([^,]+)\s*$/)
-  return match?.[1]?.trim() || ''
 }
 
 function renderHuurderInfoBlock(person: Student, heading?: string): string {
@@ -161,7 +176,7 @@ export function generateContractHtml(bundle: ContractBundle): string {
   const signedDate = formatDocumentDate(contract.signedAt)
   const signatureParty = signaturePartyLabel(student, secondStudent)
 
-  const contractCity = property.contractCity?.trim() || cityFromAddress(property.address)
+  const contractCity = property.city.trim()
   const signingPlace = contractCity || '_____________________'
   const studentTaxAuthority = contractCity ? `Stad ${contractCity}` : 'de bevoegde gemeente'
 
@@ -214,8 +229,8 @@ export function generateContractHtml(bundle: ContractBundle): string {
 <p><strong>TUSSEN DE ONDERGETEKENDE PARTIJEN:</strong></p>
 
 <p><strong>ENERZIJDS, de VERHUURDER:</strong></p>
-<div class="field-row"><span class="field-label">Naam en voornaam:</span><span>${escapeHtml(landlord.name)}</span></div>
-<div class="field-row"><span class="field-label">Adres:</span><span>${escapeHtml(landlord.address)}</span></div>
+<div class="field-row"><span class="field-label">Naam en voornaam:</span><span>${escapeHtml(formatLandlordName(landlord))}</span></div>
+<div class="field-row"><span class="field-label">Adres:</span><span>${escapeHtml(formatAddress(landlord))}</span></div>
 <div class="field-row"><span class="field-label">Telefoonnummer:</span><span>${escapeHtml(landlord.phone)}</span></div>
 <div class="field-row"><span class="field-label">E-mailadres:</span><span>${escapeHtml(landlord.email)}</span></div>
 
@@ -229,7 +244,7 @@ ${secondStudent
 <article>
   <span class="art-title">Art. 1. BESCHRIJVING VAN HET GEHUURDE GOED</span><br/>
   De verhuurder geeft in huur een ${escapeHtml(ROOM_TYPE_LABEL[room.roomType].toLowerCase())}
-  gelegen: <strong>${escapeHtml(property.address)}, kamer ${escapeHtml(room.roomNumber)}</strong>
+  gelegen: <strong>${escapeHtml(formatAddress(property))}, kamer ${escapeHtml(room.roomNumber)}</strong>
   (${escapeHtml(property.name)}).<br/>
   Het gehuurde goed kan enkel gebruikt worden als studieverblijf. Het is de huurder niet
   toegestaan er zijn hoofdverblijf te nemen.
@@ -261,8 +276,8 @@ ${secondStudent
   <span class="art-title">Art. 5. BETALING</span><br/>
   € ${totalMonthly},00 wordt maandelijks betaald door overschrijving, uiterlijk binnen vijf
   kalenderdagen na de aanvang van de huurmaand.<br/>
-  Bankrekeningnummer: <strong>${escapeHtml(landlord.iban)}</strong><br/>
-  Op naam van: ${escapeHtml(landlord.name)}
+  Bankrekeningnummer: <strong>${escapeHtml(formatIban(landlord))}</strong><br/>
+  Op naam van: ${escapeHtml(formatLandlordName(landlord))}
 </article>
 
 <article>
@@ -366,7 +381,7 @@ Opgemaakt te ${escapeHtml(signingPlace)}, in twee originelen. Elke partij erkent
   <div class="sign-line">
     <strong>Handtekening verhuurder</strong><br/>
     ${landlordSignature ? `<img src="${landlordSignature}" alt="Handtekening verhuurder" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
-    Naam: ${escapeHtml(landlord.name)}<br/>
+    Naam: ${escapeHtml(formatLandlordName(landlord))}<br/>
     Datum: _____ / _____ / _____<br/>
     Plaats: ${escapeHtml(signingPlace)}
   </div>

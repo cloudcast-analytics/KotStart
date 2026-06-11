@@ -157,8 +157,8 @@ export default function InspectionDetailPage() {
                   return (
                     <div key={item.id} className="rounded-xl border border-slate-100/70 bg-white/40 p-3">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-slate-800">{item.itemName}</span>
-                        <span className={cn('rounded-full px-2 py-0.5 text-xs font-bold', badge.colorClass)}>
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800">{item.itemName}</span>
+                        <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-xs font-bold', badge.colorClass)}>
                           {badge.label}
                         </span>
                       </div>

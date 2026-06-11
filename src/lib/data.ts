@@ -5,8 +5,10 @@ import { isSupabaseConfigured, supabase } from './supabase'
 interface PropertyRow {
   id: string
   name: string
-  address: string | null
-  contract_city?: string | null
+  street?: string | null
+  number?: string | null
+  postal_code?: string | null
+  city?: string | null
   created_at: string
 }
 
@@ -76,6 +78,19 @@ interface InspectionItemRow {
   notes: string | null
 }
 
+interface LandlordProfileRow {
+  first_name: string
+  last_name: string
+  street: string
+  number: string
+  postal_code: string
+  city: string
+  phone: string
+  email: string
+  iban_country: string
+  iban: string
+}
+
 interface ContractDraftStudent {
   firstName: string
   lastName: string
@@ -119,8 +134,10 @@ interface SaveInspectionInput {
 
 interface PropertyInput {
   name: string
-  address: string
-  contractCity?: string
+  street: string
+  number: string
+  postalCode: string
+  city: string
 }
 
 interface RoomInput {
@@ -229,8 +246,10 @@ function mapProperty(row: PropertyRow): Property {
   return {
     id: row.id,
     name: row.name,
-    address: row.address ?? '',
-    contractCity: row.contract_city ?? undefined,
+    street: row.street ?? '',
+    number: row.number ?? '',
+    postalCode: row.postal_code ?? '',
+    city: row.city ?? '',
     createdAt: row.created_at,
   }
 }
@@ -269,6 +288,21 @@ function mapStudent(row: StudentRow): Student {
     guardianEmail: row.guardian_email ?? undefined,
     guardianPhone: row.guardian_phone ?? undefined,
     createdAt: row.created_at,
+  }
+}
+
+function mapLandlordProfile(row: LandlordProfileRow): LandlordProfile {
+  return {
+    firstName: row.first_name,
+    lastName: row.last_name,
+    street: row.street,
+    number: row.number,
+    postalCode: row.postal_code,
+    city: row.city,
+    phone: row.phone,
+    email: row.email,
+    ibanCountry: row.iban_country === 'NL' ? 'NL' : 'BE',
+    iban: row.iban,
   }
 }
 
@@ -332,12 +366,48 @@ async function mapInspectionItemWithAssets(row: InspectionItemRow): Promise<Insp
   }
 }
 
+function nextSchoolYear(current: string): string {
+  const match = current.match(/^(\d{4})[–-](\d{4})$/)
+  if (!match) return current
+
+  const start = Number(match[1]) + 1
+  const end = Number(match[2]) + 1
+  return `${start}–${end}`
+}
+
+async function getInspectionFlagsByContract(contractIds: string[]): Promise<Map<string, { start: boolean; end: boolean }>> {
+  const flags = new Map<string, { start: boolean; end: boolean }>()
+  if (contractIds.length === 0) return flags
+
+  let rows: Array<{ contractId: string; type: 'start' | 'end' }>
+
+  if (!isSupabaseConfigured) {
+    rows = MOCK_INSPECTIONS.filter(inspection => contractIds.includes(inspection.contractId))
+      .map(inspection => ({ contractId: inspection.contractId, type: inspection.type }))
+  } else {
+    const { data, error } = await supabase.from('inspections').select('contract_id, type').in('contract_id', contractIds)
+    if (error) throw error
+    rows = ((data as Array<{ contract_id: string; type: 'start' | 'end' }>) ?? [])
+      .map(row => ({ contractId: row.contract_id, type: row.type }))
+  }
+
+  for (const row of rows) {
+    const entry = flags.get(row.contractId) ?? { start: false, end: false }
+    if (row.type === 'start') entry.start = true
+    if (row.type === 'end') entry.end = true
+    flags.set(row.contractId, entry)
+  }
+
+  return flags
+}
+
 function buildDashboardRows(
   propertyId: string,
   schoolYear: string,
   rooms: Room[],
   contracts: Contract[],
   students: Student[],
+  inspectionFlags: Map<string, { start: boolean; end: boolean }>,
 ): StudentDashboardRow[] {
   const propertyRooms = rooms.filter(room => room.propertyId === propertyId)
   const roomIds = new Set(propertyRooms.map(room => room.id))
@@ -353,6 +423,12 @@ function buildDashboardRows(
         ? students.find(item => item.id === contract.secondStudentId)
         : undefined
 
+      const flags = inspectionFlags.get(contract.id)
+      const renewalSchoolYear = nextSchoolYear(contract.schoolYear)
+      const renewDone = contracts.some(
+        other => other.studentId === contract.studentId && other.roomId === contract.roomId && other.schoolYear === renewalSchoolYear,
+      )
+
       return {
         studentId: student.id,
         firstName: student.firstName,
@@ -361,6 +437,9 @@ function buildDashboardRows(
         contractId: contract.id,
         secondFirstName: secondStudent?.firstName,
         secondLastName: secondStudent?.lastName,
+        startInspectionDone: flags?.start ?? false,
+        renewDone,
+        endInspectionDone: flags?.end ?? false,
       }
     })
     .filter((row): row is StudentDashboardRow => row !== null)
@@ -401,7 +480,12 @@ export async function getContracts(): Promise<Contract[]> {
 
 export async function getDashboardRowsData(propertyId: string, schoolYear: string): Promise<StudentDashboardRow[]> {
   const [rooms, contracts, students] = await Promise.all([getRooms(), getContracts(), getStudents()])
-  return buildDashboardRows(propertyId, schoolYear, rooms, contracts, students)
+  const propertyRoomIds = new Set(rooms.filter(room => room.propertyId === propertyId).map(room => room.id))
+  const activeContractIds = contracts
+    .filter(contract => propertyRoomIds.has(contract.roomId) && contract.schoolYear === schoolYear)
+    .map(contract => contract.id)
+  const inspectionFlags = await getInspectionFlagsByContract(activeContractIds)
+  return buildDashboardRows(propertyId, schoolYear, rooms, contracts, students, inspectionFlags)
 }
 
 export async function getContractBundleData(contractId: string | undefined) {
@@ -460,7 +544,7 @@ export async function getContractBundleData(contractId: string | undefined) {
       : []
   }
 
-  const landlord = getLandlordProfile()
+  const landlord = await getLandlordProfile()
   return { contract, room, student, secondStudent, property, startInspection, startInspectionItems, endInspection, endInspectionItems, landlord }
 }
 
@@ -494,7 +578,7 @@ export async function getInspectionData(inspectionId: string | undefined): Promi
 
 const LANDLORD_PROFILE_KEY = 'kotstart_landlord_profile'
 
-export function getLandlordProfile(): LandlordProfile {
+function getLandlordProfileFromStorage(): LandlordProfile {
   try {
     const stored = localStorage.getItem(LANDLORD_PROFILE_KEY)
     if (stored) return JSON.parse(stored) as LandlordProfile
@@ -504,23 +588,71 @@ export function getLandlordProfile(): LandlordProfile {
   return MOCK_LANDLORD_PROFILE
 }
 
+export async function getLandlordProfile(): Promise<LandlordProfile> {
+  if (isSupabaseConfigured) {
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData.user) {
+      const { data, error } = await supabase
+        .from('landlord_profiles')
+        .select('*')
+        .eq('owner_id', userData.user.id)
+        .maybeSingle()
+
+      if (!error && data) return mapLandlordProfile(data as LandlordProfileRow)
+    }
+  }
+
+  return getLandlordProfileFromStorage()
+}
+
 const REQUIRED_LANDLORD_PROFILE_FIELDS: Array<keyof LandlordProfile> = [
-  'name',
-  'address',
+  'firstName',
+  'lastName',
+  'street',
+  'number',
+  'postalCode',
+  'city',
   'phone',
   'email',
   'iban',
 ]
 
-export function isLandlordProfileComplete(profile: LandlordProfile = getLandlordProfile()): boolean {
+export function isLandlordProfileComplete(profile: LandlordProfile): boolean {
   return REQUIRED_LANDLORD_PROFILE_FIELDS.every(field => profile[field].trim().length > 0)
 }
 
-export function saveLandlordProfile(profile: LandlordProfile): void {
+export async function saveLandlordProfile(profile: LandlordProfile): Promise<void> {
+  if (isSupabaseConfigured) {
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData.user) {
+      const { error } = await supabase
+        .from('landlord_profiles')
+        .upsert(
+          {
+            owner_id: userData.user.id,
+            first_name: profile.firstName,
+            last_name: profile.lastName,
+            street: profile.street,
+            number: profile.number,
+            postal_code: profile.postalCode,
+            city: profile.city,
+            phone: profile.phone,
+            email: profile.email,
+            iban_country: profile.ibanCountry,
+            iban: profile.iban,
+          },
+          { onConflict: 'owner_id' },
+        )
+
+      if (error) throw error
+      return
+    }
+  }
+
   localStorage.setItem(LANDLORD_PROFILE_KEY, JSON.stringify(profile))
 }
 
-export async function getInspectionCategories(): Promise<InspectionTemplateCategory[]> {
+export async function getInspectionCategories(propertyId: string): Promise<InspectionTemplateCategory[]> {
   if (!isSupabaseConfigured) return DEFAULT_INSPECTION_CATEGORIES
 
   const { data: userData } = await supabase.auth.getUser()
@@ -530,13 +662,14 @@ export async function getInspectionCategories(): Promise<InspectionTemplateCateg
     .from('inspection_templates')
     .select('categories')
     .eq('owner_id', userData.user.id)
+    .eq('property_id', propertyId)
     .maybeSingle()
 
   if (error || !data) return DEFAULT_INSPECTION_CATEGORIES
   return data.categories as InspectionTemplateCategory[]
 }
 
-export async function saveInspectionCategories(categories: InspectionTemplateCategory[]): Promise<void> {
+export async function saveInspectionCategories(propertyId: string, categories: InspectionTemplateCategory[]): Promise<void> {
   if (!isSupabaseConfigured) return
 
   const { data: userData } = await supabase.auth.getUser()
@@ -544,7 +677,7 @@ export async function saveInspectionCategories(categories: InspectionTemplateCat
 
   const { error } = await supabase
     .from('inspection_templates')
-    .upsert({ owner_id: userData.user.id, categories }, { onConflict: 'owner_id' })
+    .upsert({ owner_id: userData.user.id, property_id: propertyId, categories }, { onConflict: 'owner_id,property_id' })
 
   if (error) throw error
 }
@@ -579,8 +712,10 @@ export async function createPropertyData(input: PropertyInput): Promise<Property
   const fallbackProperty: Property = {
     id: crypto.randomUUID(),
     name: input.name,
-    address: input.address,
-    contractCity: input.contractCity,
+    street: input.street,
+    number: input.number,
+    postalCode: input.postalCode,
+    city: input.city,
     createdAt: new Date().toISOString(),
   }
   if (!isSupabaseConfigured) return fallbackProperty
@@ -594,8 +729,10 @@ export async function createPropertyData(input: PropertyInput): Promise<Property
     .insert({
       owner_id: userData.user.id,
       name: input.name,
-      address: input.address || null,
-      contract_city: input.contractCity || null,
+      street: input.street || null,
+      number: input.number || null,
+      postal_code: input.postalCode || null,
+      city: input.city || null,
     })
     .select()
     .single()
@@ -606,7 +743,6 @@ export async function createPropertyData(input: PropertyInput): Promise<Property
       .insert({
         owner_id: userData.user.id,
         name: input.name,
-        address: input.address || null,
       })
       .select()
       .single()
@@ -626,8 +762,10 @@ export async function updatePropertyData(property: Property): Promise<Property> 
     .from('properties')
     .update({
       name: property.name,
-      address: property.address || null,
-      contract_city: property.contractCity || null,
+      street: property.street || null,
+      number: property.number || null,
+      postal_code: property.postalCode || null,
+      city: property.city || null,
     })
     .eq('id', property.id)
     .select()
@@ -638,7 +776,6 @@ export async function updatePropertyData(property: Property): Promise<Property> 
       .from('properties')
       .update({
         name: property.name,
-        address: property.address || null,
       })
       .eq('id', property.id)
       .select()

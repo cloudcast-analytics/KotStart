@@ -51,11 +51,23 @@
     @apply bg-green-50/80 border border-green-300/55;
   }
 
+  .btn-action-start-done {
+    @apply bg-start-green border border-start-green;
+  }
+
   .btn-action-renew {
     @apply bg-blue-50/80 border border-blue-300/55;
   }
 
+  .btn-action-renew-done {
+    @apply bg-renew-blue border border-renew-blue;
+  }
+
   .btn-action-end {
     @apply bg-purple-50/80 border border-purple-300/55;
+  }
+
+  .btn-action-end-done {
+    @apply bg-end-purple border border-end-purple;
   }
 }

@@ -583,3 +583,54 @@ create policy "Owners manage their inspection template"
 alter table inspection_items
   add column if not exists meter_value numeric,
   add column if not exists meter_unit text;
+
+
+-- ---------------------------------------------------------------------
+-- 11) 20260611000000_inspection_templates_per_property  (Cluster E — N2)
+-- ---------------------------------------------------------------------
+alter table inspection_templates
+  add column if not exists property_id uuid references public.properties(id) on delete cascade;
+
+alter table inspection_templates
+  drop constraint if exists inspection_templates_owner_id_key;
+
+alter table inspection_templates
+  add constraint inspection_templates_owner_id_property_id_key unique (owner_id, property_id);
+
+
+-- ---------------------------------------------------------------------
+-- 12) 20260611002638_property_address_split
+-- ---------------------------------------------------------------------
+alter table properties
+  add column if not exists street      text,
+  add column if not exists number      text,
+  add column if not exists postal_code text,
+  add column if not exists city        text;
+
+
+-- ---------------------------------------------------------------------
+-- 13) 20260611013911_landlord_profiles
+-- ---------------------------------------------------------------------
+create table landlord_profiles (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users(id) on delete cascade unique,
+  first_name text not null default '',
+  last_name text not null default '',
+  street text not null default '',
+  number text not null default '',
+  postal_code text not null default '',
+  city text not null default '',
+  phone text not null default '',
+  email text not null default '',
+  iban_country text not null default 'BE',
+  iban text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table landlord_profiles enable row level security;
+
+create policy "Owners manage their landlord profile"
+  on landlord_profiles for all
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());

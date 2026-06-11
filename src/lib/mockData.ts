@@ -3,8 +3,8 @@ import type { Contract, Inspection, InspectionItem, InspectionTemplateCategory, 
 export const SCHOOL_YEARS = ['2024–2025', '2025–2026']
 
 export const PROPERTIES: Property[] = [
-  { id: 'p1', name: 'Residentie De Linde', address: 'Lindestraat 12, 9000 Gent', contractCity: 'Gent', createdAt: '2024-08-01' },
-  { id: 'p2', name: 'Kot Guldensporenstraat', address: 'Guldensporenstraat 45, 9000 Gent', contractCity: 'Gent', createdAt: '2024-08-01' },
+  { id: 'p1', name: 'Residentie De Linde', street: 'Lindestraat', number: '12', postalCode: '9000', city: 'Gent', createdAt: '2024-08-01' },
+  { id: 'p2', name: 'Kot Guldensporenstraat', street: 'Guldensporenstraat', number: '45', postalCode: '9000', city: 'Gent', createdAt: '2024-08-01' },
 ]
 
 export const ROOMS: Room[] = [
@@ -93,10 +93,15 @@ export const DEFAULT_INSPECTION_CATEGORIES: InspectionTemplateCategory[] = [
 ]
 
 export const MOCK_LANDLORD_PROFILE: LandlordProfile = {
-  name: '',
-  address: '',
+  firstName: '',
+  lastName: '',
+  street: '',
+  number: '',
+  postalCode: '',
+  city: '',
   phone: '',
   email: '',
+  ibanCountry: 'BE',
   iban: '',
 }
 

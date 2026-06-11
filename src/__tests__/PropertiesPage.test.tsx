@@ -27,8 +27,10 @@ describe('PropertiesPage', () => {
 
     expect(await screen.findByRole('heading', { name: 'Pand toevoegen' })).toBeInTheDocument()
     expect(screen.getByLabelText('Pandnaam')).toBeInTheDocument()
-    expect(screen.getByLabelText('Adres')).toBeInTheDocument()
-    expect(screen.getByLabelText('Contractgemeente')).toBeInTheDocument()
+    expect(screen.getByLabelText('Straat')).toBeInTheDocument()
+    expect(screen.getByLabelText('Nummer')).toBeInTheDocument()
+    expect(screen.getByLabelText('Postcode')).toBeInTheDocument()
+    expect(screen.getByLabelText('Gemeente')).toBeInTheDocument()
   })
 
   it('voegt een pand toe in demo mode', async () => {
@@ -36,8 +38,10 @@ describe('PropertiesPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /nieuw pand/i }))
     fireEvent.change(await screen.findByLabelText('Pandnaam'), { target: { value: 'Testpand' } })
-    fireEvent.change(screen.getByLabelText('Adres'), { target: { value: 'Teststraat 1, 9000 Gent' } })
-    fireEvent.change(screen.getByLabelText('Contractgemeente'), { target: { value: 'Gent' } })
+    fireEvent.change(screen.getByLabelText('Straat'), { target: { value: 'Teststraat' } })
+    fireEvent.change(screen.getByLabelText('Nummer'), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText('Postcode'), { target: { value: '9000' } })
+    fireEvent.change(screen.getByLabelText('Gemeente'), { target: { value: 'Gent' } })
     fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }))
 
     await waitFor(() => {

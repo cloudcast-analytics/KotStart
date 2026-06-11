@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatResidence, isValidBelgianPostalCode } from '../lib/residence'
+import { formatAddress, formatResidence, isValidBelgianPostalCode } from '../lib/residence'
 
 describe('formatResidence', () => {
   it('stelt straat, nummer, postcode en gemeente samen', () => {
@@ -45,6 +45,26 @@ describe('formatResidence', () => {
     expect(
       formatResidence({ residenceBox: '3', residencePostalCode: '9000', residenceCity: 'Gent' }),
     ).toBe('9000 Gent')
+  })
+})
+
+describe('formatAddress', () => {
+  it('stelt straat, nummer, postcode en gemeente samen', () => {
+    expect(
+      formatAddress({ street: 'Lindestraat', number: '12', postalCode: '9000', city: 'Gent' }),
+    ).toBe('Lindestraat 12, 9000 Gent')
+  })
+
+  it('laat ontbrekende delen netjes weg', () => {
+    expect(formatAddress({ street: 'Lindestraat', number: '12' })).toBe('Lindestraat 12')
+  })
+
+  it('geeft een lege string terug zonder invoer', () => {
+    expect(formatAddress({})).toBe('')
+  })
+
+  it('trimt spaties rond veldwaarden', () => {
+    expect(formatAddress({ street: '  Lindestraat  ', number: ' 12 ' })).toBe('Lindestraat 12')
   })
 })
 

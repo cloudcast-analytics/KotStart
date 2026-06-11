@@ -24,13 +24,15 @@ describe('generateContractHtml', () => {
     expect(html).toContain('Lindestraat 12, 9000 Gent')
   })
 
-  it('gebruikt de contractgemeente van het pand voor locatie-specifieke contractvelden', () => {
+  it('gebruikt de gemeente van het pand voor locatie-specifieke contractvelden', () => {
     const html = generateContractHtml({
       ...mockBundle,
       property: {
         ...PROPERTIES[0],
-        address: 'Markt 1',
-        contractCity: 'Leuven',
+        street: 'Markt',
+        number: '1',
+        postalCode: '3000',
+        city: 'Leuven',
       },
     })
 
@@ -68,11 +70,16 @@ describe('generateContractHtml', () => {
     const html = generateContractHtml({
       ...mockBundle,
       landlord: {
-        name: 'Geert Vandenberghe',
-        address: 'Veldstraat 89, 9000 Gent',
+        firstName: 'Geert',
+        lastName: 'Vandenberghe',
+        street: 'Veldstraat',
+        number: '89',
+        postalCode: '9000',
+        city: 'Gent',
         phone: '0498 12 34 56',
         email: 'geert@test.be',
-        iban: 'BE12 3456 7890 1234',
+        ibanCountry: 'BE',
+        iban: '12 3456 7890 1234',
       },
     })
     expect(html).toContain('BE12 3456 7890 1234')
