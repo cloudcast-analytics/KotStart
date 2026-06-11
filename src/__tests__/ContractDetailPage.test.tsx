@@ -2,6 +2,15 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import ContractDetailPage from '../pages/ContractDetailPage'
+import { getContractBundleData } from '../lib/data'
+
+vi.mock('../lib/data', async () => {
+  const actual = await vi.importActual<typeof import('../lib/data')>('../lib/data')
+  return {
+    ...actual,
+    getContractBundleData: vi.fn(actual.getContractBundleData),
+  }
+})
 
 function renderPage(initialPath = '/contracts/c1', state?: unknown) {
   return render(
@@ -173,5 +182,34 @@ describe('ContractDetailPage', () => {
 
     await screen.findByRole('heading', { name: 'Emma Janssen' })
     expect(screen.queryByText(/Minderjarig — voogd:/)).not.toBeInTheDocument()
+  })
+
+  it('valt terug op de huidige kamerprijzen wanneer het contract geen eigen snapshot heeft', async () => {
+    const base = await getContractBundleData('c1')
+    vi.mocked(getContractBundleData).mockResolvedValueOnce({
+      ...base!,
+      contract: { ...base!.contract, monthlyRent: undefined, fixedCosts: undefined, studentTax: undefined },
+    })
+
+    renderPage()
+
+    expect(await screen.findByText('€ 450/maand')).toBeInTheDocument()
+    expect(screen.getByText('€ 60/maand')).toBeInTheDocument()
+    expect(screen.getByText('€ 12/maand')).toBeInTheDocument()
+  })
+
+  it('toont de eigen snapshotwaarden van het contract i.p.v. de huidige kamerprijzen', async () => {
+    const base = await getContractBundleData('c1')
+    vi.mocked(getContractBundleData).mockResolvedValueOnce({
+      ...base!,
+      contract: { ...base!.contract, monthlyRent: 500, fixedCosts: 75, studentTax: 15 },
+    })
+
+    renderPage()
+
+    expect(await screen.findByText('€ 500/maand')).toBeInTheDocument()
+    expect(screen.getByText('€ 75/maand')).toBeInTheDocument()
+    expect(screen.getByText('€ 15/maand')).toBeInTheDocument()
+    expect(screen.getByText('€ 900')).toBeInTheDocument()
   })
 })

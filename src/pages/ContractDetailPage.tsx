@@ -87,6 +87,9 @@ export default function ContractDetailPage() {
   if (!bundle) return <Navigate to="/" replace />
 
   const { contract, room, student, secondStudent, property, startInspection, startInspectionItems, endInspection, landlord } = bundle
+  const effectiveMonthlyRent = contract.monthlyRent ?? room.monthlyRent
+  const effectiveFixedCosts = contract.fixedCosts ?? room.fixedCosts
+  const effectiveStudentTax = contract.studentTax ?? room.studentTax
 
   const startDone = !!startInspection
   const signedDone = contract.status === 'signed' || contract.status === 'sent'
@@ -350,9 +353,9 @@ export default function ContractDetailPage() {
               title="Contract"
               rows={[
                 ['Schooljaar', contract.schoolYear],
-                ['Huurprijs', `€ ${room.monthlyRent}/maand`],
-                ['Vaste kosten', `€ ${room.fixedCosts}/maand`],
-                ['Studentenbelasting', `€ ${room.studentTax}/maand`],
+                ['Huurprijs', `€ ${effectiveMonthlyRent}/maand`],
+                ['Vaste kosten', `€ ${effectiveFixedCosts}/maand`],
+                ['Studentenbelasting', `€ ${effectiveStudentTax}/maand`],
                 ['Waarborg', `€ ${room.deposit}`],
               ]}
             />
