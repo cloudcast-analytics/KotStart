@@ -203,6 +203,28 @@ describe('generateContractHtml', () => {
   })
 })
 
+describe('generateContractHtml — prijssnapshot per contract', () => {
+  it('gebruikt de eigen contractwaarden i.p.v. de huidige kamerprijzen wanneer aanwezig', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      contract: { ...CONTRACTS[0], monthlyRent: 500, fixedCosts: 75, studentTax: 15 },
+    })
+    expect(html).toContain('€ 500,00 per maand')
+    expect(html).toContain('Vaste kosten per maand: € 75,00')
+    expect(html).toContain('Studentenbelasting (Stad Gent): € 15,00 per maand')
+    expect(html).toContain('2 × € 500,00')
+    expect(html).toContain('€ 1000,00')
+  })
+
+  it('valt terug op de huidige kamerprijzen wanneer het contract geen snapshot heeft', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      contract: { ...CONTRACTS[0], monthlyRent: undefined, fixedCosts: undefined, studentTax: undefined },
+    })
+    expect(html).toContain(`€ ${ROOMS[0].monthlyRent},00 per maand`)
+  })
+})
+
 describe('generateInspectionHtml', () => {
   it('maakt een apart plaatsbeschrijvingsdocument met sleutelaantal', () => {
     const html = generateInspectionHtml({

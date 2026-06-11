@@ -170,7 +170,10 @@ export function generateContractHtml(bundle: ContractBundle): string {
   } = bundle
   const landlord = bundle.landlord ?? MOCK_LANDLORD
   const landlordSignature = landlordSignatureDataUrl ?? signatureDataUrl
-  const totalMonthly = room.monthlyRent + room.fixedCosts
+  const effectiveMonthlyRent = contract.monthlyRent ?? room.monthlyRent
+  const effectiveFixedCosts = contract.fixedCosts ?? room.fixedCosts
+  const effectiveStudentTax = contract.studentTax ?? room.studentTax
+  const totalMonthly = effectiveMonthlyRent + effectiveFixedCosts
   const startDate = schoolYearStartDate(contract.schoolYear)
   const endDate = schoolYearEndDate(contract.schoolYear)
   const signedDate = formatDocumentDate(contract.signedAt)
@@ -265,9 +268,9 @@ ${secondStudent
 
 <article>
   <span class="art-title">Art. 4. HUURPRIJS EN KOSTEN</span><br/>
-  De huurprijs bedraagt <strong>€ ${room.monthlyRent},00 per maand</strong>.<br/>
-  Vaste kosten per maand: € ${room.fixedCosts},00 (water, elektriciteit, verwarming en internet).<br/>
-  Studentenbelasting (${escapeHtml(studentTaxAuthority)}): € ${room.studentTax},00 per maand.<br/>
+  De huurprijs bedraagt <strong>€ ${effectiveMonthlyRent},00 per maand</strong>.<br/>
+  Vaste kosten per maand: € ${effectiveFixedCosts},00 (water, elektriciteit, verwarming en internet).<br/>
+  Studentenbelasting (${escapeHtml(studentTaxAuthority)}): € ${effectiveStudentTax},00 per maand.<br/>
   <strong>Totaal maandelijkse betaling: € ${totalMonthly},00</strong><br/>
   Conform art. 60 Vlaams Woninghuurdecreet dienen alle kosten en lasten verrekend te worden.
 </article>
@@ -282,7 +285,7 @@ ${secondStudent
 
 <article>
   <span class="art-title">Art. 6. WAARBORG</span><br/>
-  De huurwaarborg bedraagt <strong>€ ${room.deposit},00</strong> (twee maanden huurprijs: 2 × € ${room.monthlyRent},00)
+  De huurwaarborg bedraagt <strong>€ ${room.deposit},00</strong> (twee maanden huurprijs: 2 × € ${effectiveMonthlyRent},00)
   en wordt gestort op een geblokkeerde waarborgrekening op naam van de huurder vóór de aanvang van de huurperiode.
   De waarborg wordt vrijgemaakt binnen drie maanden nadat de huurder het goed verlaten heeft,
   tenzij de verhuurder de teruggave betwist bij aangetekende brief.
@@ -332,7 +335,7 @@ ${secondStudent
   <span class="art-title">Art. 13. VOORTIJDIGE BEËINDIGING</span><br/>
   De huurder kan voortijdig beëindigen via schriftelijke opzegging conform art. 39 van het
   Vlaams Woninghuurdecreet. Bij opzegging minder dan drie maanden vóór de startdatum is een
-  vergoeding van twee maanden huur (€ ${room.monthlyRent * 2},00) verschuldigd.
+  vergoeding van twee maanden huur (€ ${effectiveMonthlyRent * 2},00) verschuldigd.
 </article>
 
 <article>
