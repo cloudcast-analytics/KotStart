@@ -991,6 +991,75 @@ export async function updateContractStatus(contractId: string, status: Contract[
   if (error) throw error
 }
 
+export interface CreateContractRenewalInput {
+  previousContractId: string
+  roomId: string
+  schoolYear: string
+  monthlyRent: number
+  fixedCosts: number
+  studentTax: number
+}
+
+export async function createContractRenewal(input: CreateContractRenewalInput): Promise<string | null> {
+  if (!isSupabaseConfigured) return null
+
+  const [contracts, rooms] = await Promise.all([getContracts(), getRooms()])
+
+  const previous = contracts.find(c => c.id === input.previousContractId)
+  if (!previous) throw new Error('Vorig contract niet gevonden')
+
+  const room = rooms.find(r => r.id === input.roomId)
+  if (!room) throw new Error('Kamer niet gevonden')
+
+  if (
+    room.monthlyRent !== input.monthlyRent ||
+    room.fixedCosts !== input.fixedCosts ||
+    room.studentTax !== input.studentTax
+  ) {
+    await updateRoomData({
+      ...room,
+      monthlyRent: input.monthlyRent,
+      fixedCosts: input.fixedCosts,
+      studentTax: input.studentTax,
+    })
+  }
+
+  const { data, error } = await supabase
+    .from('contracts')
+    .insert({
+      room_id: input.roomId,
+      school_year: input.schoolYear,
+      student_id: previous.studentId,
+      second_student_id: previous.secondStudentId ?? null,
+      status: 'draft',
+      monthly_rent: input.monthlyRent,
+      fixed_costs: input.fixedCosts,
+      student_tax: input.studentTax,
+    })
+    .select()
+    .single()
+
+  if (isMissingColumnError(error)) {
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('contracts')
+      .insert({
+        room_id: input.roomId,
+        school_year: input.schoolYear,
+        student_id: previous.studentId,
+        second_student_id: previous.secondStudentId ?? null,
+        status: 'draft',
+      })
+      .select()
+      .single()
+
+    if (fallbackError) throw fallbackError
+    return (fallbackData as ContractRow).id
+  }
+
+  if (error) throw error
+  return (data as ContractRow).id
+}
+
 export async function deleteContractBundleData(contractId: string): Promise<void> {
   const bundle = await getContractBundleData(contractId)
   if (!bundle) throw new Error('Contract niet gevonden')

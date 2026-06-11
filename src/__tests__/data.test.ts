@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getAvailableRoomsForRenewal, getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, nextSchoolYear, saveInspectionCategories } from '../lib/data'
+import { createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, nextSchoolYear, saveInspectionCategories } from '../lib/data'
 import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
 
 describe('getContractBundleData', () => {
@@ -86,5 +86,18 @@ describe('getAvailableRoomsForRenewal', () => {
     const rooms = await getAvailableRoomsForRenewal('p1', '2025–2026', 'c-demo-student')
 
     expect(rooms.map(r => r.id)).toEqual(['r3', 'r5', 'r6'])
+  })
+})
+
+describe('createContractRenewal', () => {
+  it('doet niets en geeft null terug in demo-modus', async () => {
+    await expect(createContractRenewal({
+      previousContractId: 'c1',
+      roomId: 'r1',
+      schoolYear: '2026–2027',
+      monthlyRent: 450,
+      fixedCosts: 60,
+      studentTax: 12,
+    })).resolves.toBeNull()
   })
 })
