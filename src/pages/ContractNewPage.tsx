@@ -146,6 +146,9 @@ export default function ContractNewPage() {
         roomId: selectedRoom.id,
         schoolYear: '2025–2026',
         students,
+        monthlyRent: selectedRoom.monthlyRent,
+        fixedCosts: selectedRoom.fixedCosts,
+        studentTax: selectedRoom.studentTax,
       })
       navigate(contractId ? `/contracts/${contractId}` : '/', { state: { savedDraft: true } })
     } catch (err) {

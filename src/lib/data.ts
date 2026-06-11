@@ -118,6 +118,9 @@ interface CreateContractDraftInput {
   roomId: string
   schoolYear: string
   students: ContractDraftStudent[]
+  monthlyRent: number
+  fixedCosts: number
+  studentTax: number
 }
 
 interface SaveInspectionInput {
@@ -935,9 +938,29 @@ export async function createContractDraft(input: CreateContractDraftInput): Prom
       student_id: primaryStudent.id,
       second_student_id: students[1]?.id ?? null,
       status: 'draft',
+      monthly_rent: input.monthlyRent,
+      fixed_costs: input.fixedCosts,
+      student_tax: input.studentTax,
     })
     .select()
     .single()
+
+  if (isMissingColumnError(contractError)) {
+    const { data: fallbackContract, error: fallbackError } = await supabase
+      .from('contracts')
+      .insert({
+        room_id: input.roomId,
+        school_year: input.schoolYear,
+        student_id: primaryStudent.id,
+        second_student_id: students[1]?.id ?? null,
+        status: 'draft',
+      })
+      .select()
+      .single()
+
+    if (fallbackError) throw fallbackError
+    return (fallbackContract as ContractRow).id
+  }
 
   if (contractError) throw contractError
   return (insertedContract as ContractRow).id
