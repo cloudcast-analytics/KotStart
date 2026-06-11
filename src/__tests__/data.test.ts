@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, nextSchoolYear, saveInspectionCategories } from '../lib/data'
+import { getAvailableRoomsForRenewal, getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, nextSchoolYear, saveInspectionCategories } from '../lib/data'
 import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
 
 describe('getContractBundleData', () => {
@@ -66,5 +66,25 @@ describe('nextSchoolYear', () => {
 
   it('geeft de input ongewijzigd terug bij een onverwacht formaat', () => {
     expect(nextSchoolYear('onbekend')).toBe('onbekend')
+  })
+})
+
+describe('getAvailableRoomsForRenewal', () => {
+  it('geeft alle kamers van het pand terug voor een schooljaar zonder contracten', async () => {
+    const rooms = await getAvailableRoomsForRenewal('p1', '2026–2027', 'c1')
+
+    expect(rooms.map(r => r.id)).toEqual(['r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7'])
+  })
+
+  it('sluit volle kamers uit, telt het te verlengen contract zelf niet mee', async () => {
+    const rooms = await getAvailableRoomsForRenewal('p1', '2025–2026', 'c1')
+
+    expect(rooms.map(r => r.id)).toEqual(['r1', 'r3', 'r5', 'r6'])
+  })
+
+  it('negeert draft-contracten en telt de eigen kamer van een ander contract niet mee', async () => {
+    const rooms = await getAvailableRoomsForRenewal('p1', '2025–2026', 'c-demo-student')
+
+    expect(rooms.map(r => r.id)).toEqual(['r3', 'r5', 'r6'])
   })
 })

@@ -484,6 +484,39 @@ export async function getContracts(): Promise<Contract[]> {
   return (data as ContractRow[]).map(mapContract)
 }
 
+const ROOM_CAPACITY: Record<Room['roomType'], number> = {
+  studio: 1,
+  single: 1,
+  double: 2,
+}
+
+function isRoomAvailable(
+  room: Room,
+  schoolYear: string,
+  contracts: Contract[],
+  excludeContractId: string,
+): boolean {
+  const occupants = contracts.filter(
+    contract =>
+      contract.roomId === room.id &&
+      contract.schoolYear === schoolYear &&
+      contract.id !== excludeContractId &&
+      (contract.status === 'signed' || contract.status === 'sent'),
+  ).length
+  return occupants < ROOM_CAPACITY[room.roomType]
+}
+
+export async function getAvailableRoomsForRenewal(
+  propertyId: string,
+  schoolYear: string,
+  currentContractId: string,
+): Promise<Room[]> {
+  const [rooms, contracts] = await Promise.all([getRooms(), getContracts()])
+  return rooms
+    .filter(room => room.propertyId === propertyId)
+    .filter(room => isRoomAvailable(room, schoolYear, contracts, currentContractId))
+}
+
 export async function getDashboardRowsData(propertyId: string, schoolYear: string): Promise<StudentDashboardRow[]> {
   const [rooms, contracts, students] = await Promise.all([getRooms(), getContracts(), getStudents()])
   const propertyRoomIds = new Set(rooms.filter(room => room.propertyId === propertyId).map(room => room.id))
