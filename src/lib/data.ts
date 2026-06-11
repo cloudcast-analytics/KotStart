@@ -55,6 +55,9 @@ interface ContractRow {
   created_at: string
   signed_at?: string | null
   sent_at?: string | null
+  monthly_rent?: number | string | null
+  fixed_costs?: number | string | null
+  student_tax?: number | string | null
 }
 
 interface InspectionRow {
@@ -324,6 +327,9 @@ function mapContract(row: ContractRow): Contract {
     createdAt: row.created_at,
     signedAt: row.signed_at ?? undefined,
     sentAt: row.sent_at ?? undefined,
+    monthlyRent: row.monthly_rent != null ? asNumber(row.monthly_rent) : undefined,
+    fixedCosts: row.fixed_costs != null ? asNumber(row.fixed_costs) : undefined,
+    studentTax: row.student_tax != null ? asNumber(row.student_tax) : undefined,
   }
 }
 
