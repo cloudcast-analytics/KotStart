@@ -22,6 +22,15 @@ describe('ActionBar', () => {
     expect(onSort).toHaveBeenCalledWith('student')
   })
 
+  it('roept onSort("room") aan bij klik op Kamer header (ook op mobiel zichtbaar)', () => {
+    const onSort = vi.fn()
+    render(<ActionBar sortKey="student" sortDir="asc" onSort={onSort} onNewContract={vi.fn()} />)
+    const kamerButton = screen.getByRole('button', { name: /^kamer$/i })
+    expect(kamerButton).not.toHaveClass('hidden')
+    fireEvent.click(kamerButton)
+    expect(onSort).toHaveBeenCalledWith('room')
+  })
+
   it('toont pijl-omhoog indicator bij asc sortering op actieve kolom', () => {
     render(<ActionBar sortKey="student" sortDir="asc" onSort={vi.fn()} onNewContract={vi.fn()} />)
     expect(screen.getByTestId('sort-arrow')).toHaveTextContent('↑')

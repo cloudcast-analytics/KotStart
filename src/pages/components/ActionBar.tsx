@@ -23,7 +23,6 @@ export default function ActionBar({ sortKey, sortDir, onSort, onNewContract }: A
             className={cn(
               'flex items-center gap-1 text-[10.5px] font-bold tracking-[0.05em] uppercase transition-colors',
               sortKey === key ? 'text-accent' : 'text-slate-400 hover:text-slate-600',
-              key === 'room' && 'hidden md:flex',
             )}
           >
             {key === 'student' ? 'Student' : 'Kamer'}
