@@ -1,6 +1,6 @@
 import type { Contract, Inspection, InspectionItem, InspectionTemplateCategory, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
 
-export const SCHOOL_YEARS = ['2024–2025', '2025–2026', '2026–2027', '2027–2028']
+export const SCHOOL_YEARS = ['2025–2026']
 
 export const PROPERTIES: Property[] = [
   { id: 'p1', name: 'Residentie De Linde', street: 'Lindestraat', number: '12', postalCode: '9000', city: 'Gent', createdAt: '2024-08-01' },

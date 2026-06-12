@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addSchoolYear, createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, getSchoolYears, nextSchoolYear, saveInspectionCategories } from '../lib/data'
-import { DEFAULT_INSPECTION_CATEGORIES, SCHOOL_YEARS } from '../lib/mockData'
+import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
 
 describe('getContractBundleData', () => {
   it('lost de tweede student op wanneer secondStudentId gezet is', async () => {
@@ -103,11 +103,10 @@ describe('createContractRenewal', () => {
 })
 
 describe('getSchoolYears', () => {
-  it('geeft SCHOOL_YEARS terug in demo-modus', async () => {
+  it('geeft enkel schooljaren met contracten terug in demo-modus', async () => {
     const years = await getSchoolYears()
 
-    expect(years).toEqual(SCHOOL_YEARS)
-    expect(years[0]).toContain('–')
+    expect(years).toEqual(['2025–2026'])
   })
 })
 

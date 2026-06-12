@@ -1,5 +1,5 @@
 import type { Contract, Inspection, InspectionItem, InspectionMeterUnit, InspectionTemplateCategory, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
-import { CONTRACTS, DEFAULT_INSPECTION_CATEGORIES, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, SCHOOL_YEARS, STUDENTS } from './mockData'
+import { CONTRACTS, DEFAULT_INSPECTION_CATEGORIES, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
 import { isSupabaseConfigured, supabase } from './supabase'
 
 interface PropertyRow {
@@ -394,6 +394,10 @@ function mergeSchoolYears(base: string[], custom: string[]): string[] {
 }
 
 export async function getSchoolYears(): Promise<string[]> {
+  const contracts = await getContracts()
+  const contractYears = Array.from(new Set(contracts.map(contract => contract.schoolYear)))
+
+  let custom: string[] = []
   if (isSupabaseConfigured) {
     const { data: userData } = await supabase.auth.getUser()
     if (userData.user) {
@@ -403,13 +407,12 @@ export async function getSchoolYears(): Promise<string[]> {
         .eq('owner_id', userData.user.id)
 
       if (!error && data) {
-        const custom = data.map(row => row.label as string)
-        return mergeSchoolYears(SCHOOL_YEARS, custom)
+        custom = data.map(row => row.label as string)
       }
     }
   }
 
-  return [...SCHOOL_YEARS]
+  return mergeSchoolYears(contractYears, custom)
 }
 
 export async function addSchoolYear(label: string): Promise<string[] | null> {
