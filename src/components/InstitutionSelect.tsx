@@ -76,6 +76,7 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
             <li key={name}>
               <button
                 type="button"
+                onMouseDown={event => event.preventDefault()}
                 onClick={() => {
                   onChange(name)
                   setOpen(false)
@@ -90,6 +91,7 @@ export default function InstitutionSelect({ value, onChange, id, ariaLabel }: In
           <li>
             <button
               type="button"
+              onMouseDown={event => event.preventDefault()}
               onClick={() => {
                 setMode('other')
                 setOpen(false)
