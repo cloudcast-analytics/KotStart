@@ -98,7 +98,7 @@ export default function DashboardPage() {
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={handleSort}
-          onNewContract={() => navigate('/contracts/new')}
+          onNewContract={() => navigate('/contracts/new', { state: { propertyId, schoolYear } })}
         />
 
         <div className="flex-1 overflow-y-auto">

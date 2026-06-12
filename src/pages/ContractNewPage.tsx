@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { createContractDraft, getLandlordProfile, getRooms, isLandlordProfileComplete } from '../lib/data'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { createContractDraft, getAvailableRoomsForNewContract, getLandlordProfile, getProperties, getSchoolYears, isLandlordProfileComplete } from '../lib/data'
 import { MOCK_LANDLORD_PROFILE } from '../lib/mockData'
 import { isValidBelgianPostalCode } from '../lib/residence'
 import type { Room } from '../types'
@@ -61,23 +61,45 @@ function studentIsComplete(student: StudentFormData): boolean {
 
 export default function ContractNewPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const navState = location.state as { propertyId?: string; schoolYear?: string } | null
   const [currentStep, setCurrentStep] = useState<WizardStep>(1)
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
   const [students, setStudents] = useState<StudentFormData[]>([emptyStudent()])
   const [isSending, setIsSending] = useState(false)
   const [rooms, setRooms] = useState<Room[]>([])
   const [landlordProfile, setLandlordProfile] = useState<LandlordProfile>(MOCK_LANDLORD_PROFILE)
+  const [propertyId, setPropertyId] = useState<string | null>(navState?.propertyId ?? null)
+  const [schoolYear, setSchoolYear] = useState<string | null>(navState?.schoolYear ?? null)
   const [loadingRooms, setLoadingRooms] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (propertyId && schoolYear) return
     let cancelled = false
 
-    async function loadRooms() {
+    async function resolveContext() {
+      const [properties, schoolYears] = await Promise.all([getProperties(), getSchoolYears()])
+      if (cancelled) return
+      if (!propertyId) setPropertyId(properties[0]?.id ?? null)
+      if (!schoolYear) setSchoolYear(schoolYears[schoolYears.length - 1] ?? null)
+    }
+
+    resolveContext()
+    return () => { cancelled = true }
+  }, [propertyId, schoolYear])
+
+  useEffect(() => {
+    const currentPropertyId = propertyId
+    const currentSchoolYear = schoolYear
+    if (!currentPropertyId || !currentSchoolYear) return
+    let cancelled = false
+
+    async function loadRooms(forPropertyId: string, forSchoolYear: string) {
       setLoadingRooms(true)
       setError(null)
       try {
-        const nextRooms = await getRooms()
+        const nextRooms = await getAvailableRoomsForNewContract(forPropertyId, forSchoolYear)
         if (!cancelled) setRooms(nextRooms)
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Kamers konden niet geladen worden')
@@ -86,9 +108,9 @@ export default function ContractNewPage() {
       }
     }
 
-    loadRooms()
+    loadRooms(currentPropertyId, currentSchoolYear)
     return () => { cancelled = true }
-  }, [])
+  }, [propertyId, schoolYear])
 
   useEffect(() => {
     let cancelled = false
@@ -134,7 +156,7 @@ export default function ContractNewPage() {
       return
     }
 
-    if (!selectedRoom) return
+    if (!selectedRoom || !schoolYear) return
     if (!isLandlordProfileComplete(landlordProfile)) {
       setError('Vul eerst alle verhuurdergegevens in bij Account voordat je een contract aanmaakt.')
       return
@@ -144,7 +166,7 @@ export default function ContractNewPage() {
     try {
       const contractId = await createContractDraft({
         roomId: selectedRoom.id,
-        schoolYear: '2025–2026',
+        schoolYear,
         students,
         monthlyRent: selectedRoom.monthlyRent,
         fixedCosts: selectedRoom.fixedCosts,
@@ -189,7 +211,7 @@ export default function ContractNewPage() {
             <div className="p-4 text-sm font-semibold text-slate-500">Kamers laden...</div>
           ) : propertyRooms.length === 0 ? (
             <div className="m-4 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm font-semibold text-yellow-800">
-              Geen kamers gevonden. Maak eerst een kamer aan bij Panden.
+              Geen vrije kamers voor dit schooljaar in dit pand. Maak een nieuwe kamer aan bij Panden of kies een ander pand of schooljaar.
             </div>
           ) : (
             <Step1Room rooms={propertyRooms} selectedRoomId={selectedRoomId} onSelect={handleRoomSelect} />

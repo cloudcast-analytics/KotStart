@@ -30,7 +30,7 @@ function renderNewContractPage() {
 }
 
 async function selectFirstRoomAndContinue() {
-  fireEvent.click(await screen.findByRole('button', { name: /kamer 01/i }))
+  fireEvent.click(await screen.findByRole('button', { name: /kamer 03/i }))
   fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
 }
 
@@ -60,6 +60,18 @@ describe('ContractNewPage', () => {
     renderNewContractPage()
 
     expect(await screen.findByText(/kies een kamer/i)).toBeInTheDocument()
+  })
+
+  it('toont enkel vrije kamers van het pand voor het huidige schooljaar', async () => {
+    renderNewContractPage()
+
+    expect(await screen.findByRole('button', { name: /kamer 03/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /kamer 05/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /kamer 06/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /kamer 01/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /kamer 02/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /kamer 04/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /kamer 07/i })).not.toBeInTheDocument()
   })
 
   it('toont de stapindicator met 3 stappen', async () => {

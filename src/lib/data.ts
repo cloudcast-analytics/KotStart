@@ -544,7 +544,7 @@ function isRoomAvailable(
   room: Room,
   schoolYear: string,
   contracts: Contract[],
-  excludeContractId: string,
+  excludeContractId?: string,
 ): boolean {
   const occupants = contracts.filter(
     contract =>
@@ -565,6 +565,16 @@ export async function getAvailableRoomsForRenewal(
   return rooms
     .filter(room => room.propertyId === propertyId)
     .filter(room => isRoomAvailable(room, schoolYear, contracts, currentContractId))
+}
+
+export async function getAvailableRoomsForNewContract(
+  propertyId: string,
+  schoolYear: string,
+): Promise<Room[]> {
+  const [rooms, contracts] = await Promise.all([getRooms(), getContracts()])
+  return rooms
+    .filter(room => room.propertyId === propertyId)
+    .filter(room => isRoomAvailable(room, schoolYear, contracts))
 }
 
 export async function getDashboardRowsData(propertyId: string, schoolYear: string): Promise<StudentDashboardRow[]> {
