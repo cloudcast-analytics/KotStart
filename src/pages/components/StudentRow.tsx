@@ -58,7 +58,7 @@ export default function StudentRow({
           className={cn('btn-action', row.startInspectionDone ? 'btn-action-start-done' : 'btn-action-start')}
         >
           <ClipboardList size={15} className={row.startInspectionDone ? 'text-green-100' : 'text-start-green'} />
-          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-green-400 to-green-600 text-white text-[7px] font-black flex items-center justify-center border-[1.5px] border-white">
+          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-green-400 to-green-700 text-white text-[7px] font-black flex items-center justify-center border-[1.5px] border-white">
             S
           </span>
         </button>
