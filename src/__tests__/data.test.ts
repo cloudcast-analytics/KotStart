@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, nextSchoolYear, saveInspectionCategories } from '../lib/data'
-import { DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
+import { addSchoolYear, createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, getContracts, getDashboardRowsData, getInspectionCategories, getSchoolYears, nextSchoolYear, saveInspectionCategories } from '../lib/data'
+import { DEFAULT_INSPECTION_CATEGORIES, SCHOOL_YEARS } from '../lib/mockData'
 
 describe('getContractBundleData', () => {
   it('lost de tweede student op wanneer secondStudentId gezet is', async () => {
@@ -99,5 +99,20 @@ describe('createContractRenewal', () => {
       fixedCosts: 60,
       studentTax: 12,
     })).resolves.toBeNull()
+  })
+})
+
+describe('getSchoolYears', () => {
+  it('geeft SCHOOL_YEARS terug in demo-modus', async () => {
+    const years = await getSchoolYears()
+
+    expect(years).toEqual(SCHOOL_YEARS)
+    expect(years[0]).toContain('–')
+  })
+})
+
+describe('addSchoolYear', () => {
+  it('geeft null terug in demo-modus', async () => {
+    await expect(addSchoolYear('2028–2029')).resolves.toBeNull()
   })
 })

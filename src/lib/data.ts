@@ -1,5 +1,5 @@
 import type { Contract, Inspection, InspectionItem, InspectionMeterUnit, InspectionTemplateCategory, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
-import { CONTRACTS, DEFAULT_INSPECTION_CATEGORIES, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
+import { CONTRACTS, DEFAULT_INSPECTION_CATEGORIES, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, SCHOOL_YEARS, STUDENTS } from './mockData'
 import { isSupabaseConfigured, supabase } from './supabase'
 
 interface PropertyRow {
@@ -382,6 +382,50 @@ export function nextSchoolYear(current: string): string {
   const start = Number(match[1]) + 1
   const end = Number(match[2]) + 1
   return `${start}–${end}`
+}
+
+function mergeSchoolYears(base: string[], custom: string[]): string[] {
+  const unique = Array.from(new Set([...base, ...custom]))
+  return unique.sort((a, b) => {
+    const yearA = Number(a.match(/^(\d{4})/)?.[1] ?? 0)
+    const yearB = Number(b.match(/^(\d{4})/)?.[1] ?? 0)
+    return yearA - yearB
+  })
+}
+
+export async function getSchoolYears(): Promise<string[]> {
+  if (isSupabaseConfigured) {
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData.user) {
+      const { data, error } = await supabase
+        .from('school_years')
+        .select('label')
+        .eq('owner_id', userData.user.id)
+
+      if (!error && data) {
+        const custom = data.map(row => row.label as string)
+        return mergeSchoolYears(SCHOOL_YEARS, custom)
+      }
+    }
+  }
+
+  return [...SCHOOL_YEARS]
+}
+
+export async function addSchoolYear(label: string): Promise<string[] | null> {
+  if (isSupabaseConfigured) {
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData.user) {
+      const { error } = await supabase
+        .from('school_years')
+        .upsert({ owner_id: userData.user.id, label }, { onConflict: 'owner_id,label' })
+
+      if (error) throw error
+      return getSchoolYears()
+    }
+  }
+
+  return null
 }
 
 async function getInspectionFlagsByContract(contractIds: string[]): Promise<Map<string, { start: boolean; end: boolean }>> {
