@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import DashboardPage from '../pages/DashboardPage'
 
@@ -12,6 +12,10 @@ function renderDashboard() {
 }
 
 describe('DashboardPage', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   it('toont studentennamen', async () => {
     renderDashboard()
     expect(await screen.findByText('Emma Janssen')).toBeInTheDocument()
@@ -53,5 +57,18 @@ describe('DashboardPage', () => {
     const option = await screen.findByText('Kot Guldensporenstraat')
     fireEvent.click(option)
     expect(await screen.findByText('Nog geen studenten')).toBeInTheDocument()
+  })
+
+  it('onthoudt het laatst geselecteerde pand na een herlaad', async () => {
+    const { unmount } = renderDashboard()
+    const propertyButton = await screen.findByText('Residentie De Linde')
+    fireEvent.click(propertyButton)
+    const option = await screen.findByText('Kot Guldensporenstraat')
+    fireEvent.click(option)
+    await screen.findByText('Kot Guldensporenstraat')
+    unmount()
+
+    renderDashboard()
+    expect(await screen.findByText('Kot Guldensporenstraat')).toBeInTheDocument()
   })
 })

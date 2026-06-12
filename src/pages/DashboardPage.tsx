@@ -11,10 +11,28 @@ import type { Property, StudentDashboardRow } from '../types'
 type SortKey = 'student' | 'room'
 type SortDir = 'asc' | 'desc'
 
+const PROPERTY_STORAGE_KEY = 'kotstart_dashboard_property_id'
+
+function getStoredPropertyId(): string | null {
+  try {
+    return localStorage.getItem(PROPERTY_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function storePropertyId(id: string): void {
+  try {
+    localStorage.setItem(PROPERTY_STORAGE_KEY, id)
+  } catch {
+    // ignore
+  }
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate()
   const [schoolYear, setSchoolYear] = useState('2025–2026')
-  const [propertyId, setPropertyId] = useState(PROPERTIES[0].id)
+  const [propertyId, setPropertyId] = useState(() => getStoredPropertyId() ?? PROPERTIES[0].id)
   const [sortKey, setSortKey] = useState<SortKey>('room')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [properties, setProperties] = useState<Property[]>(PROPERTIES)
@@ -31,7 +49,9 @@ export default function DashboardPage() {
         if (cancelled) return
         setProperties(nextProperties)
         if (!nextProperties.some(property => property.id === propertyId)) {
-          setPropertyId(nextProperties[0]?.id ?? PROPERTIES[0].id)
+          const fallbackId = nextProperties[0]?.id ?? PROPERTIES[0].id
+          setPropertyId(fallbackId)
+          storePropertyId(fallbackId)
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Panden konden niet geladen worden')
@@ -84,12 +104,17 @@ export default function DashboardPage() {
     }
   }
 
+  function handlePropertyChange(id: string) {
+    setPropertyId(id)
+    storePropertyId(id)
+  }
+
   return (
     <AppShell
       schoolYear={schoolYear}
       propertyId={propertyId}
       onSchoolYearChange={setSchoolYear}
-      onPropertyChange={setPropertyId}
+      onPropertyChange={handlePropertyChange}
       properties={properties}
       schoolYears={SCHOOL_YEARS}
     >
