@@ -48,8 +48,10 @@ describe('DashboardPage', () => {
 
   it('toont lege staat als er geen data is voor de selectie', async () => {
     renderDashboard()
-    const propertyChip = await screen.findByText('Residentie De Linde')
-    fireEvent.click(propertyChip)
+    const propertyButton = await screen.findByText('Residentie De Linde')
+    fireEvent.click(propertyButton)
+    const option = await screen.findByText('Kot Guldensporenstraat')
+    fireEvent.click(option)
     expect(await screen.findByText('Nog geen studenten')).toBeInTheDocument()
   })
 })

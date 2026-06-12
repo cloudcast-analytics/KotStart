@@ -1,5 +1,6 @@
 import { Menu } from 'lucide-react'
-import Chip from '../ui/Chip'
+import FilterDropdown from '../ui/FilterDropdown'
+import { nextSchoolYear } from '../../lib/data'
 
 interface TopBarProps {
   schoolYear: string
@@ -8,6 +9,7 @@ interface TopBarProps {
   propertyNames: string[]
   onSchoolYearChange: (year: string) => void
   onPropertyChange: (name: string) => void
+  onAddSchoolYear: () => void
   onMenuClick: () => void
   showMenuButton: boolean
   showSchoolYearFilter?: boolean
@@ -21,6 +23,7 @@ export default function TopBar({
   propertyNames,
   onSchoolYearChange,
   onPropertyChange,
+  onAddSchoolYear,
   onMenuClick,
   showMenuButton,
   showSchoolYearFilter = true,
@@ -41,24 +44,22 @@ export default function TopBar({
         )}
         <div className="flex gap-1.5 flex-1 min-w-0">
           {showSchoolYearFilter && (
-            <Chip
+            <FilterDropdown
               label={schoolYear}
-              onClick={() => {
-                const currentIndex = schoolYears.indexOf(schoolYear)
-                const next = schoolYears[(currentIndex + 1) % schoolYears.length] ?? schoolYear
-                onSchoolYearChange(next)
+              options={schoolYears}
+              onSelect={onSchoolYearChange}
+              extraAction={{
+                label: `+ Volgend schooljaar toevoegen (${nextSchoolYear(schoolYears[schoolYears.length - 1] ?? schoolYear)})`,
+                onClick: onAddSchoolYear,
               }}
               className="flex-1 max-w-[130px]"
             />
           )}
           {showPropertyFilter && (
-            <Chip
+            <FilterDropdown
               label={propertyName}
-              onClick={() => {
-                const currentIndex = propertyNames.indexOf(propertyName)
-                const next = propertyNames[(currentIndex + 1) % propertyNames.length] ?? propertyName
-                onPropertyChange(next)
-              }}
+              options={propertyNames}
+              onSelect={onPropertyChange}
               className="flex-1"
             />
           )}

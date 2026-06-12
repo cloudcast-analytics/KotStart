@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Drawer from './Drawer'
 import TopBar from './TopBar'
+import { addSchoolYear, getSchoolYears, nextSchoolYear } from '../../lib/data'
 import { PROPERTIES, SCHOOL_YEARS } from '../../lib/mockData'
 import type { Property } from '../../types'
 
@@ -23,17 +24,40 @@ export default function AppShell({
   onSchoolYearChange,
   onPropertyChange,
   properties = PROPERTIES,
-  schoolYears = SCHOOL_YEARS,
+  schoolYears: schoolYearsProp = SCHOOL_YEARS,
   showSchoolYearFilter = true,
   showPropertyFilter = true,
 }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [schoolYears, setSchoolYears] = useState<string[]>(schoolYearsProp)
+
+  useEffect(() => {
+    let cancelled = false
+    getSchoolYears().then(years => {
+      if (!cancelled) setSchoolYears(years)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const selectedProperty = properties.find(p => p.id === propertyId) ?? properties[0] ?? PROPERTIES[0]
 
   function handlePropertyChange(name: string) {
     const found = properties.find(p => p.name === name)
     if (found) onPropertyChange(found.id)
+  }
+
+  async function handleAddSchoolYear() {
+    const last = schoolYears[schoolYears.length - 1] ?? schoolYear
+    const newYear = nextSchoolYear(last)
+    const updated = await addSchoolYear(newYear)
+    if (updated) {
+      setSchoolYears(updated)
+    } else {
+      setSchoolYears(prev => (prev.includes(newYear) ? prev : [...prev, newYear]))
+    }
+    onSchoolYearChange(newYear)
   }
 
   return (
@@ -48,6 +72,7 @@ export default function AppShell({
           propertyNames={properties.map(p => p.name)}
           onSchoolYearChange={onSchoolYearChange}
           onPropertyChange={handlePropertyChange}
+          onAddSchoolYear={handleAddSchoolYear}
           onMenuClick={() => setDrawerOpen(true)}
           showMenuButton={true}
           showSchoolYearFilter={showSchoolYearFilter}
