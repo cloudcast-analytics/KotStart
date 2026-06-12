@@ -30,7 +30,7 @@ export default function TopBar({
   showPropertyFilter = true,
 }: TopBarProps) {
   return (
-    <div className="bg-white/38 backdrop-blur-xl border-b border-white/65 px-4 pt-3 pb-2.5">
+    <div className="relative z-20 bg-white/38 backdrop-blur-xl border-b border-white/65 px-4 pt-3 pb-2.5">
       <div className="flex items-center gap-2">
         {showMenuButton && (
           <button
