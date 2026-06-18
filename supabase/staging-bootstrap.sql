@@ -63,6 +63,7 @@ create table contracts (
   status text check (status in ('draft','sent','signed')) default 'draft',
   signed_at timestamptz,
   sent_at timestamptz,
+  concept_sent_at timestamptz, -- migratie 20260618
   created_at timestamptz default now()
 );
 
