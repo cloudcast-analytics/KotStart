@@ -50,7 +50,7 @@ serve(async (req) => {
       return jsonResponse(req, { error: 'Niet geauthenticeerd' }, 401)
     }
 
-    const { to, name, html, pdfBase64 } = await req.json() as { to?: string; name?: string; html?: string; pdfBase64?: string }
+    const { to, name, html, pdfBase64, isConcept } = await req.json() as { to?: string; name?: string; html?: string; pdfBase64?: string; isConcept?: boolean }
     if (!to || !name || !html || !isValidEmail(to) || name.length > 120 || html.length > 500_000) {
       return jsonResponse(req, { error: 'Ongeldige payload' }, 400)
     }
@@ -63,20 +63,26 @@ serve(async (req) => {
 
     const safeName = name.replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').slice(0, 80)
 
+    const subject = isConcept ? `Concept huurovereenkomst voor ${name}` : `Huurovereenkomst voor ${name}`
+    const bodyLine = isConcept
+      ? 'In bijlage vindt u een concept van de huurovereenkomst als PDF.'
+      : 'In bijlage vindt u de ondertekende huurovereenkomst als PDF.'
+    const filename = isConcept ? `concept_huurovereenkomst_${safeName}.pdf` : `huurovereenkomst_${safeName}.pdf`
+
     const emailBody: Record<string, unknown> = {
       from: `${fromName} <${fromAddress}>`,
       to,
       reply_to: user.email,
-      subject: `Huurovereenkomst voor ${name}`,
+      subject,
       html: `<p>Beste ${name},</p>
-             <p>In bijlage vindt u de ondertekende huurovereenkomst als PDF.</p>
+             <p>${bodyLine}</p>
              <p>Met vriendelijke groeten,<br>${fromName}</p>`,
     }
 
     if (pdfBase64) {
       emailBody.attachments = [
         {
-          filename: `huurovereenkomst_${safeName}.pdf`,
+          filename,
           content: pdfBase64,
         },
       ]

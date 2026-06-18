@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Building2, CalendarPlus, Check, ClipboardList, Download, Home, Trash2, User } from 'lucide-react'
-import { deleteContractBundleData, getContractBundleData, sendContractEmail, updateContractStatus } from '../lib/data'
+import { deleteContractBundleData, getContractBundleData, saveConceptSentAt, sendContractEmail, updateContractStatus } from '../lib/data'
 import { cn } from '../lib/cn'
 import { formatAddress } from '../lib/residence'
 import type { Contract, Inspection, InspectionItem, LandlordProfile, Property, Room, Student } from '../types'
@@ -53,6 +53,7 @@ export default function ContractDetailPage() {
   const [studentSignatureDataUrl, setStudentSignatureDataUrl] = useState<string | undefined>(undefined)
   const [, setSignStatus] = useState<'idle' | 'signing' | 'error'>('idle')
   const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [conceptSendStatus, setConceptSendStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [deleteStatus, setDeleteStatus] = useState<'idle' | 'deleting' | 'error'>('idle')
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
@@ -91,7 +92,6 @@ export default function ContractDetailPage() {
   const effectiveFixedCosts = contract.fixedCosts ?? room.fixedCosts
   const effectiveStudentTax = contract.studentTax ?? room.studentTax
 
-  const startDone = !!startInspection
   const signedDone = contract.status === 'signed' || contract.status === 'sent'
   const sentDone = contract.status === 'sent'
   const requiresGuardianSignature = [student, secondStudent].some(person => Boolean(person?.guardianName))
@@ -112,6 +112,38 @@ export default function ContractDetailPage() {
     } catch (err) {
       setSignStatus('error')
       setStatusMessage(err instanceof Error ? err.message : 'Handtekeningen opslaan mislukt.')
+    }
+  }
+
+  async function handleSendConcept() {
+    if (!student.email) {
+      setConceptSendStatus('error')
+      setStatusMessage('Geen e-mailadres gevonden voor deze student.')
+      return
+    }
+    setConceptSendStatus('sending')
+    setStatusMessage('Concept wordt verstuurd...')
+    try {
+      const conceptBundle = { contract, room, student, secondStudent, property, landlord }
+      const html = generateContractHtml(conceptBundle, { isConcept: true })
+      let pdfBase64: string | undefined
+      try {
+        pdfBase64 = await generateContractPdfBase64(conceptBundle, { isConcept: true })
+      } catch (pdfError) {
+        console.error('Concept PDF-generatie mislukt, verstuur HTML fallback:', pdfError)
+      }
+      await sendContractEmail(student.email, `${student.firstName} ${student.lastName}`, html, pdfBase64, true)
+      if (secondStudent?.email) {
+        await sendContractEmail(secondStudent.email, `${secondStudent.firstName} ${secondStudent.lastName}`, html, pdfBase64, true)
+      }
+      await saveConceptSentAt(contract.id)
+      const conceptSentAt = new Date().toISOString()
+      setBundle(prev => prev ? { ...prev, contract: { ...prev.contract, conceptSentAt } } : null)
+      setConceptSendStatus('sent')
+      setStatusMessage(null)
+    } catch (err) {
+      setConceptSendStatus('error')
+      setStatusMessage(err instanceof Error ? err.message : 'Concept kon niet verstuurd worden.')
     }
   }
 
@@ -295,20 +327,17 @@ export default function ContractDetailPage() {
                 done={true}
                 date={contract.createdAt}
                 datePrefix="Concept"
-              />
-              <ProgressRow
-                label="Startplaatsbeschrijving"
-                done={startDone}
-                date={startInspection?.createdAt}
+                secondaryAction={!sentDone && !contract.conceptSentAt && conceptSendStatus !== 'sending' ? handleSendConcept : undefined}
+                secondaryLabel={!sentDone && !contract.conceptSentAt && conceptSendStatus !== 'sending' ? 'Concept sturen' : undefined}
+                conceptSentAt={contract.conceptSentAt}
               />
               <ProgressRow
                 label={signatureProgressLabel}
                 done={signedDone}
-                blocked={!startDone}
                 date={contract.signedAt}
                 datePrefix="Definitief contract"
-                primaryAction={!signedDone && startDone ? () => setShowSignatureModal(true) : undefined}
-                primaryLabel={!signedDone && startDone ? 'Handtekeningen opslaan' : undefined}
+                primaryAction={!signedDone ? () => setShowSignatureModal(true) : undefined}
+                primaryLabel={!signedDone ? 'Handtekeningen opslaan' : undefined}
               />
               <ProgressRow
                 label="Versturen naar student"
@@ -481,6 +510,7 @@ function ProgressRow({
   primaryLabel,
   secondaryAction,
   secondaryLabel,
+  conceptSentAt,
 }: {
   label: string
   done: boolean
@@ -491,6 +521,7 @@ function ProgressRow({
   primaryLabel?: string
   secondaryAction?: () => void
   secondaryLabel?: string
+  conceptSentAt?: string
 }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-100/70 bg-white/40 px-4 py-3">
@@ -512,7 +543,12 @@ function ProgressRow({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {secondaryAction && secondaryLabel && (
+        {conceptSentAt && (
+          <span className="text-xs font-semibold text-accent">
+            ✓ Verstuurd {new Date(conceptSentAt).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </span>
+        )}
+        {!conceptSentAt && secondaryAction && secondaryLabel && (
           <button
             type="button"
             onClick={secondaryAction}

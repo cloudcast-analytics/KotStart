@@ -47,13 +47,12 @@ describe('ContractDetailPage', () => {
     expect(screen.getByText('€ 450/maand')).toBeInTheDocument()
   })
 
-  it('toont voortgangschecklist met 4 stappen', async () => {
+  it('toont voortgangschecklist met 3 stappen (plaatsbeschrijving staat los in Inspectiepaspoort)', async () => {
     renderPage()
 
     await screen.findByRole('heading', { name: 'Emma Janssen' })
     expect(screen.getByText('Contract aangemaakt')).toBeInTheDocument()
     expect(screen.getByText(/Concept: 20 augustus 2025/i)).toBeInTheDocument()
-    expect(screen.getAllByText('Startplaatsbeschrijving')).not.toHaveLength(0)
     expect(screen.getByText('Handtekeningen verhuurder en student')).toBeInTheDocument()
     expect(screen.getByText(/Definitief contract: 12 september 2025/i)).toBeInTheDocument()
     expect(screen.getByText('Versturen naar student')).toBeInTheDocument()
@@ -82,6 +81,46 @@ describe('ContractDetailPage', () => {
     renderPage('/contracts/c4')
 
     expect(await screen.findByRole('button', { name: /handtekeningen opslaan/i })).toBeInTheDocument()
+  })
+
+  it('toont Handtekeningen opslaan ook zonder startplaatsbeschrijving (plaatsbeschrijving blokkeert niet meer)', async () => {
+    const base = await getContractBundleData('c4')
+    vi.mocked(getContractBundleData).mockResolvedValueOnce({
+      ...base!,
+      startInspection: undefined,
+      startInspectionItems: [],
+    })
+
+    renderPage('/contracts/c4')
+
+    expect(await screen.findByRole('button', { name: /handtekeningen opslaan/i })).toBeInTheDocument()
+  })
+
+  it('toont Concept sturen-knop wanneer conceptSentAt niet gezet is en contract nog niet verstuurd is', async () => {
+    renderPage('/contracts/c4')
+
+    expect(await screen.findByRole('button', { name: /concept sturen/i })).toBeInTheDocument()
+  })
+
+  it('verbergt Concept sturen-knop en toont verstuurd-label wanneer conceptSentAt gezet is', async () => {
+    const base = await getContractBundleData('c4')
+    vi.mocked(getContractBundleData).mockResolvedValueOnce({
+      ...base!,
+      contract: { ...base!.contract, conceptSentAt: '2026-06-18T10:00:00.000Z' },
+    })
+
+    renderPage('/contracts/c4')
+
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.queryByRole('button', { name: /concept sturen/i })).not.toBeInTheDocument()
+    expect(screen.getByText(/✓ Verstuurd/)).toBeInTheDocument()
+  })
+
+  it('toont geen Concept sturen-knop wanneer contract al verstuurd is (status sent)', async () => {
+    renderPage('/contracts/c3')
+
+    await screen.findByRole('heading', { level: 1 })
+    expect(screen.queryByRole('button', { name: /concept sturen/i })).not.toBeInTheDocument()
   })
 
   it('toont geen "Ondertekenen & versturen" als één knop', async () => {
