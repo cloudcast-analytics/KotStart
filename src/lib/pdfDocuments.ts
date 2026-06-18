@@ -157,7 +157,8 @@ function signaturePartyLabel(student: Student, secondStudent?: Student): { title
   }
 }
 
-export function generateContractHtml(bundle: ContractBundle): string {
+export function generateContractHtml(bundle: ContractBundle, options?: { isConcept?: boolean }): string {
+  const isConceptDoc = options?.isConcept ?? false
   const {
     contract,
     room,
@@ -217,7 +218,7 @@ export function generateContractHtml(bundle: ContractBundle): string {
 </head>
 <body>
 
-<h1>HUUROVEREENKOMST STUDENTENKAMER</h1>
+<h1>${isConceptDoc ? 'CONCEPT ' : ''}HUUROVEREENKOMST STUDENTENKAMER</h1>
 <h2>ACADEMIEJAAR ${escapeHtml(contract.schoolYear)}</h2>
 <p class="subtitle">Conform het Vlaams Woninghuurdecreet van 9 november 2018</p>
 
@@ -385,7 +386,7 @@ Opgemaakt te ${escapeHtml(signingPlace)}, in twee originelen. Elke partij erkent
     <strong>Handtekening verhuurder</strong><br/>
     ${landlordSignature ? `<img src="${landlordSignature}" alt="Handtekening verhuurder" style="max-height:70px;max-width:200px;display:block;margin:6px 0;" />` : '<br/><br/>'}
     Naam: ${escapeHtml(formatLandlordName(landlord))}<br/>
-    Datum: _____ / _____ / _____<br/>
+    Datum: ${escapeHtml(signedDate)}<br/>
     Plaats: ${escapeHtml(signingPlace)}
   </div>
   <div class="sign-line">
@@ -422,11 +423,11 @@ export function printContractDocument(bundle: ContractBundle) {
  * Generates a PDF from the contract HTML and returns it as a base64 string.
  * Uses html2pdf.js (client-side, no server needed).
  */
-export async function generateContractPdfBase64(bundle: ContractBundle): Promise<string> {
+export async function generateContractPdfBase64(bundle: ContractBundle, options?: { isConcept?: boolean }): Promise<string> {
   // Dynamically import to avoid SSR issues
   const html2pdf = (await import('html2pdf.js')).default
 
-  const html = generateContractHtml(bundle)
+  const html = generateContractHtml(bundle, options)
 
   // Render the full HTML document inside a hidden, on-screen iframe. An off-screen
   // (-9999px) container or a bare <div> with innerHTML makes html2canvas capture a

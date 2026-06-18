@@ -107,6 +107,35 @@ describe('generateContractHtml', () => {
     expect(html).toContain('alt="Handtekening huurder"')
   })
 
+  it('vult de verhuurder-datum in op dezelfde datum als de huurder wanneer het contract getekend is', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      contract: { ...CONTRACTS[0], signedAt: '2025-09-12T10:00:00.000Z' },
+    })
+    const matches = [...html.matchAll(/Datum: 12\/09\/2025/g)]
+    expect(matches).toHaveLength(2)
+  })
+
+  it('laat beide datumvelden leeg wanneer het contract nog niet getekend is', () => {
+    const html = generateContractHtml({
+      ...mockBundle,
+      contract: { ...CONTRACTS[0], signedAt: undefined },
+    })
+    const matches = [...html.matchAll(/Datum: _____ \/ _____ \/ _____/g)]
+    expect(matches).toHaveLength(2)
+  })
+
+  it('voegt CONCEPT toe aan de documenttitel wanneer isConcept true is', () => {
+    const html = generateContractHtml(mockBundle, { isConcept: true })
+    expect(html).toContain('CONCEPT HUUROVEREENKOMST STUDENTENKAMER')
+  })
+
+  it('bevat geen CONCEPT prefix in de documenttitel zonder isConcept optie', () => {
+    const html = generateContractHtml(mockBundle)
+    expect(html).toContain('HUUROVEREENKOMST STUDENTENKAMER')
+    expect(html).not.toContain('CONCEPT HUUROVEREENKOMST')
+  })
+
   it('toont wettelijke vertegenwoordiger als ondertekenaar bij een minderjarige student', () => {
     const html = generateContractHtml({
       ...mockBundle,
