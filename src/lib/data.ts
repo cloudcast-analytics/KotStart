@@ -783,15 +783,25 @@ export async function saveInspectionCategories(propertyId: string, categories: I
   if (error) throw error
 }
 
+export async function saveConceptSentAt(contractId: string): Promise<void> {
+  if (!isSupabaseConfigured) return
+  const { error } = await supabase
+    .from('contracts')
+    .update({ concept_sent_at: new Date().toISOString() })
+    .eq('id', contractId)
+  if (error) throw error
+}
+
 export async function sendContractEmail(
   to: string,
   name: string,
   html: string,
   pdfBase64?: string,
+  isConcept?: boolean,
 ): Promise<void> {
   if (!isSupabaseConfigured) return
   const { error } = await supabase.functions.invoke('send-contract-email', {
-    body: { to, name, html, pdfBase64 },
+    body: { to, name, html, pdfBase64, isConcept },
   })
   if (error) {
     const response = (error as { context?: Response }).context
