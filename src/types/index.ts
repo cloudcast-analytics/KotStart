@@ -64,6 +64,7 @@ export interface Contract {
   createdAt: string
   signedAt?: string
   sentAt?: string
+  conceptSentAt?: string
   monthlyRent?: number
   fixedCosts?: number
   studentTax?: number
