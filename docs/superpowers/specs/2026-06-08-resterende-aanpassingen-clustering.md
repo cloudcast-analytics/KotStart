@@ -1,10 +1,9 @@
 # Resterende "Aanpassingen KotStart" — Clustering voor losse vervolggesprekken
 
-**Datum:** 2026-06-08
-**Status:** Door Vince doorgenomen en bevestigd item-per-item; klaar als naslag voor aparte cluster-gesprekken
-**Context:** Cluster B (studentdata) en Cluster D (tweede persoon) zijn **af** en gepusht naar `staging`.
-Dit document legt vast wat er nog open staat uit `aanpassingen kotstart.docx` (15 items), plus
-gloednieuwe wensen die Vince tijdens deze sessie heeft geuit (niet in het origineel document).
+**Datum:** 2026-06-08 (laatst bijgewerkt: 2026-06-19)
+**Status:** B/D/C/A-partial/contractverlenging/dropdowns/E-partial allemaal af; nieuwe items N9–N11 toegevoegd
+**Context:** Meerdere clusters zijn afgerond op `staging`. Dit document legt vast wat er nog open
+staat uit `aanpassingen kotstart.docx` (15 items), plus gloednieuwe wensen die Vince heeft geuit.
 Doel: elk overblijvend cluster kan in een **eigen, verse conversatie** gebrainstormd en uitgevoerd
 worden — dat bespaart tokens t.o.v. één steeds langer wordende sessie.
 
@@ -62,11 +61,29 @@ extra wensen naar boven die niet in de docx stonden:
   plaatsbeschrijvingsdocument (vergelijkbaar met/herbruikbaar voor de eindplaatsbeschrijving),
   i.p.v. de huidige opzet waarin `generateContractHtml` de volledige plaatsbeschrijving inline
   in het contract rendert.
-- **N8 — E-mailadres/wachtwoord wijzigen functioneel maken**: in `AccountPage.tsx` is een nieuw
-  blok "Accountgegevens" toegevoegd met een "Inlog e-mailadres"-veld (incl. "Wijzigen"-knop) en een
-  "Wachtwoord wijzigen"-knop. Voorlopig is dit **enkel UI-structuur** (beide knoppen disabled,
-  "Binnenkort beschikbaar"). Nog te implementeren: de werkelijke `supabase.auth.updateUser()`-flow
-  voor het wijzigen van e-mailadres en wachtwoord, inclusief bevestigingsmails via Resend.
+- ✅ **N8 — E-mailadres/wachtwoord wijzigen functioneel maken**: volledig werkend via
+  `supabase.auth.updateUser()` met `emailRedirectTo`; inline bewerkingsflows in AccountPage;
+  Supabase "Secure email change" uitgezet (enkel nieuw adres bevestigen). Commit `2cff386` +
+  `16cc8a4` op `staging`.
+- **N9 — Wachtwoord vergeten / reset flow**: gebruiker klikt "Wachtwoord vergeten?" op de
+  loginpagina, vult e-mail in, ontvangt een reset-link via `supabase.auth.resetPasswordForEmail()`,
+  klikt de link, komt terug op een `/reset-password` pagina, stelt nieuw wachtwoord in via
+  `updateUser({ password })`. Design goedgekeurd 2026-06-19, implementatieplan volgt.
+- **N10 — Plaatsbeschrijving uitbesteden aan student**: verhuurder kan kiezen of de
+  plaatsbeschrijving (inspectie) **samen** met de student wordt ingevuld (huidige flow) of
+  **uitbesteed** wordt aan de student. Bij uitbesteding ontvangt de student een link naar een
+  **gesloten omgeving** (geen toegang tot contracten, dashboard, of andere verhuurderdata) waar
+  enkel de plaatsbeschrijving ingevuld kan worden. Na afronden krijgt de student een **PDF-versie**
+  die gedownload of per e-mail verstuurd kan worden. **Belangrijk**: meterstanden (elektriciteit,
+  gas, water) moeten **altijd samen** met de verhuurder worden ingevuld, ook bij uitbesteding — deze
+  worden uit de student-flow gehaald. Bij **contractverlenging** is geen nieuwe startplaatsbeschrijving
+  nodig (de originele loopt door tot het einde van de huurperiode), tenzij de student naar een ander
+  pand/kamer verhuist. Nog te brainstormen: exacte authenticatie/tokenmodel voor de studentlink,
+  scope van de gesloten omgeving, hoe meterstanden apart afgehandeld worden.
+- **N11 — Indexatie automatisch toepassen**: een knop "Indexatie toevoegen" waarmee huurprijzen
+  automatisch geïndexeerd worden (conform de wettelijke gezondheidsindex). Nog te brainstormen:
+  welke waarden geïndexeerd worden (huur, vaste kosten, studentenbelasting), welk indexcijfer
+  gebruikt wordt, en of dit bij contractverlenging of op pandniveau gebeurt.
 
 N6 en N7 raken dezelfde bestanden (`pdfDocuments.ts`, `InspectionDetailPage.tsx`) en dezelfde
 onderliggende vraag — "wat bevat het contract-PDF en hoe verwijst het naar de plaatsbeschrijving"
@@ -78,36 +95,47 @@ bevestigd dat ze daarom bij **Cluster A** horen, als onderdeel van de contract-P
 
 Met B en D klaar, blijven er drie zinvolle clusters over:
 
-### Cluster C — Inspectie/Plaatsbeschrijving
-*(was al gescoped vóór deze sessie, simpelweg de eerstvolgende in de oorspronkelijke volgorde
-B → D → **C** → A)*
-- #1 overzichtsfoto's 5-8
-- #2 sleutels: aantal i.p.v. staat
+### Cluster C — Inspectie/Plaatsbeschrijving ✅ AFGEROND
+*(commits `64cc975`..`e8a91d1` op `staging`, 2026-06-11)*
+- ✅ #1 overzichtsfoto's 5-8
+- ✅ #2 sleutels: aantal i.p.v. staat
 
-### Cluster A — Contract- & verhuurderflow
+### Cluster A — Contract- & verhuurderflow (DEELS AFGEROND)
 *(grootste resterende cluster — bevat alles wat met de ondertekenings-/verzend-/aanmaakflow van
-het contract te maken heeft; was toch al de plek waar "wie ondertekent bij minderjarigheid" naartoe
-verschoven is vanuit Cluster D)*
-- #7 datum concept vs. definitief contract (+ datumcorrectie bij effectieve ondertekening)
+het contract te maken heeft)*
+
+**Afgerond** (commit `2fc99cc` op `staging`, 2026-06-18):
+- ✅ #7 stepper vereenvoudigd, concept sturen, verhuurder datum fix
+- ✅ #13 verhuurdergegevens → verplaatst naar Supabase (N1)
+
+**Nog open:**
 - #8 contracten automatisch per pand genereren (locatie-specifieke velden i.p.v. hardcoded Gent)
-- #13 verhuurdergegevens compleet vóór contract aanmaken mogelijk is
 - N6 PDF-knop verplaatsen naar `InspectionDetailPage.tsx` ("PDF opmaken", pas na afronden zichtbaar)
 - N7 contract-PDF en plaatsbeschrijving-PDF loskoppelen tot twee aparte documenten
-  *(N6/N7 horen bij de contract-PDF-herziening en starten samen met #8 — zie "Nieuwe items")*
+  *(N6/N7 horen bij de contract-PDF-herziening en starten samen met #8)*
 - (overgeërfd uit Cluster D) wie ondertekent bij minderjarigheid:
   wettelijke vertegenwoordiger/voogd verplicht; student eventueel mee als akkoord/kennisname,
   maar niet als enige rechtsbasis
 
-### Nieuw Cluster E — Instellingen & Profiel
-*(volledig nieuw, ontstaan uit Vince's wensen deze sessie — niet in de docx)*
+### Nieuw Cluster E — Instellingen & Profiel (DEELS AFGEROND)
+*(volledig nieuw, ontstaan uit Vince's wensen — niet in de docx)*
 - ✅ N1 verhuurderprofiel van Instellingen naar Profiel verplaatsen
-- N2 zelf samen te stellen plaatsbeschrijvingscategorieën
+- ✅ N2 zelf samen te stellen plaatsbeschrijvingscategorieën (per pand)
+- ✅ N8 e-mailadres/wachtwoord wijzigen functioneel maken
 - N3 dark/light thema
 - N4 taalkeuze
-- N5 (nog te specifiëren — eerst aan Vince vragen bij start van dit cluster)
-- N8 e-mailadres/wachtwoord wijzigen functioneel maken (UI-structuur staat al in `AccountPage.tsx`,
-  via `supabase.auth.updateUser()` + bevestigingsmails Resend)
+- N5 (nog te specifiëren — eerst aan Vince vragen)
+- N9 wachtwoord vergeten / reset flow ← **implementatieplan klaar, uitvoering nu**
 - mogelijk #15 (backup/herstel) — zie "Open vragen"
+
+### Nieuw Cluster F — Plaatsbeschrijving uitbesteden & indexatie
+*(nieuwe wensen, 2026-06-19)*
+- N10 plaatsbeschrijving uitbesteden aan student (gesloten omgeving, tokenlink, meterstanden apart)
+- N11 indexatie automatisch toepassen (huurprijzen geïndexeerd via gezondheidsindex)
+
+### Afgeronde losse features (geen cluster)
+- ✅ Contractverlenging (commits `00d405c`..`592d19e` op `staging`, 2026-06-12)
+- ✅ Schooljaar/pand-dropdowns (commits `34d7b31`..`55665e6` op `staging`, 2026-06-13)
 
 ### Niet geclusterd / bewust uitgesteld
 - #4 e-maildomein → wacht op de echte/productie-mailbox
@@ -128,11 +156,13 @@ verschoven is vanuit Cluster D)*
    cluster te verplaatsen als het te veel impact heeft op meerdere pagina's.
 3. **N5 ("andere aanpassingen")** — nog volledig open; eerste vraag bij de start van Cluster E.
 
-## Aanbevolen volgorde
+## Aanbevolen volgorde (bijgewerkt 2026-06-19)
 
-**C → A → E** (E hangt het minst samen met de rest en kan het laatst, A is het meest verweven met
-de bestaande contractflow dus best vroeg na C zodat de inzichten uit C — bv. plaatsbeschrijving in
-de 4-stappen-checklist — nog vers zijn).
+**N9 (wachtwoord reset, nu) → E-rest (N3/N4/N5) → A-rest (#8/N6/N7) → F (N10/N11)**
+
+N9 is klein en klaar om te implementeren. E-rest zijn UI-instellingen. A-rest is de grote
+contract-PDF-herziening. F (plaatsbeschrijving uitbesteden + indexatie) is het meest complex
+en moet eerst uitvoerig gebrainstormd worden.
 
 ## Hoe een vervolggesprek te starten
 

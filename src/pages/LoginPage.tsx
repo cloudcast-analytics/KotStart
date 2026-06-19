@@ -3,11 +3,12 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function LoginPage() {
-  const { user, loading, signIn, signUp } = useAuth()
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const { user, loading, signIn, signUp, resetPassword } = useAuth()
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   if (loading) {
@@ -23,9 +24,13 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setSuccess(null)
     setSubmitting(true)
     try {
-      if (mode === 'login') {
+      if (mode === 'forgot') {
+        await resetPassword!(email)
+        setSuccess('Check je inbox voor een link om je wachtwoord te resetten.')
+      } else if (mode === 'login') {
         await signIn(email, password)
       } else {
         await signUp(email, password)
@@ -43,61 +48,88 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-slate-900">KotStart</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {mode === 'login' ? 'Welkom terug' : 'Maak een account aan'}
+            {mode === 'forgot' ? 'Wachtwoord resetten' : mode === 'login' ? 'Welkom terug' : 'Maak een account aan'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="text-xs font-semibold text-slate-600">
-              E-mail
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
+        {success ? (
+          <div className="flex flex-col gap-4">
+            <p className="rounded-xl bg-green-50 px-3 py-2 text-xs font-semibold text-green-700">{success}</p>
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setSuccess(null) }}
+              className="w-full text-center text-xs font-semibold text-blue-600 hover:underline"
+            >
+              Terug naar inloggen
+            </button>
           </div>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="email" className="text-xs font-semibold text-slate-600">
+                  E-mail
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="password" className="text-xs font-semibold text-slate-600">
-              Wachtwoord
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
+              {mode !== 'forgot' && (
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="password" className="text-xs font-semibold text-slate-600">
+                    Wachtwoord
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              )}
 
-          {error && (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">{error}</p>
-          )}
+              {mode === 'login' && resetPassword && (
+                <button
+                  type="button"
+                  onClick={() => { setMode('forgot'); setError(null) }}
+                  className="-mt-2 self-end text-xs text-slate-500 hover:text-blue-600 hover:underline"
+                >
+                  Wachtwoord vergeten?
+                </button>
+              )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-1 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
-          >
-            {submitting ? 'Even geduld...' : mode === 'login' ? 'Inloggen' : 'Registreren'}
-          </button>
-        </form>
+              {error && (
+                <p className="rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">{error}</p>
+              )}
 
-        <button
-          type="button"
-          onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null) }}
-          className="mt-6 w-full text-center text-xs font-semibold text-blue-600 hover:underline"
-        >
-          {mode === 'login' ? 'Account aanmaken' : 'Al een account? Inloggen'}
-        </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="mt-1 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+              >
+                {submitting ? 'Even geduld...' : mode === 'forgot' ? 'Verstuur reset-link' : mode === 'login' ? 'Inloggen' : 'Registreren'}
+              </button>
+            </form>
+
+            <button
+              type="button"
+              onClick={() => { setMode(mode === 'register' ? 'login' : mode === 'forgot' ? 'login' : 'register'); setError(null) }}
+              className="mt-6 w-full text-center text-xs font-semibold text-blue-600 hover:underline"
+            >
+              {mode === 'forgot' ? 'Terug naar inloggen' : mode === 'login' ? 'Account aanmaken' : 'Al een account? Inloggen'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

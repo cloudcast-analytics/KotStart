@@ -12,6 +12,7 @@ const PropertiesPage = lazy(() => import('./pages/PropertiesPage'))
 const AccountPage = lazy(() => import('./pages/AccountPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 
 function PageFallback() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
     <Suspense fallback={<PageFallback />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/" element={<ProtectedPage><DashboardPage /></ProtectedPage>} />
         <Route path="/contracts/new" element={<ProtectedPage><ContractNewPage /></ProtectedPage>} />
         <Route path="/contracts/:id/renew" element={<ProtectedPage><ContractRenewPage /></ProtectedPage>} />

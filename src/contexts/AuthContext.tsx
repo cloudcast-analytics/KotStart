@@ -10,6 +10,7 @@ interface AuthContextValue {
   signOut: () => Promise<void>
   updateEmail?: (email: string) => Promise<void>
   updatePassword?: (password: string) => Promise<void>
+  resetPassword?: (email: string) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue>({
