@@ -46,7 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateEmail = isSupabaseConfigured
     ? async (email: string) => {
-        const { error } = await supabase.auth.updateUser({ email })
+        const { error } = await supabase.auth.updateUser(
+          { email },
+          { emailRedirectTo: window.location.origin }
+        )
         if (error) throw error
       }
     : undefined
