@@ -12,6 +12,8 @@ const mockAuth = {
   signUp: vi.fn(),
   signInWithGoogle: vi.fn(),
   signOut: vi.fn(),
+  updateEmail: vi.fn(),
+  updatePassword: vi.fn(),
 }
 
 function renderPage() {
@@ -31,6 +33,8 @@ describe('AccountPage', () => {
   beforeEach(() => {
     localStorage.clear()
     mockAuth.signOut.mockReset()
+    mockAuth.updateEmail.mockReset()
+    mockAuth.updatePassword.mockReset()
   })
 
   it('toont account en verhuurderprofielvelden', () => {
@@ -51,14 +55,108 @@ describe('AccountPage', () => {
     expect(screen.queryByLabelText('EPC-certificaatnummer')).not.toBeInTheDocument()
   })
 
-  it('toont accountgegevens met inlog e-mailadres en geblokkeerde wijzig-acties', () => {
+  it('toont accountgegevens met inlog e-mailadres en actieve wijzig-knoppen', () => {
     renderPage()
 
     expect(screen.getByText('Accountgegevens')).toBeInTheDocument()
     expect(screen.getByLabelText('Inlog e-mailadres')).toHaveValue('verhuurder@test.be')
     expect(screen.getByLabelText('Inlog e-mailadres')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Wijzigen' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Wachtwoord wijzigen' })).toBeEnabled()
+  })
+
+  it('toont geblokkeerde wijzig-knoppen wanneer updateEmail/updatePassword niet beschikbaar zijn', () => {
+    render(
+      <AuthContext.Provider value={{ ...mockAuth, updateEmail: undefined, updatePassword: undefined }}>
+        <MemoryRouter initialEntries={['/account']}>
+          <Routes>
+            <Route path="/account" element={<AccountPage />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+    )
+
     expect(screen.getByRole('button', { name: 'Wijzigen' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Wachtwoord wijzigen' })).toBeDisabled()
+  })
+
+  it('toont bewerkingsveld na klikken op e-mailadres Wijzigen', async () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wijzigen' }))
+
+    expect(screen.getByLabelText('Nieuw e-mailadres')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Opslaan' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Annuleren' })).toBeInTheDocument()
+  })
+
+  it('verstuurt updateEmail en toont bevestiging bij opslaan nieuw e-mailadres', async () => {
+    mockAuth.updateEmail.mockResolvedValueOnce(undefined)
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wijzigen' }))
+    fireEvent.change(screen.getByLabelText('Nieuw e-mailadres'), { target: { value: 'nieuw@test.be' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(await screen.findByText(/bevestigingsmail verstuurd/i)).toBeInTheDocument()
+    expect(mockAuth.updateEmail).toHaveBeenCalledWith('nieuw@test.be')
+  })
+
+  it('toont foutmelding bij ongeldig nieuw e-mailadres', async () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wijzigen' }))
+    fireEvent.change(screen.getByLabelText('Nieuw e-mailadres'), { target: { value: 'geen-email' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(await screen.findByText(/geldig e-mailadres/i)).toBeInTheDocument()
+    expect(mockAuth.updateEmail).not.toHaveBeenCalled()
+  })
+
+  it('toont wachtwoordformulier na klikken op Wachtwoord wijzigen', async () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wachtwoord wijzigen' }))
+
+    expect(screen.getByLabelText('Nieuw wachtwoord')).toBeInTheDocument()
+    expect(screen.getByLabelText('Bevestig wachtwoord')).toBeInTheDocument()
+  })
+
+  it('wijzigt wachtwoord en toont bevestiging bij overeenstemmende wachtwoorden', async () => {
+    mockAuth.updatePassword.mockResolvedValueOnce(undefined)
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wachtwoord wijzigen' }))
+    fireEvent.change(screen.getByLabelText('Nieuw wachtwoord'), { target: { value: 'NieuwWachtwoord1!' } })
+    fireEvent.change(screen.getByLabelText('Bevestig wachtwoord'), { target: { value: 'NieuwWachtwoord1!' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(await screen.findByText(/wachtwoord gewijzigd/i)).toBeInTheDocument()
+    expect(mockAuth.updatePassword).toHaveBeenCalledWith('NieuwWachtwoord1!')
+  })
+
+  it('toont foutmelding bij niet-overeenkomende wachtwoorden', async () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wachtwoord wijzigen' }))
+    fireEvent.change(screen.getByLabelText('Nieuw wachtwoord'), { target: { value: 'Wachtwoord1!' } })
+    fireEvent.change(screen.getByLabelText('Bevestig wachtwoord'), { target: { value: 'Anders123!' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(await screen.findByText(/komen niet overeen/i)).toBeInTheDocument()
+    expect(mockAuth.updatePassword).not.toHaveBeenCalled()
+  })
+
+  it('toont foutmelding bij wachtwoord korter dan 8 tekens', async () => {
+    renderPage()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Wachtwoord wijzigen' }))
+    fireEvent.change(screen.getByLabelText('Nieuw wachtwoord'), { target: { value: 'kort' } })
+    fireEvent.change(screen.getByLabelText('Bevestig wachtwoord'), { target: { value: 'kort' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }))
+
+    expect(await screen.findByText(/minimaal 8 tekens/i)).toBeInTheDocument()
+    expect(mockAuth.updatePassword).not.toHaveBeenCalled()
   })
 
   it('slaat verhuurderprofiel op en toont naam/voornaam read-only in profiel verhuurder', async () => {

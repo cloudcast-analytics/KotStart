@@ -8,6 +8,8 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
+  updateEmail?: (email: string) => Promise<void>
+  updatePassword?: (password: string) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue>({

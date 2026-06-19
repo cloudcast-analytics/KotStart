@@ -7,6 +7,8 @@ import { MOCK_LANDLORD_PROFILE, PROPERTIES, SCHOOL_YEARS } from '../lib/mockData
 import { useAuth } from '../contexts/AuthContext'
 import type { LandlordProfile } from '../types'
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 const ACCOUNT_NAME_FIELDS: Array<{ key: 'firstName' | 'lastName'; label: string; placeholder: string }> = [
   { key: 'firstName', label: 'Voornaam', placeholder: 'Voornaam' },
   { key: 'lastName', label: 'Naam', placeholder: 'Naam' },
@@ -28,6 +30,12 @@ const READONLY_INPUT_CLASS =
 const DISABLED_BUTTON_CLASS =
   'shrink-0 cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-400'
 
+const ACTION_BUTTON_CLASS =
+  'shrink-0 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100'
+
+const CANCEL_BUTTON_CLASS =
+  'shrink-0 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-200'
+
 const FIELD_LABEL_CLASS = 'text-xs font-semibold text-slate-600'
 
 export default function AccountPage() {
@@ -36,7 +44,19 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<LandlordProfile>(MOCK_LANDLORD_PROFILE)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { user, signOut } = useAuth()
+
+  const [emailEditMode, setEmailEditMode] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [emailStatus, setEmailStatus] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
+
+  const [passwordEditMode, setPasswordEditMode] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordStatus, setPasswordStatus] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+
+  const { user, signOut, updateEmail, updatePassword } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -74,6 +94,44 @@ export default function AccountPage() {
   async function handleSignOut() {
     await signOut()
     navigate('/login')
+  }
+
+  async function handleEmailSave() {
+    if (!updateEmail) return
+    setEmailError(null)
+    if (!newEmail || !EMAIL_REGEX.test(newEmail)) {
+      setEmailError('Voer een geldig e-mailadres in.')
+      return
+    }
+    try {
+      await updateEmail(newEmail)
+      setEmailEditMode(false)
+      setEmailStatus(`Bevestigingsmail verstuurd naar ${newEmail}. Bevestig de wijziging via de link in de mail.`)
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'E-mailadres kon niet worden gewijzigd.')
+    }
+  }
+
+  async function handlePasswordSave() {
+    if (!updatePassword) return
+    setPasswordError(null)
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Wachtwoorden komen niet overeen.')
+      return
+    }
+    if (newPassword.length < 8) {
+      setPasswordError('Wachtwoord moet minimaal 8 tekens bevatten.')
+      return
+    }
+    try {
+      await updatePassword(newPassword)
+      setPasswordEditMode(false)
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordStatus('Wachtwoord gewijzigd.')
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Wachtwoord kon niet worden gewijzigd.')
+    }
   }
 
   return (
@@ -260,31 +318,100 @@ export default function AccountPage() {
               ))}
 
               <div className="flex flex-col gap-1 md:col-span-2">
-                <label htmlFor="account-email" className={FIELD_LABEL_CLASS}>
+                <label htmlFor={emailEditMode ? 'account-email-edit' : 'account-email'} className={FIELD_LABEL_CLASS}>
                   Inlog e-mailadres
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    id="account-email"
-                    type="email"
-                    value={user?.email ?? ''}
-                    disabled
-                    className={`w-full min-w-0 flex-1 ${READONLY_INPUT_CLASS}`}
-                  />
-                  <button type="button" disabled title="Binnenkort beschikbaar" className={DISABLED_BUTTON_CLASS}>
-                    Wijzigen
-                  </button>
-                </div>
+                {emailEditMode ? (
+                  <div className="flex gap-2">
+                    <input
+                      id="account-email-edit"
+                      type="email"
+                      autoFocus
+                      value={newEmail}
+                      onChange={event => setNewEmail(event.target.value)}
+                      placeholder="Nieuw e-mailadres"
+                      aria-label="Nieuw e-mailadres"
+                      className={`w-full min-w-0 flex-1 ${INPUT_CLASS}`}
+                    />
+                    <button type="button" onClick={handleEmailSave} className={ACTION_BUTTON_CLASS}>
+                      Opslaan
+                    </button>
+                    <button type="button" onClick={() => { setEmailEditMode(false); setEmailError(null) }} className={CANCEL_BUTTON_CLASS}>
+                      Annuleren
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      id="account-email"
+                      type="email"
+                      value={user?.email ?? ''}
+                      disabled
+                      className={`w-full min-w-0 flex-1 ${READONLY_INPUT_CLASS}`}
+                    />
+                    <button
+                      type="button"
+                      disabled={!updateEmail}
+                      onClick={() => { setNewEmail(user?.email ?? ''); setEmailEditMode(true) }}
+                      className={updateEmail ? ACTION_BUTTON_CLASS : DISABLED_BUTTON_CLASS}
+                    >
+                      Wijzigen
+                    </button>
+                  </div>
+                )}
+                {emailError && <p className="text-xs font-semibold text-red-600">{emailError}</p>}
+                {emailStatus && <p className="text-xs font-semibold text-green-600">{emailStatus}</p>}
               </div>
 
               <div className="flex flex-col gap-1 md:col-span-2">
                 <span className={FIELD_LABEL_CLASS}>Wachtwoord</span>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                  <button type="button" disabled title="Binnenkort beschikbaar" className={`${DISABLED_BUTTON_CLASS} w-full sm:w-auto`}>
-                    Wachtwoord wijzigen
-                  </button>
-                  <span className="text-xs text-slate-400">Binnenkort beschikbaar</span>
-                </div>
+                {passwordEditMode ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor="new-password" className="sr-only">Nieuw wachtwoord</label>
+                      <input
+                        id="new-password"
+                        type="password"
+                        value={newPassword}
+                        onChange={event => setNewPassword(event.target.value)}
+                        placeholder="Nieuw wachtwoord"
+                        aria-label="Nieuw wachtwoord"
+                        className={INPUT_CLASS}
+                      />
+                      <label htmlFor="confirm-password" className="sr-only">Bevestig wachtwoord</label>
+                      <input
+                        id="confirm-password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={event => setConfirmPassword(event.target.value)}
+                        placeholder="Bevestig wachtwoord"
+                        aria-label="Bevestig wachtwoord"
+                        className={INPUT_CLASS}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={handlePasswordSave} className={ACTION_BUTTON_CLASS}>
+                        Opslaan
+                      </button>
+                      <button type="button" onClick={() => { setPasswordEditMode(false); setPasswordError(null); setNewPassword(''); setConfirmPassword('') }} className={CANCEL_BUTTON_CLASS}>
+                        Annuleren
+                      </button>
+                    </div>
+                    {passwordError && <p className="text-xs font-semibold text-red-600">{passwordError}</p>}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                    <button
+                      type="button"
+                      disabled={!updatePassword}
+                      onClick={() => setPasswordEditMode(true)}
+                      className={updatePassword ? `${ACTION_BUTTON_CLASS} w-full sm:w-auto` : `${DISABLED_BUTTON_CLASS} w-full sm:w-auto`}
+                    >
+                      Wachtwoord wijzigen
+                    </button>
+                    {passwordStatus && <span className="text-xs font-semibold text-green-600">{passwordStatus}</span>}
+                  </div>
+                )}
               </div>
             </div>
           </section>

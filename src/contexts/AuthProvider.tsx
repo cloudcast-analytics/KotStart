@@ -44,8 +44,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isDemoMode) setUser(DEMO_USER)
   }
 
+  const updateEmail = isSupabaseConfigured
+    ? async (email: string) => {
+        const { error } = await supabase.auth.updateUser({ email })
+        if (error) throw error
+      }
+    : undefined
+
+  const updatePassword = isSupabaseConfigured
+    ? async (password: string) => {
+        const { error } = await supabase.auth.updateUser({ password })
+        if (error) throw error
+      }
+    : undefined
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut, updateEmail, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )
