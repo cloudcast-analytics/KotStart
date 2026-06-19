@@ -1,23 +1,78 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 export default function ResetPasswordPage() {
   const { updatePassword } = useAuth()
   const navigate = useNavigate()
+  const [sessionReady, setSessionReady] = useState(false)
+  const [sessionError, setSessionError] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  if (!updatePassword) {
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setSessionError(true)
+      return
+    }
+
+    let cancelled = false
+
+    async function establishSession() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!cancelled && session) {
+        setSessionReady(true)
+        return
+      }
+
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!cancelled) {
+          if (error) {
+            setSessionError(true)
+          } else {
+            setSessionReady(true)
+          }
+        }
+        return
+      }
+
+      const hash = window.location.hash
+      if (hash.includes('access_token')) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+        const { data: { session: retrySession } } = await supabase.auth.getSession()
+        if (!cancelled) {
+          if (retrySession) {
+            setSessionReady(true)
+          } else {
+            setSessionError(true)
+          }
+        }
+        return
+      }
+
+      if (!cancelled) setSessionError(true)
+    }
+
+    establishSession()
+    return () => { cancelled = true }
+  }, [])
+
+  if (!updatePassword || sessionError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4">
         <div className="w-full max-w-sm rounded-3xl border border-white/70 bg-white/60 p-8 shadow-xl backdrop-blur-xl text-center">
           <h1 className="text-2xl font-bold text-slate-900">KotStart</h1>
           <p className="mt-4 text-sm text-slate-500">
-            Wachtwoord resetten is niet beschikbaar in demo-modus.
+            {sessionError
+              ? 'De reset-link is ongeldig of verlopen. Vraag een nieuwe aan.'
+              : 'Wachtwoord resetten is niet beschikbaar in demo-modus.'}
           </p>
           <button
             type="button"
@@ -27,6 +82,14 @@ export default function ResetPasswordPage() {
             Terug naar inloggen
           </button>
         </div>
+      </div>
+    )
+  }
+
+  if (!sessionReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <p className="text-sm font-semibold text-slate-500">Sessie verifiëren...</p>
       </div>
     )
   }

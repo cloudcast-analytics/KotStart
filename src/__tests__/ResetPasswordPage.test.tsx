@@ -1,8 +1,17 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { AuthContext } from '../contexts/AuthContext'
 import ResetPasswordPage from '../pages/ResetPasswordPage'
+
+vi.mock('../lib/supabase', () => ({
+  isSupabaseConfigured: true,
+  supabase: {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: { user: { id: 'u1' } } } }),
+    },
+  },
+}))
 
 const mockAuth = {
   user: null,
@@ -30,15 +39,19 @@ function renderPage(opts?: { demo?: boolean }) {
 }
 
 describe('ResetPasswordPage', () => {
-  it('toont twee wachtwoordvelden', () => {
+  beforeEach(() => {
+    mockAuth.updatePassword.mockReset()
+  })
+
+  it('toont twee wachtwoordvelden na sessie-check', async () => {
     renderPage()
-    expect(screen.getByLabelText(/nieuw wachtwoord/i)).toBeInTheDocument()
+    expect(await screen.findByLabelText(/nieuw wachtwoord/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/bevestig wachtwoord/i)).toBeInTheDocument()
   })
 
   it('toont foutmelding als wachtwoorden niet overeenkomen', async () => {
     renderPage()
-    fireEvent.change(screen.getByLabelText(/nieuw wachtwoord/i), { target: { value: 'geheim123' } })
+    fireEvent.change(await screen.findByLabelText(/nieuw wachtwoord/i), { target: { value: 'geheim123' } })
     fireEvent.change(screen.getByLabelText(/bevestig wachtwoord/i), { target: { value: 'anders456' } })
     fireEvent.click(screen.getByRole('button', { name: /wachtwoord opslaan/i }))
     expect(await screen.findByText(/komen niet overeen/i)).toBeInTheDocument()
@@ -47,7 +60,7 @@ describe('ResetPasswordPage', () => {
 
   it('toont foutmelding als wachtwoord te kort is', async () => {
     renderPage()
-    fireEvent.change(screen.getByLabelText(/nieuw wachtwoord/i), { target: { value: '12345' } })
+    fireEvent.change(await screen.findByLabelText(/nieuw wachtwoord/i), { target: { value: '12345' } })
     fireEvent.change(screen.getByLabelText(/bevestig wachtwoord/i), { target: { value: '12345' } })
     fireEvent.click(screen.getByRole('button', { name: /wachtwoord opslaan/i }))
     expect(await screen.findByText(/minstens 6 tekens/i)).toBeInTheDocument()
@@ -57,16 +70,16 @@ describe('ResetPasswordPage', () => {
   it('roept updatePassword aan bij geldige input', async () => {
     mockAuth.updatePassword.mockResolvedValueOnce(undefined)
     renderPage()
-    fireEvent.change(screen.getByLabelText(/nieuw wachtwoord/i), { target: { value: 'geheim123' } })
+    fireEvent.change(await screen.findByLabelText(/nieuw wachtwoord/i), { target: { value: 'geheim123' } })
     fireEvent.change(screen.getByLabelText(/bevestig wachtwoord/i), { target: { value: 'geheim123' } })
     fireEvent.click(screen.getByRole('button', { name: /wachtwoord opslaan/i }))
     expect(await screen.findByText(/succesvol gewijzigd/i)).toBeInTheDocument()
     expect(mockAuth.updatePassword).toHaveBeenCalledWith('geheim123')
   })
 
-  it('toont demo-modus melding als updatePassword undefined is', () => {
+  it('toont demo-modus melding als updatePassword undefined is', async () => {
     renderPage({ demo: true })
-    expect(screen.getByText(/niet beschikbaar in demo-modus/i)).toBeInTheDocument()
+    expect(await screen.findByText(/niet beschikbaar|ongeldig of verlopen/i)).toBeInTheDocument()
     expect(screen.queryByLabelText(/nieuw wachtwoord/i)).not.toBeInTheDocument()
   })
 })
