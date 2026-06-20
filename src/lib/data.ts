@@ -691,16 +691,9 @@ function getLandlordProfileFromStorage(): LandlordProfile {
 
 export async function getLandlordProfile(): Promise<LandlordProfile> {
   if (isSupabaseConfigured) {
-    const { data: userData } = await supabase.auth.getUser()
-    if (userData.user) {
-      const { data, error } = await supabase
-        .from('landlord_profiles')
-        .select('*')
-        .eq('owner_id', userData.user.id)
-        .maybeSingle()
+    const { data, error } = await supabase.rpc('get_landlord_profile')
 
-      if (!error && data) return mapLandlordProfile(data as LandlordProfileRow)
-    }
+    if (!error && data && data.length > 0) return mapLandlordProfile(data[0] as LandlordProfileRow)
   }
 
   return getLandlordProfileFromStorage()
@@ -724,30 +717,21 @@ export function isLandlordProfileComplete(profile: LandlordProfile): boolean {
 
 export async function saveLandlordProfile(profile: LandlordProfile): Promise<void> {
   if (isSupabaseConfigured) {
-    const { data: userData } = await supabase.auth.getUser()
-    if (userData.user) {
-      const { error } = await supabase
-        .from('landlord_profiles')
-        .upsert(
-          {
-            owner_id: userData.user.id,
-            first_name: profile.firstName,
-            last_name: profile.lastName,
-            street: profile.street,
-            number: profile.number,
-            postal_code: profile.postalCode,
-            city: profile.city,
-            phone: profile.phone,
-            email: profile.email,
-            iban_country: profile.ibanCountry,
-            iban: profile.iban,
-          },
-          { onConflict: 'owner_id' },
-        )
+    const { error } = await supabase.rpc('save_landlord_profile', {
+      p_first_name: profile.firstName,
+      p_last_name: profile.lastName,
+      p_street: profile.street,
+      p_number: profile.number,
+      p_postal_code: profile.postalCode,
+      p_city: profile.city,
+      p_phone: profile.phone,
+      p_email: profile.email,
+      p_iban_country: profile.ibanCountry,
+      p_iban: profile.iban,
+    })
 
-      if (error) throw error
-      return
-    }
+    if (error) throw error
+    return
   }
 
   localStorage.setItem(LANDLORD_PROFILE_KEY, JSON.stringify(profile))
