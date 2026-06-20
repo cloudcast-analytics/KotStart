@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Save } from 'lucide-react'
 import AppShell from '../components/layout/AppShell'
+import FilterDropdown from '../components/ui/FilterDropdown'
 import { getLandlordProfile, saveLandlordProfile } from '../lib/data'
 import { MOCK_LANDLORD_PROFILE, PROPERTIES, SCHOOL_YEARS } from '../lib/mockData'
 import { useAuth } from '../contexts/AuthContext'
+import { cn } from '../lib/cn'
 import type { LandlordProfile } from '../types'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -19,7 +21,7 @@ const PROFILE_FIELDS: Array<{ key: 'phone' | 'email'; label: string; placeholder
   { key: 'email', label: 'E-mailadres', placeholder: 'E-mailadres' },
 ]
 
-const IBAN_COUNTRIES = ['BE', 'NL'] as const
+const IBAN_COUNTRIES = ['BE'] as const
 
 const INPUT_CLASS =
   'rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
@@ -42,6 +44,7 @@ export default function AccountPage() {
   const [schoolYear, setSchoolYear] = useState('2025–2026')
   const [propertyId, setPropertyId] = useState(PROPERTIES[0].id)
   const [profile, setProfile] = useState<LandlordProfile>(MOCK_LANDLORD_PROFILE)
+  const initialProfile = useRef<LandlordProfile>(MOCK_LANDLORD_PROFILE)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -63,20 +66,27 @@ export default function AccountPage() {
     let cancelled = false
 
     getLandlordProfile().then(loaded => {
-      if (!cancelled) setProfile(loaded)
+      if (!cancelled) {
+        setProfile(loaded)
+        initialProfile.current = loaded
+      }
     })
 
     return () => { cancelled = true }
   }, [])
+
+  const dirty = JSON.stringify(profile) !== JSON.stringify(initialProfile.current)
 
   function handleProfileChange(key: Exclude<keyof LandlordProfile, 'ibanCountry'>, value: string) {
     setProfile(prev => ({ ...prev, [key]: value }))
     setSaved(false)
   }
 
-  function handleIbanCountryChange(value: LandlordProfile['ibanCountry']) {
-    setProfile(prev => ({ ...prev, ibanCountry: value }))
-    setSaved(false)
+  function handleIbanCountryChange(value: string) {
+    if (IBAN_COUNTRIES.includes(value as typeof IBAN_COUNTRIES[number])) {
+      setProfile(prev => ({ ...prev, ibanCountry: value as LandlordProfile['ibanCountry'] }))
+      setSaved(false)
+    }
   }
 
   async function handleProfileSave(e: React.FormEvent) {
@@ -84,6 +94,7 @@ export default function AccountPage() {
     setError(null)
     try {
       await saveLandlordProfile(profile)
+      initialProfile.current = profile
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
@@ -260,18 +271,12 @@ export default function AccountPage() {
                   Bankrekeningnummer
                 </label>
                 <div className="flex gap-2">
-                  <select
-                    aria-label="Landcode rekeningnummer"
-                    value={profile.ibanCountry}
-                    onChange={event => handleIbanCountryChange(event.target.value as LandlordProfile['ibanCountry'])}
-                    className={`${INPUT_CLASS} shrink-0`}
-                  >
-                    {IBAN_COUNTRIES.map(code => (
-                      <option key={code} value={code}>
-                        {code}
-                      </option>
-                    ))}
-                  </select>
+                  <FilterDropdown
+                    label={profile.ibanCountry}
+                    options={[...IBAN_COUNTRIES]}
+                    onSelect={handleIbanCountryChange}
+                    className="shrink-0 w-[72px]"
+                  />
                   <input
                     id="iban"
                     type="text"
@@ -286,10 +291,18 @@ export default function AccountPage() {
 
             <button
               type="submit"
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-4 text-base font-bold text-white transition hover:bg-blue-700"
+              disabled={!dirty && !saved}
+              className={cn(
+                'mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition',
+                dirty
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700'
+                  : saved
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed',
+              )}
             >
-              {saved ? <Check size={20} /> : <Save size={20} />}
-              {saved ? 'Opgeslagen!' : 'Profiel opslaan'}
+              {saved ? <Check size={16} /> : <Save size={16} />}
+              {saved ? 'Opgeslagen!' : 'Wijzigingen opslaan'}
             </button>
           </section>
 

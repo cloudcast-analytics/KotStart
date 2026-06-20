@@ -51,7 +51,7 @@ describe('AccountPage', () => {
     expect(screen.getByLabelText('Telefoonnummer')).toBeInTheDocument()
     expect(screen.getByLabelText('E-mailadres')).toBeInTheDocument()
     expect(screen.getByLabelText('Bankrekeningnummer')).toBeInTheDocument()
-    expect(screen.getByLabelText('Landcode rekeningnummer')).toBeInTheDocument()
+    expect(screen.getByText('BE')).toBeInTheDocument()
     expect(screen.queryByLabelText('EPC-certificaatnummer')).not.toBeInTheDocument()
   })
 
@@ -168,9 +168,6 @@ describe('AccountPage', () => {
     fireEvent.change(screen.getByLabelText('Naam'), {
       target: { value: 'Ferson' },
     })
-    fireEvent.change(screen.getByLabelText('Landcode rekeningnummer'), {
-      target: { value: 'NL' },
-    })
     fireEvent.change(screen.getByLabelText('Bankrekeningnummer'), {
       target: { value: '12 3456 7890 1234' },
     })
@@ -178,14 +175,13 @@ describe('AccountPage', () => {
     expect(screen.getByText('Geert')).toBeInTheDocument()
     expect(screen.getByText('Ferson')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /profiel opslaan/i }))
+    fireEvent.click(screen.getByRole('button', { name: /wijzigingen opslaan/i }))
 
     expect(await screen.findByRole('button', { name: /opgeslagen/i })).toBeInTheDocument()
 
     const stored = localStorage.getItem('kotstart_landlord_profile')
     expect(stored).toContain('Geert')
     expect(stored).toContain('Ferson')
-    expect(stored).toContain('NL')
   })
 
   it('logt uit via de sessieknop', async () => {
