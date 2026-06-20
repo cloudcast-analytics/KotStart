@@ -26,7 +26,10 @@ const IBAN_LENGTH: Record<string, number> = { BE: 14 }
 
 function formatIbanInput(raw: string): string {
   const digits = raw.replace(/\s/g, '')
-  return digits.replace(/(.{4})/g, '$1 ').trim()
+  if (digits.length <= 2) return digits
+  const first = digits.slice(0, 2)
+  const rest = digits.slice(2).replace(/(.{4})/g, '$1 ').trim()
+  return `${first} ${rest}`
 }
 
 function getIbanDigits(formatted: string): string {
@@ -298,7 +301,7 @@ export default function AccountPage() {
                       const digits = getIbanDigits(event.target.value).replace(/\D/g, '').slice(0, IBAN_LENGTH[profile.ibanCountry] ?? 14)
                       handleProfileChange('iban', digits)
                     }}
-                    placeholder="0000 0000 0000 00"
+                    placeholder="00 0000 0000 0000"
                     className={`w-full min-w-0 flex-1 ${INPUT_CLASS}`}
                   />
                 </div>
