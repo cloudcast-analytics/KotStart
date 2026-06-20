@@ -22,6 +22,16 @@ const PROFILE_FIELDS: Array<{ key: 'phone' | 'email'; label: string; placeholder
 ]
 
 const IBAN_COUNTRIES = ['BE'] as const
+const IBAN_LENGTH: Record<string, number> = { BE: 14 }
+
+function formatIbanInput(raw: string): string {
+  const digits = raw.replace(/\s/g, '')
+  return digits.replace(/(.{4})/g, '$1 ').trim()
+}
+
+function getIbanDigits(formatted: string): string {
+  return formatted.replace(/\s/g, '')
+}
 
 const INPUT_CLASS =
   'rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100'
@@ -76,6 +86,8 @@ export default function AccountPage() {
   }, [])
 
   const dirty = JSON.stringify(profile) !== JSON.stringify(initialProfile.current)
+  const ibanValid = profile.iban.length === 0 || profile.iban.length === (IBAN_LENGTH[profile.ibanCountry] ?? 14)
+  const canSave = dirty && ibanValid
 
   function handleProfileChange(key: Exclude<keyof LandlordProfile, 'ibanCountry'>, value: string) {
     setProfile(prev => ({ ...prev, [key]: value }))
@@ -280,21 +292,30 @@ export default function AccountPage() {
                   <input
                     id="iban"
                     type="text"
-                    value={profile.iban}
-                    onChange={event => handleProfileChange('iban', event.target.value)}
-                    placeholder="Rekeningnummer"
+                    inputMode="numeric"
+                    value={formatIbanInput(profile.iban)}
+                    onChange={event => {
+                      const digits = getIbanDigits(event.target.value).replace(/\D/g, '').slice(0, IBAN_LENGTH[profile.ibanCountry] ?? 14)
+                      handleProfileChange('iban', digits)
+                    }}
+                    placeholder="0000 0000 0000 00"
                     className={`w-full min-w-0 flex-1 ${INPUT_CLASS}`}
                   />
                 </div>
+                {profile.iban.length > 0 && profile.iban.length !== (IBAN_LENGTH[profile.ibanCountry] ?? 14) && (
+                  <p className="text-xs text-amber-600">
+                    {profile.ibanCountry} rekeningnummer moet {IBAN_LENGTH[profile.ibanCountry] ?? 14} cijfers bevatten ({profile.iban.length}/{IBAN_LENGTH[profile.ibanCountry] ?? 14})
+                  </p>
+                )}
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={!dirty && !saved}
+              disabled={!canSave && !saved}
               className={cn(
                 'mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition',
-                dirty
+                canSave
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700'
                   : saved
                     ? 'bg-blue-600 text-white'
