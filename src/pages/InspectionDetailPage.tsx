@@ -141,7 +141,7 @@ export default function InspectionDetailPage() {
                     key={url}
                     src={url}
                     alt={`Overzichtsfoto ${index + 1}`}
-                    className="aspect-[4/3] w-full rounded-xl object-cover"
+                    className="aspect-[4/3] w-full rounded-xl bg-slate-100 object-contain"
                   />
                 ))}
               </div>
@@ -166,7 +166,7 @@ export default function InspectionDetailPage() {
                         <img
                           src={item.photoUrl}
                           alt={item.itemName}
-                          className="mt-2 h-32 w-full rounded-lg object-cover"
+                          className="mt-2 h-32 w-full rounded-lg bg-slate-100 object-contain"
                         />
                       )}
                     </div>

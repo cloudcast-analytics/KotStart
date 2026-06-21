@@ -309,7 +309,7 @@ export default function InspectionNewPage() {
                                 <img
                                   src={state.photoUrl}
                                   alt={`Foto ${item.name}`}
-                                  className="mb-3 h-28 w-full rounded-xl object-cover"
+                                  className="mb-3 h-28 w-full rounded-xl bg-slate-100 object-contain"
                                 />
                               ) : null}
                               <label
@@ -357,7 +357,7 @@ export default function InspectionNewPage() {
                         <img
                           src={url}
                           alt={`Overzichtsfoto ${index + 1}`}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full bg-slate-100 object-contain"
                         />
                         <button
                           type="button"
