@@ -1432,6 +1432,7 @@ export async function sendInspectionDelegationEmail(
     body: {
       to: studentEmail,
       name: studentName,
+      subject: `Vul je plaatsbeschrijving in — ${propertyName} kamer ${roomNumber}`,
       html: `<p>Hallo ${studentName},</p>
              <p>Je verhuurder vraagt je om de plaatsbeschrijving in te vullen voor ${propertyName}, kamer ${roomNumber}.</p>
              <p><a href="${tokenUrl}">Klik hier om de plaatsbeschrijving in te vullen</a></p>

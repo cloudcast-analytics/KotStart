@@ -50,7 +50,7 @@ serve(async (req) => {
       return jsonResponse(req, { error: 'Niet geauthenticeerd' }, 401)
     }
 
-    const { to, name, html, pdfBase64, isConcept } = await req.json() as { to?: string; name?: string; html?: string; pdfBase64?: string; isConcept?: boolean }
+    const { to, name, html, pdfBase64, isConcept, subject: customSubject } = await req.json() as { to?: string; name?: string; html?: string; pdfBase64?: string; isConcept?: boolean; subject?: string }
     if (!to || !name || !html || !isValidEmail(to) || name.length > 120 || html.length > 500_000) {
       return jsonResponse(req, { error: 'Ongeldige payload' }, 400)
     }
@@ -63,7 +63,7 @@ serve(async (req) => {
 
     const safeName = name.replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').slice(0, 80)
 
-    const subject = isConcept ? `Concept huurovereenkomst voor ${name}` : `Huurovereenkomst voor ${name}`
+    const subject = customSubject ?? (isConcept ? `Concept huurovereenkomst voor ${name}` : `Huurovereenkomst voor ${name}`)
     const bodyLine = isConcept
       ? 'In bijlage vindt u een concept van de huurovereenkomst als PDF.'
       : 'In bijlage vindt u de ondertekende huurovereenkomst als PDF.'
@@ -74,7 +74,7 @@ serve(async (req) => {
       to,
       reply_to: user.email,
       subject,
-      html: `<p>Beste ${name},</p>
+      html: customSubject ? html : `<p>Beste ${name},</p>
              <p>${bodyLine}</p>
              <p>Met vriendelijke groeten,<br>${fromName}</p>`,
     }
@@ -86,8 +86,7 @@ serve(async (req) => {
           content: pdfBase64,
         },
       ]
-    } else {
-      // Fallback: stuur HTML als body als PDF generatie mislukte
+    } else if (!customSubject) {
       emailBody.html = html
     }
 
