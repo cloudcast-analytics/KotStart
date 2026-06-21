@@ -1,4 +1,4 @@
-import type { Contract, Inspection, InspectionItem, InspectionMeterUnit, InspectionTemplateCategory, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
+import type { Contract, Inspection, InspectionItem, InspectionMeterUnit, InspectionTemplateCategory, InspectionToken, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
 import { CONTRACTS, DEFAULT_INSPECTION_CATEGORIES, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
 import { isSupabaseConfigured, supabase } from './supabase'
 
@@ -10,6 +10,7 @@ interface PropertyRow {
   postal_code?: string | null
   city?: string | null
   created_at: string
+  inspection_delegation?: 'together' | 'delegate' | null
 }
 
 interface RoomRow {
@@ -93,6 +94,22 @@ interface LandlordProfileRow {
   email: string
   iban_country: string
   iban: string
+}
+
+interface InspectionTokenRow {
+  id: string
+  token: string
+  contract_id: string
+  property_id: string
+  owner_id: string
+  status: 'pending' | 'submitted' | 'approved' | 'rejected'
+  expires_at: string
+  landlord_items: unknown
+  student_items: unknown
+  student_photo_urls: string[] | null
+  submitted_at: string | null
+  reviewed_at: string | null
+  created_at: string
 }
 
 interface ContractDraftStudent {
@@ -257,6 +274,24 @@ function mapProperty(row: PropertyRow): Property {
     number: row.number ?? '',
     postalCode: row.postal_code ?? '',
     city: row.city ?? '',
+    createdAt: row.created_at,
+    inspectionDelegation: row.inspection_delegation ?? undefined,
+  }
+}
+
+function mapInspectionToken(row: InspectionTokenRow): InspectionToken {
+  return {
+    id: row.id,
+    token: row.token,
+    contractId: row.contract_id,
+    propertyId: row.property_id,
+    status: row.status,
+    expiresAt: row.expires_at,
+    landlordItems: row.landlord_items,
+    studentItems: row.student_items,
+    studentPhotoUrls: row.student_photo_urls ?? [],
+    submittedAt: row.submitted_at ?? undefined,
+    reviewedAt: row.reviewed_at ?? undefined,
     createdAt: row.created_at,
   }
 }
@@ -1230,4 +1265,159 @@ export async function saveInspectionData(input: SaveInspectionInput): Promise<st
   }
 
   return inspectionId
+}
+
+export async function getPropertyDelegation(propertyId: string): Promise<'together' | 'delegate'> {
+  if (!isSupabaseConfigured) return 'together'
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select('inspection_delegation')
+    .eq('id', propertyId)
+    .maybeSingle()
+
+  if (error || !data) return 'together'
+  return (data.inspection_delegation as 'together' | 'delegate') ?? 'together'
+}
+
+export async function savePropertyDelegation(propertyId: string, mode: 'together' | 'delegate'): Promise<void> {
+  if (!isSupabaseConfigured) return
+
+  const { error } = await supabase
+    .from('properties')
+    .update({ inspection_delegation: mode })
+    .eq('id', propertyId)
+
+  if (error) throw error
+}
+
+export async function createInspectionToken(
+  contractId: string,
+  propertyId: string,
+  landlordItems: unknown,
+): Promise<{ token: string; expiresAt: string } | null> {
+  if (!isSupabaseConfigured) return null
+
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return null
+
+  const { data, error } = await supabase
+    .from('inspection_tokens')
+    .insert({
+      contract_id: contractId,
+      property_id: propertyId,
+      owner_id: userData.user.id,
+      landlord_items: landlordItems,
+    })
+    .select('token, expires_at')
+    .single()
+
+  if (error) throw error
+  return { token: data.token as string, expiresAt: data.expires_at as string }
+}
+
+export async function getInspectionTokenForContract(contractId: string): Promise<InspectionToken | null> {
+  if (!isSupabaseConfigured) return null
+
+  const { data, error } = await supabase
+    .from('inspection_tokens')
+    .select('*')
+    .eq('contract_id', contractId)
+    .in('status', ['pending', 'submitted'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return mapInspectionToken(data as InspectionTokenRow)
+}
+
+export async function approveInspectionToken(
+  tokenId: string,
+  contractId: string,
+  type: 'start' | 'end',
+): Promise<void> {
+  if (!isSupabaseConfigured) return
+
+  const { data: tokenData, error: tokenError } = await supabase
+    .from('inspection_tokens')
+    .select('*')
+    .eq('id', tokenId)
+    .single()
+
+  if (tokenError || !tokenData) throw new Error('Token niet gevonden')
+
+  const token = tokenData as InspectionTokenRow
+  const allItems = [
+    ...((token.landlord_items as Array<Record<string, unknown>>) ?? []),
+    ...((token.student_items as Array<Record<string, unknown>>) ?? []),
+  ]
+
+  const { data: inspData, error: inspError } = await supabase
+    .from('inspections')
+    .insert({
+      contract_id: contractId,
+      type,
+      overview_photo_urls: token.student_photo_urls ?? [],
+    })
+    .select('id')
+    .single()
+
+  if (inspError) throw inspError
+
+  if (allItems.length > 0) {
+    const itemRows = allItems.map(item => ({
+      inspection_id: inspData.id,
+      category: item.category as string,
+      item_name: item.itemName as string,
+      condition: (item.condition as string) ?? null,
+      key_count: (item.keyCount as number) ?? null,
+      meter_value: (item.meterValue as number) ?? null,
+      meter_unit: (item.meterUnit as string) ?? null,
+      photo_url: (item.photoUrl as string) ?? null,
+    }))
+
+    const { error: itemsError } = await supabase.from('inspection_items').insert(itemRows)
+    if (itemsError) throw itemsError
+  }
+
+  const { error: updateError } = await supabase
+    .from('inspection_tokens')
+    .update({ status: 'approved', reviewed_at: new Date().toISOString() })
+    .eq('id', tokenId)
+
+  if (updateError) throw updateError
+}
+
+export async function rejectInspectionToken(tokenId: string): Promise<string | null> {
+  if (!isSupabaseConfigured) return null
+
+  const { data: oldToken, error: fetchError } = await supabase
+    .from('inspection_tokens')
+    .select('contract_id, property_id, owner_id, landlord_items')
+    .eq('id', tokenId)
+    .single()
+
+  if (fetchError || !oldToken) throw new Error('Token niet gevonden')
+
+  const { error: rejectError } = await supabase
+    .from('inspection_tokens')
+    .update({ status: 'rejected', reviewed_at: new Date().toISOString() })
+    .eq('id', tokenId)
+
+  if (rejectError) throw rejectError
+
+  const { data: newToken, error: createError } = await supabase
+    .from('inspection_tokens')
+    .insert({
+      contract_id: oldToken.contract_id,
+      property_id: oldToken.property_id,
+      owner_id: oldToken.owner_id,
+      landlord_items: oldToken.landlord_items,
+    })
+    .select('token')
+    .single()
+
+  if (createError) throw createError
+  return newToken.token as string
 }

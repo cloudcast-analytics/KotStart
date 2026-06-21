@@ -6,6 +6,7 @@ export interface Property {
   postalCode: string
   city: string
   createdAt: string
+  inspectionDelegation?: 'together' | 'delegate'
 }
 
 export interface Room {
@@ -91,6 +92,21 @@ export interface InspectionTemplateCategory {
   id: string
   label: string
   items: InspectionTemplateItem[]
+}
+
+export interface InspectionToken {
+  id: string
+  token: string
+  contractId: string
+  propertyId: string
+  status: 'pending' | 'submitted' | 'approved' | 'rejected'
+  expiresAt: string
+  landlordItems: unknown
+  studentItems: unknown
+  studentPhotoUrls: string[]
+  submittedAt?: string
+  reviewedAt?: string
+  createdAt: string
 }
 
 export interface InspectionItem {
