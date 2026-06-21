@@ -6,6 +6,7 @@ import {
   createInspectionToken,
   getContractBundleData,
   getInspectionCategories,
+  getInspectionTokenForContract,
   sendInspectionDelegationEmail,
 } from '../lib/data'
 import type { InspectionTemplateCategory, InspectionTemplateItem } from '../types'
@@ -48,6 +49,24 @@ export default function InspectionDelegatePage() {
       }
 
       try {
+        // Check for existing pending token first
+        const existingToken = await getInspectionTokenForContract(contractId)
+        if (cancelled) return
+
+        if (existingToken && existingToken.status === 'pending') {
+          const tokenUrl = `${window.location.origin}/inspection/student/${existingToken.token}`
+          // Load bundle for student email display
+          const bundle = await getContractBundleData(contractId)
+          if (cancelled) return
+          setConfirmation({
+            email: bundle?.student.email ?? '',
+            expiresAt: existingToken.expiresAt,
+            link: tokenUrl,
+          })
+          setLoading(false)
+          return
+        }
+
         const bundle = await getContractBundleData(contractId)
         if (cancelled || !bundle) {
           if (!cancelled) setLoading(false)
