@@ -11,6 +11,7 @@ const InspectionDetailPage = lazy(() => import('./pages/InspectionDetailPage'))
 const PropertiesPage = lazy(() => import('./pages/PropertiesPage'))
 const AccountPage = lazy(() => import('./pages/AccountPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const InspectionStudentPage = lazy(() => import('./pages/InspectionStudentPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 
@@ -32,6 +33,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/inspection/student/:token" element={<InspectionStudentPage />} />
         <Route path="/" element={<ProtectedPage><DashboardPage /></ProtectedPage>} />
         <Route path="/contracts/new" element={<ProtectedPage><ContractNewPage /></ProtectedPage>} />
         <Route path="/contracts/:id/renew" element={<ProtectedPage><ContractRenewPage /></ProtectedPage>} />
