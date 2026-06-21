@@ -35,7 +35,7 @@ const CONDITION_OPTIONS: Array<{
   activeClass: string
 }> = [
   { value: 'good', label: 'Goed', activeClass: 'bg-green-100 text-green-800 border-green-300' },
-  { value: 'moderate', label: 'Redelijk', activeClass: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  { value: 'moderate', label: 'Matig', activeClass: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
   { value: 'bad', label: 'Slecht', activeClass: 'bg-orange-100 text-orange-800 border-orange-300' },
   { value: 'unusable', label: 'Onbruikbaar', activeClass: 'bg-red-100 text-red-800 border-red-300' },
 ]
