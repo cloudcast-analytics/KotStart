@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/layout/AppShell'
 import { PROPERTIES, SCHOOL_YEARS, DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
-import { getInspectionCategories, saveInspectionCategories, getProperties } from '../lib/data'
+import { getInspectionCategories, saveInspectionCategories, getProperties, getPropertyDelegation, savePropertyDelegation } from '../lib/data'
 import type { InspectionTemplateCategory, InspectionTemplateItem, InspectionItemType, InspectionMeterUnit, Property } from '../types'
 import { Building2, Check, ChevronDown, ChevronRight, ChevronUp, Plus, Save, Trash2 } from 'lucide-react'
 import { cn } from '../lib/cn'
@@ -62,6 +62,8 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [delegationMode, setDelegationMode] = useState<'together' | 'delegate'>('together')
+  const [delegationLoading, setDelegationLoading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -87,10 +89,14 @@ export default function SettingsPage() {
     async function load() {
       setLoading(true)
       try {
-        const loaded = await getInspectionCategories(selectedPropertyId!)
+        const [loaded, loadedDelegation] = await Promise.all([
+          getInspectionCategories(selectedPropertyId!),
+          getPropertyDelegation(selectedPropertyId!),
+        ])
         if (!cancelled) {
           setCategories(loaded)
           setSavedCategories(loaded)
+          setDelegationMode(loadedDelegation)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -253,6 +259,64 @@ export default function SettingsPage() {
                 >
                   Ander pand
                 </button>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white/70 p-4">
+                <p className="text-sm font-bold text-slate-900">Plaatsbeschrijving invullen</p>
+                <div className="mt-3 flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setDelegationMode('together')
+                      setDelegationLoading(true)
+                      try { await savePropertyDelegation(selectedPropertyId!, 'together') } finally { setDelegationLoading(false) }
+                    }}
+                    disabled={delegationLoading}
+                    className={cn(
+                      'flex items-start gap-3 rounded-xl border p-3 text-left transition',
+                      delegationMode === 'together'
+                        ? 'border-accent/35 bg-accent/[0.06]'
+                        : 'border-white/80 bg-white/40',
+                    )}
+                  >
+                    <span className={cn(
+                      'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2',
+                      delegationMode === 'together' ? 'border-accent bg-accent' : 'border-slate-300',
+                    )}>
+                      {delegationMode === 'together' && <span className="h-2 w-2 rounded-full bg-white" />}
+                    </span>
+                    <div>
+                      <span className="text-sm font-bold text-slate-900">Samen met student</span>
+                      <p className="mt-0.5 text-xs font-medium text-slate-500">Verhuurder en student vullen de plaatsbeschrijving samen ter plaatse in.</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setDelegationMode('delegate')
+                      setDelegationLoading(true)
+                      try { await savePropertyDelegation(selectedPropertyId!, 'delegate') } finally { setDelegationLoading(false) }
+                    }}
+                    disabled={delegationLoading}
+                    className={cn(
+                      'flex items-start gap-3 rounded-xl border p-3 text-left transition',
+                      delegationMode === 'delegate'
+                        ? 'border-accent/35 bg-accent/[0.06]'
+                        : 'border-white/80 bg-white/40',
+                    )}
+                  >
+                    <span className={cn(
+                      'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2',
+                      delegationMode === 'delegate' ? 'border-accent bg-accent' : 'border-slate-300',
+                    )}>
+                      {delegationMode === 'delegate' && <span className="h-2 w-2 rounded-full bg-white" />}
+                    </span>
+                    <div>
+                      <span className="text-sm font-bold text-slate-900">Uitbesteden aan student</span>
+                      <p className="mt-0.5 text-xs font-medium text-slate-500">Student vult zelfstandig in via een persoonlijke link. Meterstanden en sleutels vul je altijd zelf in.</p>
+                    </div>
+                  </button>
+                </div>
               </div>
 
               {loading ? (
