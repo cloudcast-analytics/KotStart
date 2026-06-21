@@ -5,7 +5,7 @@ import ActionBar from './components/ActionBar'
 import StudentRow from './components/StudentRow'
 import EmptyState from './components/EmptyState'
 import { PROPERTIES, SCHOOL_YEARS } from '../lib/mockData'
-import { getDashboardRowsData, getProperties } from '../lib/data'
+import { getDashboardRowsData, getProperties, getPropertyDelegation } from '../lib/data'
 import type { Property, StudentDashboardRow } from '../types'
 
 type SortKey = 'student' | 'room'
@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [properties, setProperties] = useState<Property[]>(PROPERTIES)
   const [baseRows, setBaseRows] = useState<StudentDashboardRow[]>([])
+  const [delegationMode, setDelegationMode] = useState<'together' | 'delegate'>('together')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -62,6 +63,22 @@ export default function DashboardPage() {
     return () => {
       cancelled = true
     }
+  }, [propertyId])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadDelegation() {
+      try {
+        const mode = await getPropertyDelegation(propertyId)
+        if (!cancelled) setDelegationMode(mode)
+      } catch {
+        if (!cancelled) setDelegationMode('together')
+      }
+    }
+
+    loadDelegation()
+    return () => { cancelled = true }
   }, [propertyId])
 
   useEffect(() => {
@@ -139,9 +156,20 @@ export default function DashboardPage() {
                 key={row.studentId}
                 row={row}
                 isEven={idx % 2 === 1}
-                onStartInspection={(contractId) =>
-                  navigate('/inspections/new', { state: { contractId, type: 'start' } })
-                }
+                onStartInspection={(contractId) => {
+                  const matchedRow = rows.find(r => r.contractId === contractId)
+                  if (matchedRow?.startInspectionDone) {
+                    navigate(`/contracts/${contractId}`)
+                  } else if (matchedRow?.inspectionTokenStatus === 'submitted') {
+                    navigate(`/inspections/review/${contractId}`)
+                  } else if (matchedRow?.inspectionTokenStatus === 'pending') {
+                    navigate('/inspections/delegate', { state: { contractId } })
+                  } else if (delegationMode === 'delegate') {
+                    navigate('/inspections/delegate', { state: { contractId } })
+                  } else {
+                    navigate('/inspections/new', { state: { contractId, type: 'start' } })
+                  }
+                }}
                 onRenew={(contractId) =>
                   navigate(`/contracts/${contractId}/renew`)
                 }

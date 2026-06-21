@@ -11,6 +11,7 @@ const InspectionDetailPage = lazy(() => import('./pages/InspectionDetailPage'))
 const PropertiesPage = lazy(() => import('./pages/PropertiesPage'))
 const AccountPage = lazy(() => import('./pages/AccountPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const InspectionDelegatePage = lazy(() => import('./pages/InspectionDelegatePage'))
 const InspectionReviewPage = lazy(() => import('./pages/InspectionReviewPage'))
 const InspectionStudentPage = lazy(() => import('./pages/InspectionStudentPage'))
 const LoginPage = lazy(() => import('./pages/LoginPage'))
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/contracts/new" element={<ProtectedPage><ContractNewPage /></ProtectedPage>} />
         <Route path="/contracts/:id/renew" element={<ProtectedPage><ContractRenewPage /></ProtectedPage>} />
         <Route path="/contracts/:id" element={<ProtectedPage><ContractDetailPage /></ProtectedPage>} />
+        <Route path="/inspections/delegate" element={<ProtectedPage><InspectionDelegatePage /></ProtectedPage>} />
         <Route path="/inspections/new" element={<ProtectedPage><InspectionNewPage /></ProtectedPage>} />
         <Route path="/inspections/review/:contractId" element={<ProtectedPage><InspectionReviewPage /></ProtectedPage>} />
         <Route path="/inspections/:id" element={<ProtectedPage><InspectionDetailPage /></ProtectedPage>} />

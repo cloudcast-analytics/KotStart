@@ -1418,6 +1418,31 @@ export async function approveInspectionToken(
   if (updateError) throw updateError
 }
 
+export async function sendInspectionDelegationEmail(
+  studentEmail: string,
+  studentName: string,
+  propertyName: string,
+  roomNumber: string,
+  tokenUrl: string,
+  expiresAt: string,
+): Promise<void> {
+  if (!isSupabaseConfigured) return
+
+  const { error } = await supabase.functions.invoke('send-contract-email', {
+    body: {
+      to: studentEmail,
+      name: studentName,
+      html: `<p>Hallo ${studentName},</p>
+             <p>Je verhuurder vraagt je om de plaatsbeschrijving in te vullen voor ${propertyName}, kamer ${roomNumber}.</p>
+             <p><a href="${tokenUrl}">Klik hier om de plaatsbeschrijving in te vullen</a></p>
+             <p>Deze link is geldig tot ${new Date(expiresAt).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })}.</p>
+             <p>Met vriendelijke groeten,<br>KotStart</p>`,
+    },
+  })
+
+  if (error) throw error
+}
+
 export async function rejectInspectionToken(tokenId: string): Promise<string | null> {
   if (!isSupabaseConfigured) return null
 
