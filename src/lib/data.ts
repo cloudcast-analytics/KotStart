@@ -501,6 +501,7 @@ function buildDashboardRows(
   contracts: Contract[],
   students: Student[],
   inspectionFlags: Map<string, { start: boolean; end: boolean }>,
+  tokenStatuses?: Map<string, 'pending' | 'submitted'>,
 ): StudentDashboardRow[] {
   const propertyRooms = rooms.filter(room => room.propertyId === propertyId)
   const roomIds = new Set(propertyRooms.map(room => room.id))
@@ -531,6 +532,7 @@ function buildDashboardRows(
         secondFirstName: secondStudent?.firstName,
         secondLastName: secondStudent?.lastName,
         startInspectionDone: flags?.start ?? false,
+        inspectionTokenStatus: tokenStatuses?.get(contract.id),
         renewDone,
         endInspectionDone: flags?.end ?? false,
       }
@@ -614,14 +616,41 @@ export async function getAvailableRoomsForNewContract(
     .filter(room => isRoomAvailable(room, schoolYear, contracts))
 }
 
+async function getTokenStatusesByContract(contractIds: string[]): Promise<Map<string, 'pending' | 'submitted'>> {
+  const tokenStatuses = new Map<string, 'pending' | 'submitted'>()
+  if (contractIds.length === 0) return tokenStatuses
+
+  if (!isSupabaseConfigured) return tokenStatuses
+
+  const { data: tokens } = await supabase
+    .from('inspection_tokens')
+    .select('contract_id, status')
+    .in('contract_id', contractIds)
+    .in('status', ['pending', 'submitted'])
+    .order('created_at', { ascending: false })
+
+  if (tokens) {
+    for (const t of tokens as Array<{ contract_id: string; status: string }>) {
+      if (!tokenStatuses.has(t.contract_id)) {
+        tokenStatuses.set(t.contract_id, t.status as 'pending' | 'submitted')
+      }
+    }
+  }
+
+  return tokenStatuses
+}
+
 export async function getDashboardRowsData(propertyId: string, schoolYear: string): Promise<StudentDashboardRow[]> {
   const [rooms, contracts, students] = await Promise.all([getRooms(), getContracts(), getStudents()])
   const propertyRoomIds = new Set(rooms.filter(room => room.propertyId === propertyId).map(room => room.id))
   const activeContractIds = contracts
     .filter(contract => propertyRoomIds.has(contract.roomId) && contract.schoolYear === schoolYear)
     .map(contract => contract.id)
-  const inspectionFlags = await getInspectionFlagsByContract(activeContractIds)
-  return buildDashboardRows(propertyId, schoolYear, rooms, contracts, students, inspectionFlags)
+  const [inspectionFlags, tokenStatuses] = await Promise.all([
+    getInspectionFlagsByContract(activeContractIds),
+    getTokenStatusesByContract(activeContractIds),
+  ])
+  return buildDashboardRows(propertyId, schoolYear, rooms, contracts, students, inspectionFlags, tokenStatuses)
 }
 
 export async function getContractBundleData(contractId: string | undefined) {

@@ -131,6 +131,7 @@ export interface StudentDashboardRow {
   secondFirstName?: string
   secondLastName?: string
   startInspectionDone?: boolean
+  inspectionTokenStatus?: 'pending' | 'submitted'
   renewDone?: boolean
   endInspectionDone?: boolean
 }

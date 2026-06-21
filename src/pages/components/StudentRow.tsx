@@ -55,11 +55,26 @@ export default function StudentRow({
           type="button"
           aria-label="Startplaatsbeschrijving"
           onClick={() => onStartInspection(row.contractId)}
-          className={cn('btn-action', row.startInspectionDone ? 'btn-action-start-done' : 'btn-action-start')}
+          className={cn(
+            'btn-action',
+            row.startInspectionDone
+              ? 'btn-action-start-done'
+              : row.inspectionTokenStatus === 'submitted'
+                ? 'btn-action-start-review'
+                : 'btn-action-start',
+          )}
         >
           <ClipboardList size={15} className={row.startInspectionDone ? 'text-green-100' : 'text-start-green'} />
           <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-green-400 to-green-700 text-white text-[7px] font-black flex items-center justify-center border-[1.5px] border-white">
-            S
+            {row.startInspectionDone ? (
+              <svg width="7" height="7" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="2 6 5 9 10 3" /></svg>
+            ) : row.inspectionTokenStatus === 'submitted' ? (
+              '!'
+            ) : row.inspectionTokenStatus === 'pending' ? (
+              <svg width="7" height="7" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="2" y1="1" x2="12" y2="1"/><line x1="2" y1="13" x2="12" y2="13"/><path d="M3 1 v3 c0 2 4 3 4 4 c0-1 4-2 4-4 v-3"/><path d="M3 13 v-3 c0-2 4-3 4-4 c0 1 4 2 4 4 v3"/></svg>
+            ) : (
+              'S'
+            )}
           </span>
         </button>
 

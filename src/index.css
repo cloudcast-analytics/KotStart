@@ -51,6 +51,17 @@
     @apply bg-green-50/80 border border-green-300/55;
   }
 
+  .btn-action-start-review {
+    @apply border border-green-300/55;
+    background: repeating-linear-gradient(
+      -45deg,
+      rgba(240,253,244,0.95),
+      rgba(240,253,244,0.95) 2.5px,
+      rgba(74,222,128,0.30) 2.5px,
+      rgba(74,222,128,0.30) 5px
+    );
+  }
+
   .btn-action-start-done {
     @apply bg-start-green border border-start-green;
   }
