@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Loader2, Send } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Info, Loader2, Send } from 'lucide-react'
 import StepIndicator from './wizard/StepIndicator'
-import { createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, nextSchoolYear } from '../lib/data'
+import { createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, getHealthIndex, getPropertyIndexation, nextSchoolYear } from '../lib/data'
+import { calculateIndexedRentPure } from '../lib/indexation'
 import { cn } from '../lib/cn'
 import type { Contract, Property, Room, Student } from '../types'
 
@@ -35,6 +36,14 @@ export default function ContractRenewPage() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [indexationEnabled, setIndexationEnabled] = useState(false)
+  const [indexationInfo, setIndexationInfo] = useState<{
+    baseRent: number
+    startIndex: number
+    currentIndex: number
+    indexedRent: number
+  } | null>(null)
+  const [showIndexInfo, setShowIndexInfo] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -58,6 +67,25 @@ export default function ContractRenewPage() {
             fixedCosts: String(defaultRoom?.fixedCosts ?? nextBundle.room.fixedCosts),
             studentTax: String(defaultRoom?.studentTax ?? nextBundle.room.studentTax),
           })
+
+          const indexEnabled = await getPropertyIndexation(nextBundle.property.id)
+          if (cancelled) return
+          setIndexationEnabled(indexEnabled)
+
+          if (indexEnabled && defaultRoom) {
+            const baseRent = defaultRoom.baseRent ?? defaultRoom.monthlyRent
+            const baseYear = defaultRoom.baseRentYear ?? 2024
+            const targetYear = Number(upcomingSchoolYear.match(/^(\d{4})/)?.[1] ?? 2026)
+
+            const startIndex = await getHealthIndex(baseYear, 8)
+            const currentIndex = await getHealthIndex(targetYear, 8)
+
+            if (startIndex && currentIndex && !cancelled) {
+              const indexedRent = calculateIndexedRentPure(baseRent, startIndex, currentIndex)
+              setIndexationInfo({ baseRent, startIndex, currentIndex, indexedRent })
+              setForm(prev => ({ ...prev, monthlyRent: String(indexedRent) }))
+            }
+          }
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Contract kon niet geladen worden')
@@ -190,11 +218,37 @@ export default function ContractRenewPage() {
                 )}
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <MoneyField
-                    label="Huurprijs"
-                    value={form.monthlyRent}
-                    onChange={value => updateField('monthlyRent', value)}
-                  />
+                  <div className="relative">
+                    <MoneyField
+                      label="Huurprijs"
+                      value={form.monthlyRent}
+                      onChange={value => updateField('monthlyRent', value)}
+                    />
+                    {indexationInfo && (
+                      <div className="mt-1 flex items-center gap-1">
+                        <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                          Indexatie toegepast
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowIndexInfo(!showIndexInfo)}
+                          className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200"
+                        >
+                          <Info size={10} />
+                        </button>
+                      </div>
+                    )}
+                    {showIndexInfo && indexationInfo && (
+                      <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs text-slate-700">
+                        <p className="font-semibold">
+                          €{indexationInfo.baseRent} × ({indexationInfo.currentIndex} / {indexationInfo.startIndex}) = €{indexationInfo.indexedRent}
+                        </p>
+                        <p className="mt-1 text-slate-500">
+                          Aanvangsindex: aug {indexationInfo.startIndex} • Huidige index: aug {indexationInfo.currentIndex}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                   <MoneyField
                     label="Vaste kosten"
                     value={form.fixedCosts}
