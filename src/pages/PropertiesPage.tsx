@@ -11,9 +11,11 @@ import {
   getProperties,
   getRooms,
   getStudents,
+  savePropertyIndexation,
   updatePropertyData,
   updateRoomData,
 } from '../lib/data'
+import { cn } from '../lib/cn'
 import { formatAddress } from '../lib/residence'
 import type { Contract, Property, Room, Student } from '../types'
 
@@ -348,6 +350,7 @@ export default function PropertiesPage() {
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
   const [showRoomModal, setShowRoomModal] = useState(false)
+  const [indexationStates, setIndexationStates] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -370,6 +373,11 @@ export default function PropertiesPage() {
         ])
         if (cancelled) return
         setProperties(nextProperties)
+        const indexStates: Record<string, boolean> = {}
+        for (const prop of nextProperties) {
+          indexStates[prop.id] = prop.indexationEnabled ?? false
+        }
+        setIndexationStates(indexStates)
         setRooms(nextRooms)
         setContracts(nextContracts)
         setStudents(nextStudents)
@@ -487,6 +495,15 @@ export default function PropertiesPage() {
     }
   }
 
+  async function handlePropertyIndexation(propertyId: string, enabled: boolean) {
+    setIndexationStates(prev => ({ ...prev, [propertyId]: enabled }))
+    try {
+      await savePropertyIndexation(propertyId, enabled)
+    } catch {
+      setIndexationStates(prev => ({ ...prev, [propertyId]: !enabled }))
+    }
+  }
+
   function openNewPropertyModal() {
     setEditingProperty(null)
     setShowPropertyModal(true)
@@ -566,6 +583,24 @@ export default function PropertiesPage() {
                         <Building2 size={18} className="text-accent" />
                       </div>
                       <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Indexatie</span>
+                          <button
+                            type="button"
+                            onClick={() => handlePropertyIndexation(property.id, !indexationStates[property.id])}
+                            className={cn(
+                              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                              indexationStates[property.id] ? 'bg-blue-600' : 'bg-slate-200',
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform',
+                                indexationStates[property.id] ? 'translate-x-4' : 'translate-x-0',
+                              )}
+                            />
+                          </button>
+                        </div>
                         <span className="rounded-full border border-white/80 bg-white/60 px-2.5 py-1 text-xs font-bold text-slate-500">
                           {propertyRooms.length} kamers
                         </span>
