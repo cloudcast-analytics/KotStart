@@ -1,7 +1,7 @@
 # Resterende "Aanpassingen KotStart" — Clustering voor losse vervolggesprekken
 
-**Datum:** 2026-06-08 (laatst bijgewerkt: 2026-06-19)
-**Status:** B/D/C/A-partial/contractverlenging/dropdowns/E-partial allemaal af; nieuwe items N9–N11 toegevoegd
+**Datum:** 2026-06-08 (laatst bijgewerkt: 2026-06-24)
+**Status:** B/D/C/A/contractverlenging/dropdowns/E-partial/N10 allemaal af; N11 design klaar, N12 nieuw
 **Context:** Meerdere clusters zijn afgerond op `staging`. Dit document legt vast wat er nog open
 staat uit `aanpassingen kotstart.docx` (15 items), plus gloednieuwe wensen die Vince heeft geuit.
 Doel: elk overblijvend cluster kan in een **eigen, verse conversatie** gebrainstormd en uitgevoerd
@@ -100,22 +100,16 @@ Met B en D klaar, blijven er drie zinvolle clusters over:
 - ✅ #1 overzichtsfoto's 5-8
 - ✅ #2 sleutels: aantal i.p.v. staat
 
-### Cluster A — Contract- & verhuurderflow (DEELS AFGEROND)
-*(grootste resterende cluster — bevat alles wat met de ondertekenings-/verzend-/aanmaakflow van
-het contract te maken heeft)*
+### Cluster A — Contract- & verhuurderflow ✅ AFGEROND
+*(commits op `staging`, 2026-06-18 + eerder)*
 
-**Afgerond** (commit `2fc99cc` op `staging`, 2026-06-18):
 - ✅ #7 stepper vereenvoudigd, concept sturen, verhuurder datum fix
+- ✅ #8 contracten per pand (locatie-specifieke velden)
 - ✅ #13 verhuurdergegevens → verplaatst naar Supabase (N1)
-
-**Nog open:**
-- #8 contracten automatisch per pand genereren (locatie-specifieke velden i.p.v. hardcoded Gent)
-- N6 PDF-knop verplaatsen naar `InspectionDetailPage.tsx` ("PDF opmaken", pas na afronden zichtbaar)
-- N7 contract-PDF en plaatsbeschrijving-PDF loskoppelen tot twee aparte documenten
-  *(N6/N7 horen bij de contract-PDF-herziening en starten samen met #8)*
-- (overgeërfd uit Cluster D) wie ondertekent bij minderjarigheid:
-  wettelijke vertegenwoordiger/voogd verplicht; student eventueel mee als akkoord/kennisname,
-  maar niet als enige rechtsbasis
+- ✅ N6 PDF-knop verplaatst naar `InspectionDetailPage.tsx`
+- ✅ N7 contract-PDF en plaatsbeschrijving-PDF losgekoppeld
+- ✅ Minderjarigheid: wettelijke vertegenwoordiger/voogd handtekening afgedwongen
+  (`isMinor()` detectie, voogdvelden in wizard, aangepast handtekeninglabel in SignatureModal + PDF)
 
 ### Nieuw Cluster E — Instellingen & Profiel (DEELS AFGEROND)
 *(volledig nieuw, ontstaan uit Vince's wensen — niet in de docx)*
@@ -128,10 +122,17 @@ het contract te maken heeft)*
 - N9 wachtwoord vergeten / reset flow ← **implementatieplan klaar, uitvoering nu**
 - mogelijk #15 (backup/herstel) — zie "Open vragen"
 
-### Nieuw Cluster F — Plaatsbeschrijving uitbesteden & indexatie
+### Nieuw Cluster F — Plaatsbeschrijving uitbesteden & indexatie (DEELS AFGEROND)
 *(nieuwe wensen, 2026-06-19)*
-- N10 plaatsbeschrijving uitbesteden aan student (gesloten omgeving, tokenlink, meterstanden apart)
-- N11 indexatie automatisch toepassen (huurprijzen geïndexeerd via gezondheidsindex)
+- ✅ N10 plaatsbeschrijving uitbesteden aan student (gesloten omgeving, tokenlink, meterstanden apart)
+  *(commits `0807fee`..`53be0f1` op `staging`)*
+- N11 indexatie automatisch toepassen — **design goedgekeurd 2026-06-24**, implementatie volgt
+  *(spec: `docs/superpowers/specs/2026-06-24-huurindexatie-design.md`)*
+  Edge Function synct gezondheidsindex van Statbel; toggle per pand in Instellingen;
+  automatische berekening bij contractverlenging; kamerprijzen worden bijgewerkt met
+  `base_rent` + `base_rent_year` voor correcte formule
+- **N12 — Contractlengtes correctie**: de huidige weergave van contractlengtes klopt niet.
+  Nog te brainstormen en specificeren.
 
 ### Afgeronde losse features (geen cluster)
 - ✅ Contractverlenging (commits `00d405c`..`592d19e` op `staging`, 2026-06-12)
@@ -156,13 +157,12 @@ het contract te maken heeft)*
    cluster te verplaatsen als het te veel impact heeft op meerdere pagina's.
 3. **N5 ("andere aanpassingen")** — nog volledig open; eerste vraag bij de start van Cluster E.
 
-## Aanbevolen volgorde (bijgewerkt 2026-06-19)
+## Aanbevolen volgorde (bijgewerkt 2026-06-24)
 
-**N9 (wachtwoord reset, nu) → E-rest (N3/N4/N5) → A-rest (#8/N6/N7) → F (N10/N11)**
+**N11 (indexatie, nu) → E-rest (N3/N4/N5) → N12 (contractlengtes)**
 
-N9 is klein en klaar om te implementeren. E-rest zijn UI-instellingen. A-rest is de grote
-contract-PDF-herziening. F (plaatsbeschrijving uitbesteden + indexatie) is het meest complex
-en moet eerst uitvoerig gebrainstormd worden.
+N11 design is goedgekeurd, implementatie start nu. E-rest zijn UI-instellingen (dark/light thema,
+taalkeuze). N12 (contractlengtes) is nieuw geïdentificeerd en moet nog gebrainstormd worden.
 
 ## Hoe een vervolggesprek te starten
 
