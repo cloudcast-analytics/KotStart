@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import AppShell from '../components/layout/AppShell'
 import { PROPERTIES, SCHOOL_YEARS, DEFAULT_INSPECTION_CATEGORIES } from '../lib/mockData'
-import { getInspectionCategories, saveInspectionCategories, getProperties, getPropertyDelegation, savePropertyDelegation } from '../lib/data'
+import { getInspectionCategories, saveInspectionCategories, getProperties, getPropertyDelegation, savePropertyDelegation, getPropertyIndexation, savePropertyIndexation } from '../lib/data'
 import type { InspectionTemplateCategory, InspectionTemplateItem, InspectionItemType, InspectionMeterUnit, Property } from '../types'
 import { Building2, Check, ChevronDown, ChevronRight, ChevronUp, Plus, Save, Trash2 } from 'lucide-react'
 import { cn } from '../lib/cn'
@@ -64,6 +64,8 @@ export default function SettingsPage() {
   const [confirmReset, setConfirmReset] = useState(false)
   const [delegationMode, setDelegationMode] = useState<'together' | 'delegate'>('together')
   const [delegationLoading, setDelegationLoading] = useState(false)
+  const [indexationEnabled, setIndexationEnabled] = useState(false)
+  const [indexationSaving, setIndexationSaving] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -89,14 +91,16 @@ export default function SettingsPage() {
     async function load() {
       setLoading(true)
       try {
-        const [loaded, loadedDelegation] = await Promise.all([
+        const [loaded, loadedDelegation, loadedIndexation] = await Promise.all([
           getInspectionCategories(selectedPropertyId!),
           getPropertyDelegation(selectedPropertyId!),
+          getPropertyIndexation(selectedPropertyId!),
         ])
         if (!cancelled) {
           setCategories(loaded)
           setSavedCategories(loaded)
           setDelegationMode(loadedDelegation)
+          setIndexationEnabled(loadedIndexation)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -112,6 +116,19 @@ export default function SettingsPage() {
     setSaved(false)
     setError(null)
     setConfirmReset(false)
+  }
+
+  async function handleIndexationToggle(enabled: boolean) {
+    if (!selectedPropertyId) return
+    setIndexationSaving(true)
+    try {
+      await savePropertyIndexation(selectedPropertyId, enabled)
+      setIndexationEnabled(enabled)
+    } catch {
+      setError('Indexatie-instelling opslaan mislukt.')
+    } finally {
+      setIndexationSaving(false)
+    }
   }
 
   function updateCategory(index: number, patch: Partial<InspectionTemplateCategory>) {
@@ -315,6 +332,35 @@ export default function SettingsPage() {
                       <span className="text-sm font-bold text-slate-900">Uitbesteden aan student</span>
                       <p className="mt-0.5 text-xs font-medium text-slate-500">Student vult zelfstandig in via een persoonlijke link. Meterstanden en sleutels vul je altijd zelf in.</p>
                     </div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">Huurindexatie</h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Automatische indexatie</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Bij contractverlenging wordt de basishuurprijs automatisch geïndexeerd aan de gezondheidsindex.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={indexationSaving}
+                    onClick={() => handleIndexationToggle(!indexationEnabled)}
+                    className={cn(
+                      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
+                      indexationEnabled ? 'bg-blue-600' : 'bg-slate-200',
+                      indexationSaving && 'opacity-50',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transition-transform',
+                        indexationEnabled ? 'translate-x-5' : 'translate-x-0',
+                      )}
+                    />
                   </button>
                 </div>
               </div>
