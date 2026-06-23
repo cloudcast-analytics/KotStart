@@ -1,5 +1,6 @@
 import type { Contract, Inspection, InspectionItem, InspectionMeterUnit, InspectionTemplateCategory, InspectionToken, LandlordProfile, Property, Room, Student, StudentDashboardRow } from '../types'
-import { CONTRACTS, DEFAULT_INSPECTION_CATEGORIES, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
+import { CONTRACTS, DEFAULT_INSPECTION_CATEGORIES, MOCK_HEALTH_INDEX, MOCK_INSPECTION_ITEMS, MOCK_INSPECTIONS, MOCK_LANDLORD_PROFILE, PROPERTIES, ROOMS, STUDENTS } from './mockData'
+import { calculateIndexedRentPure } from './indexation'
 import { isSupabaseConfigured, supabase } from './supabase'
 
 interface PropertyRow {
@@ -11,6 +12,7 @@ interface PropertyRow {
   city?: string | null
   created_at: string
   inspection_delegation?: 'together' | 'delegate' | null
+  indexation_enabled?: boolean | null
 }
 
 interface RoomRow {
@@ -22,6 +24,8 @@ interface RoomRow {
   student_tax: number | string | null
   fixed_costs: number | string | null
   deposit: number | string | null
+  base_rent?: number | string | null
+  base_rent_year?: number | null
 }
 
 interface StudentRow {
@@ -276,6 +280,7 @@ function mapProperty(row: PropertyRow): Property {
     city: row.city ?? '',
     createdAt: row.created_at,
     inspectionDelegation: row.inspection_delegation ?? undefined,
+    indexationEnabled: row.indexation_enabled ?? undefined,
   }
 }
 
@@ -306,6 +311,8 @@ function mapRoom(row: RoomRow): Room {
     studentTax: asNumber(row.student_tax),
     fixedCosts: asNumber(row.fixed_costs),
     deposit: asNumber(row.deposit),
+    baseRent: row.base_rent != null ? asNumber(row.base_rent) : undefined,
+    baseRentYear: row.base_rent_year ?? undefined,
   }
 }
 
@@ -965,6 +972,8 @@ export async function createRoomData(input: RoomInput): Promise<Room> {
       student_tax: input.studentTax,
       fixed_costs: input.fixedCosts,
       deposit: input.deposit,
+      base_rent: input.monthlyRent,
+      base_rent_year: new Date().getFullYear(),
     })
     .select()
     .single()
@@ -1475,4 +1484,60 @@ export async function rejectInspectionToken(tokenId: string): Promise<string | n
 
   if (createError) throw createError
   return newToken.token as string
+}
+
+// --- Health Index ---
+
+export async function getHealthIndex(year: number, month: number): Promise<number | null> {
+  if (!isSupabaseConfigured) {
+    const entry = MOCK_HEALTH_INDEX.find(h => h.year === year && h.month === month)
+    return entry?.value ?? null
+  }
+
+  const { data, error } = await supabase
+    .from('health_index')
+    .select('value')
+    .eq('year', year)
+    .eq('month', month)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return Number(data.value)
+}
+
+export async function calculateIndexedRent(
+  baseRent: number,
+  baseYear: number,
+  targetYear: number,
+): Promise<number> {
+  const startIndex = await getHealthIndex(baseYear, 8) // augustus
+  const currentIndex = await getHealthIndex(targetYear, 8) // augustus
+  if (!startIndex || !currentIndex) return baseRent
+  return calculateIndexedRentPure(baseRent, startIndex, currentIndex)
+}
+
+// --- Property Indexation ---
+
+export async function getPropertyIndexation(propertyId: string): Promise<boolean> {
+  if (!isSupabaseConfigured) return false
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select('indexation_enabled')
+    .eq('id', propertyId)
+    .maybeSingle()
+
+  if (error || !data) return false
+  return data.indexation_enabled === true
+}
+
+export async function savePropertyIndexation(propertyId: string, enabled: boolean): Promise<void> {
+  if (!isSupabaseConfigured) return
+
+  const { error } = await supabase
+    .from('properties')
+    .update({ indexation_enabled: enabled })
+    .eq('id', propertyId)
+
+  if (error) throw error
 }

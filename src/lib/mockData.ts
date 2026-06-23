@@ -135,6 +135,16 @@ export function getDashboardRows(propertyId: string, schoolYear: string): Studen
   }).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber))
 }
 
+export const MOCK_HEALTH_INDEX = [
+  { year: 2020, month: 8, value: 107.89 },
+  { year: 2021, month: 8, value: 110.35 },
+  { year: 2022, month: 8, value: 119.42 },
+  { year: 2023, month: 8, value: 124.15 },
+  { year: 2024, month: 8, value: 126.08 },
+  { year: 2025, month: 8, value: 129.42 },
+  { year: 2026, month: 8, value: 132.10 },
+]
+
 export const MOCK_INSPECTIONS: Inspection[] = [
   {
     id: 'i1',
