@@ -118,7 +118,7 @@ export default function ContractRenewPage() {
     setForm(previous => ({ ...previous, [field]: value }))
   }
 
-  function handleRoomChange(roomId: string) {
+  async function handleRoomChange(roomId: string) {
     const selected = availableRooms.find(availableRoom => availableRoom.id === roomId)
     if (!selected) return
     setForm({
@@ -127,6 +127,21 @@ export default function ContractRenewPage() {
       fixedCosts: String(selected.fixedCosts),
       studentTax: String(selected.studentTax),
     })
+
+    if (indexationEnabled) {
+      const baseRent = selected.baseRent ?? selected.monthlyRent
+      const baseYear = selected.baseRentYear ?? 2024
+      const targetYear = Number(upcomingSchoolYear.match(/^(\d{4})/)?.[1] ?? 2026)
+      const startIndex = await getHealthIndex(baseYear, 8)
+      const currentIndex = await getHealthIndex(targetYear, 8)
+      if (startIndex && currentIndex) {
+        const indexedRent = calculateIndexedRentPure(baseRent, startIndex, currentIndex)
+        setIndexationInfo({ baseRent, startIndex, currentIndex, indexedRent })
+        setForm(prev => ({ ...prev, monthlyRent: String(indexedRent) }))
+      } else {
+        setIndexationInfo(null)
+      }
+    }
   }
 
   function canProceed() {
