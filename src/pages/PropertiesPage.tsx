@@ -681,8 +681,8 @@ export default function PropertiesPage() {
 
           {!loading && selectedProperty && (
             <div className="flex flex-col gap-4">
-              <div className="glass rounded-2xl p-4">
-                <div className="flex items-start gap-3">
+              <div className="relative z-10 glass rounded-2xl">
+                <div className="flex items-start gap-3 p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10">
                     <Home size={18} className="text-accent" />
                   </div>
@@ -711,32 +711,31 @@ export default function PropertiesPage() {
                     </button>
                   </div>
                 </div>
-              </div>
-
-              <div className="relative z-10 flex items-center gap-3 rounded-2xl border border-white/70 bg-white/45 p-3 backdrop-blur-xl">
-                <FilterDropdown
-                  label={roomSchoolYear}
-                  options={dynamicSchoolYears}
-                  onSelect={setRoomSchoolYear}
-                  extraAction={{
-                    label: `+ Volgend schooljaar (${nextSchoolYear(dynamicSchoolYears[dynamicSchoolYears.length - 1] ?? roomSchoolYear)})`,
-                    onClick: async () => {
-                      const last = dynamicSchoolYears[dynamicSchoolYears.length - 1] ?? roomSchoolYear
-                      const newYear = nextSchoolYear(last)
-                      const updated = await addSchoolYear(newYear)
-                      if (updated) {
-                        setDynamicSchoolYears(updated)
-                      } else {
-                        setDynamicSchoolYears(prev => (prev.includes(newYear) ? prev : [...prev, newYear]))
-                      }
-                      setRoomSchoolYear(newYear)
-                    },
-                  }}
-                  className="max-w-[150px]"
-                />
-                <span className="ml-auto text-xs font-semibold text-slate-500">
-                  {selectedRooms.filter(r => !contracts.some(c => c.roomId === r.id && c.schoolYear === roomSchoolYear)).length}/{selectedRooms.length} vrij
-                </span>
+                <div className="border-t border-slate-200/50 px-4 py-3 flex items-center gap-3">
+                  <FilterDropdown
+                    label={roomSchoolYear}
+                    options={dynamicSchoolYears}
+                    onSelect={setRoomSchoolYear}
+                    extraAction={{
+                      label: `+ Volgend schooljaar (${nextSchoolYear(dynamicSchoolYears[dynamicSchoolYears.length - 1] ?? roomSchoolYear)})`,
+                      onClick: async () => {
+                        const last = dynamicSchoolYears[dynamicSchoolYears.length - 1] ?? roomSchoolYear
+                        const newYear = nextSchoolYear(last)
+                        const updated = await addSchoolYear(newYear)
+                        if (updated) {
+                          setDynamicSchoolYears(updated)
+                        } else {
+                          setDynamicSchoolYears(prev => (prev.includes(newYear) ? prev : [...prev, newYear]))
+                        }
+                        setRoomSchoolYear(newYear)
+                      },
+                    }}
+                    className="max-w-[150px]"
+                  />
+                  <span className="ml-auto text-xs font-semibold text-slate-500">
+                    {selectedRooms.filter(r => !contracts.some(c => c.roomId === r.id && c.schoolYear === roomSchoolYear)).length}/{selectedRooms.length} vrij
+                  </span>
+                </div>
               </div>
 
               <div className="grid gap-3">
