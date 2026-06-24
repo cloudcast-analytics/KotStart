@@ -23,5 +23,5 @@ ALTER TABLE rooms
 -- Backfill existing rooms: base_rent = current monthly_rent, base_rent_year from created_at
 UPDATE rooms
 SET base_rent = monthly_rent,
-    base_rent_year = EXTRACT(YEAR FROM created_at)::int
+    base_rent_year = EXTRACT(YEAR FROM CURRENT_DATE)::int
 WHERE base_rent IS NULL;
