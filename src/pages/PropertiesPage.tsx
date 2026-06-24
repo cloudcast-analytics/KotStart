@@ -12,7 +12,6 @@ import {
   getRooms,
   getStudents,
   getHealthIndex,
-  savePropertyIndexation,
   updatePropertyData,
   updateRoomData,
 } from '../lib/data'
@@ -355,6 +354,7 @@ export default function PropertiesPage() {
   const [indexationStates, setIndexationStates] = useState<Record<string, boolean>>({})
   const [indexationData, setIndexationData] = useState<Record<string, { baseRent: number; startIndex: number; currentIndex: number; indexedRent: number; baseYear: number; targetYear: number }>>({})
   const [activeTooltipRoom, setActiveTooltipRoom] = useState<string | null>(null)
+  const [roomSchoolYear, setRoomSchoolYear] = useState('2025–2026')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -455,7 +455,7 @@ export default function PropertiesPage() {
   )
 
   function getRoomOccupancy(room: Room) {
-    const contract = contracts.find(item => item.roomId === room.id && item.schoolYear === schoolYear)
+    const contract = contracts.find(item => item.roomId === room.id && item.schoolYear === roomSchoolYear)
     if (!contract) return null
 
     const primaryStudent = students.find(student => student.id === contract.studentId)
@@ -547,14 +547,6 @@ export default function PropertiesPage() {
     }
   }
 
-  async function handlePropertyIndexation(propertyId: string, enabled: boolean) {
-    setIndexationStates(prev => ({ ...prev, [propertyId]: enabled }))
-    try {
-      await savePropertyIndexation(propertyId, enabled)
-    } catch {
-      setIndexationStates(prev => ({ ...prev, [propertyId]: !enabled }))
-    }
-  }
 
   function openNewPropertyModal() {
     setEditingProperty(null)
@@ -635,27 +627,12 @@ export default function PropertiesPage() {
                         <Building2 size={18} className="text-accent" />
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Indexatie</span>
-                          <button
-                            type="button"
-                            onClick={() => handlePropertyIndexation(property.id, !indexationStates[property.id])}
-                            className={cn(
-                              'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                              indexationStates[property.id] ? 'bg-blue-600' : 'bg-slate-200',
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow transition-transform',
-                                indexationStates[property.id] ? 'translate-x-4' : 'translate-x-0',
-                              )}
-                            />
-                          </button>
-                        </div>
                         <span className="rounded-full border border-white/80 bg-white/60 px-2.5 py-1 text-xs font-bold text-slate-500">
                           {propertyRooms.length} kamers
                         </span>
+                        {indexationStates[property.id] && (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Indexatie</span>
+                        )}
                         <button
                           type="button"
                           aria-label={`${property.name} bewerken`}
@@ -728,6 +705,23 @@ export default function PropertiesPage() {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/45 p-3 backdrop-blur-xl">
+                <label htmlFor="room-school-year" className="text-xs font-bold uppercase tracking-wider text-slate-400">Schooljaar</label>
+                <select
+                  id="room-school-year"
+                  value={roomSchoolYear}
+                  onChange={e => setRoomSchoolYear(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white/70 px-3 py-1.5 text-sm font-bold text-slate-800"
+                >
+                  {SCHOOL_YEARS.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+                <span className="ml-auto text-xs font-semibold text-slate-500">
+                  {selectedRooms.filter(r => !contracts.some(c => c.roomId === r.id && c.schoolYear === roomSchoolYear)).length} van {selectedRooms.length} kamers vrij
+                </span>
               </div>
 
               <div className="grid gap-3">
