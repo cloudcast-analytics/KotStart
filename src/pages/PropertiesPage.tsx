@@ -16,7 +16,6 @@ import {
   updateRoomData,
 } from '../lib/data'
 import { calculateIndexedRentPure } from '../lib/indexation'
-import { cn } from '../lib/cn'
 import { formatAddress } from '../lib/residence'
 import type { Contract, Property, Room, Student } from '../types'
 
