@@ -34,6 +34,7 @@ export default function LoginPage() {
         await signIn(email, password)
       } else {
         await signUp(email, password)
+        setSuccess('We hebben een verificatiemail gestuurd naar ' + email + '. Klik op de link in de mail om je account te activeren.')
       }
     } catch (err) {
       setError(authErrorMessage(err))
