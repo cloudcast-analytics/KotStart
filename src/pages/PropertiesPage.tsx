@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, ChevronLeft, DoorOpen, Edit3, FileText, Home, MapPin, Plus, Trash2, User, X } from 'lucide-react'
+import { Building2, Check, ChevronLeft, DoorOpen, Edit3, FileText, Home, Info, MapPin, Plus, Trash2, User, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell'
 import { CONTRACTS, PROPERTIES, ROOMS, SCHOOL_YEARS, STUDENTS } from '../lib/mockData'
@@ -11,10 +11,12 @@ import {
   getProperties,
   getRooms,
   getStudents,
+  getHealthIndex,
   savePropertyIndexation,
   updatePropertyData,
   updateRoomData,
 } from '../lib/data'
+import { calculateIndexedRentPure } from '../lib/indexation'
 import { cn } from '../lib/cn'
 import { formatAddress } from '../lib/residence'
 import type { Contract, Property, Room, Student } from '../types'
@@ -351,6 +353,8 @@ export default function PropertiesPage() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
   const [showRoomModal, setShowRoomModal] = useState(false)
   const [indexationStates, setIndexationStates] = useState<Record<string, boolean>>({})
+  const [indexationData, setIndexationData] = useState<Record<string, { baseRent: number; startIndex: number; currentIndex: number; indexedRent: number; baseYear: number; targetYear: number }>>({})
+  const [activeTooltipRoom, setActiveTooltipRoom] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -396,6 +400,54 @@ export default function PropertiesPage() {
       cancelled = true
     }
   }, [propertyId])
+
+  useEffect(() => {
+    if (!selectedPropertyId || !indexationStates[selectedPropertyId]) {
+      setIndexationData({})
+      return
+    }
+
+    let cancelled = false
+    const propRooms = rooms.filter(r => r.propertyId === selectedPropertyId)
+    const currentYear = new Date().getFullYear()
+
+    async function loadIndexation() {
+      const data: typeof indexationData = {}
+      const years = new Set<number>()
+      for (const room of propRooms) {
+        if (room.baseRent && room.baseRentYear) years.add(room.baseRentYear)
+      }
+      years.add(currentYear)
+
+      const indexCache: Record<number, number | null> = {}
+      await Promise.all(
+        [...years].map(async y => {
+          indexCache[y] = await getHealthIndex(y, 8)
+        }),
+      )
+
+      for (const room of propRooms) {
+        const baseRent = room.baseRent ?? room.monthlyRent
+        const baseYear = room.baseRentYear ?? currentYear
+        const startIndex = indexCache[baseYear]
+        const currentIndex = indexCache[currentYear]
+        if (startIndex && currentIndex) {
+          data[room.id] = {
+            baseRent,
+            startIndex,
+            currentIndex,
+            indexedRent: calculateIndexedRentPure(baseRent, startIndex, currentIndex),
+            baseYear,
+            targetYear: currentYear,
+          }
+        }
+      }
+      if (!cancelled) setIndexationData(data)
+    }
+
+    loadIndexation()
+    return () => { cancelled = true }
+  }, [selectedPropertyId, indexationStates, rooms])
 
   const selectedRooms = useMemo(
     () => rooms.filter(room => room.propertyId === selectedPropertyId).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber)),
@@ -754,8 +806,35 @@ export default function PropertiesPage() {
                       </div>
 
                       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div className="relative rounded-xl bg-white/45 p-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Huurprijs</p>
+                          <p className="mt-1 text-sm font-bold text-slate-800">€ {room.monthlyRent}/maand</p>
+                          {selectedPropertyId && indexationStates[selectedPropertyId] && indexationData[room.id] && (
+                            <div className="mt-1.5 flex items-center gap-1">
+                              <Check size={12} className="text-emerald-600" />
+                              <span className="text-[10px] font-bold text-emerald-600">Geïndexeerd</span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setActiveTooltipRoom(activeTooltipRoom === room.id ? null : room.id) }}
+                                className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200"
+                              >
+                                <Info size={9} />
+                              </button>
+                              {activeTooltipRoom === room.id && (
+                                <div className="absolute bottom-full left-0 z-20 mb-2 w-56 rounded-xl border border-emerald-200 bg-white p-3 text-xs text-slate-700 shadow-lg">
+                                  <p className="font-bold text-slate-900">Indexatieberekening</p>
+                                  <p className="mt-1">Basishuur: €{indexationData[room.id].baseRent}</p>
+                                  <p>Index aug {indexationData[room.id].baseYear}: {indexationData[room.id].startIndex}</p>
+                                  <p>Index aug {indexationData[room.id].targetYear}: {indexationData[room.id].currentIndex}</p>
+                                  <p className="mt-1 font-bold text-emerald-700">
+                                    €{indexationData[room.id].baseRent} × ({indexationData[room.id].currentIndex} / {indexationData[room.id].startIndex}) = €{indexationData[room.id].indexedRent}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         {[
-                          ['Huurprijs', `€ ${room.monthlyRent}/maand`],
                           ['Vaste kosten', `€ ${room.fixedCosts}/maand`],
                           ['Studentenbelasting', `€ ${room.studentTax}/maand`],
                           ['Waarborg', `€ ${room.deposit}`],
