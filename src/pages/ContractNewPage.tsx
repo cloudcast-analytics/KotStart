@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { createContractDraft, getAvailableRoomsForNewContract, getLandlordProfile, getProperties, getSchoolYears, isLandlordProfileComplete } from '../lib/data'
+import { createContractDraft, getAvailableRoomsForNewContract, getHealthIndex, getLatestHealthIndex, getLandlordProfile, getProperties, getPropertyIndexation, getSchoolYears, isLandlordProfileComplete } from '../lib/data'
+import { calculateIndexedRentPure } from '../lib/indexation'
 import { MOCK_LANDLORD_PROFILE } from '../lib/mockData'
 import { isValidBelgianPostalCode } from '../lib/residence'
 import type { Room } from '../types'
@@ -73,6 +74,7 @@ export default function ContractNewPage() {
   const [schoolYear, setSchoolYear] = useState<string | null>(navState?.schoolYear ?? null)
   const [loadingRooms, setLoadingRooms] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [indexedRent, setIndexedRent] = useState<number | null>(null)
 
   useEffect(() => {
     if (propertyId && schoolYear) return
@@ -122,8 +124,47 @@ export default function ContractNewPage() {
     return () => { cancelled = true }
   }, [currentStep])
 
+  useEffect(() => {
+    if (!selectedRoomId || !schoolYear || !propertyId) {
+      setIndexedRent(null)
+      return
+    }
+
+    let cancelled = false
+    const room = rooms.find(r => r.id === selectedRoomId)
+    if (!room) return
+
+    async function calcIndexed() {
+      const enabled = await getPropertyIndexation(propertyId!)
+      if (cancelled || !enabled) { setIndexedRent(null); return }
+
+      const baseRent = room!.baseRent ?? room!.monthlyRent
+      const baseYear = room!.baseRentYear ?? new Date().getFullYear()
+      const targetYear = Number(schoolYear!.match(/^(\d{4})/)?.[1] ?? new Date().getFullYear())
+
+      const startIndex = await getHealthIndex(baseYear, 8)
+      let currentIndex = await getHealthIndex(targetYear, 8)
+      if (!currentIndex) {
+        const latest = await getLatestHealthIndex()
+        if (latest) currentIndex = latest.value
+      }
+
+      if (!cancelled && startIndex && currentIndex && startIndex !== currentIndex) {
+        setIndexedRent(calculateIndexedRentPure(baseRent, startIndex, currentIndex))
+      } else if (!cancelled) {
+        setIndexedRent(null)
+      }
+    }
+
+    calcIndexed()
+    return () => { cancelled = true }
+  }, [selectedRoomId, schoolYear, propertyId, rooms])
+
   const propertyRooms = useMemo(() => rooms, [rooms])
   const selectedRoom: Room | null = propertyRooms.find(room => room.id === selectedRoomId) ?? null
+  const effectiveRoom = selectedRoom && indexedRent != null
+    ? { ...selectedRoom, monthlyRent: indexedRent }
+    : selectedRoom
 
   function handleRoomSelect(id: string) {
     setSelectedRoomId(id)
@@ -144,8 +185,8 @@ export default function ContractNewPage() {
     if (loadingRooms || error) return false
     if (currentStep === 1) return selectedRoomId !== null
     if (currentStep === 2) return students.every(studentIsComplete)
-    if (currentStep === 3) return Boolean(selectedRoom) && isLandlordProfileComplete(landlordProfile)
-    return Boolean(selectedRoom)
+    if (currentStep === 3) return Boolean(effectiveRoom) && isLandlordProfileComplete(landlordProfile)
+    return Boolean(effectiveRoom)
   }
 
   async function handleNext() {
@@ -156,7 +197,7 @@ export default function ContractNewPage() {
       return
     }
 
-    if (!selectedRoom || !schoolYear) return
+    if (!effectiveRoom || !schoolYear) return
     if (!isLandlordProfileComplete(landlordProfile)) {
       setError('Vul eerst alle verhuurdergegevens in bij Account voordat je een contract aanmaakt.')
       return
@@ -165,12 +206,12 @@ export default function ContractNewPage() {
     setIsSending(true)
     try {
       const contractId = await createContractDraft({
-        roomId: selectedRoom.id,
+        roomId: effectiveRoom.id,
         schoolYear,
         students,
-        monthlyRent: selectedRoom.monthlyRent,
-        fixedCosts: selectedRoom.fixedCosts,
-        studentTax: selectedRoom.studentTax,
+        monthlyRent: effectiveRoom.monthlyRent,
+        fixedCosts: effectiveRoom.fixedCosts,
+        studentTax: effectiveRoom.studentTax,
       })
       navigate(contractId ? `/contracts/${contractId}` : '/', { state: { savedDraft: true } })
     } catch (err) {
@@ -220,14 +261,14 @@ export default function ContractNewPage() {
 
         {currentStep === 2 && <Step2Student students={students} onChange={handleStudentChange} />}
 
-        {currentStep === 3 && selectedRoom && (
+        {currentStep === 3 && effectiveRoom && (
           <>
             {!isLandlordProfileComplete(landlordProfile) && (
               <div role="alert" className="m-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
                 Vul eerst alle verhuurdergegevens in bij Account voordat je een contract aanmaakt.
               </div>
             )}
-            <Step4Review room={selectedRoom} students={students} />
+            <Step4Review room={effectiveRoom} students={students} />
           </>
         )}
       </WizardLayout>

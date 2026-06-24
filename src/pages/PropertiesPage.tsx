@@ -416,7 +416,7 @@ export default function PropertiesPage() {
 
     let cancelled = false
     const propRooms = rooms.filter(r => r.propertyId === selectedPropertyId)
-    const currentYear = new Date().getFullYear()
+    const targetYear = Number(roomSchoolYear.match(/^(\d{4})/)?.[1] ?? new Date().getFullYear())
 
     async function loadIndexation() {
       const data: typeof indexationData = {}
@@ -424,7 +424,7 @@ export default function PropertiesPage() {
       for (const room of propRooms) {
         if (room.baseRent && room.baseRentYear) years.add(room.baseRentYear)
       }
-      years.add(currentYear)
+      years.add(targetYear)
 
       const indexCache: Record<number, number | null> = {}
       await Promise.all(
@@ -433,16 +433,16 @@ export default function PropertiesPage() {
         }),
       )
 
-      if (!indexCache[currentYear]) {
+      if (!indexCache[targetYear]) {
         const latest = await getLatestHealthIndex()
-        if (latest) indexCache[currentYear] = latest.value
+        if (latest) indexCache[targetYear] = latest.value
       }
 
       for (const room of propRooms) {
         const baseRent = room.baseRent ?? room.monthlyRent
-        const baseYear = room.baseRentYear ?? currentYear
+        const baseYear = room.baseRentYear ?? targetYear
         const startIndex = indexCache[baseYear]
-        const currentIndex = indexCache[currentYear]
+        const currentIndex = indexCache[targetYear]
         if (startIndex && currentIndex) {
           data[room.id] = {
             baseRent,
@@ -450,7 +450,7 @@ export default function PropertiesPage() {
             currentIndex,
             indexedRent: calculateIndexedRentPure(baseRent, startIndex, currentIndex),
             baseYear,
-            targetYear: currentYear,
+            targetYear,
           }
         }
       }
@@ -459,7 +459,7 @@ export default function PropertiesPage() {
 
     loadIndexation()
     return () => { cancelled = true }
-  }, [selectedPropertyId, indexationStates, rooms])
+  }, [selectedPropertyId, indexationStates, rooms, roomSchoolYear])
 
   const selectedRooms = useMemo(
     () => rooms.filter(room => room.propertyId === selectedPropertyId).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber)),
@@ -828,7 +828,7 @@ export default function PropertiesPage() {
                       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <div className="relative rounded-xl bg-white/45 p-3">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Huurprijs</p>
-                          <p className="mt-1 text-sm font-bold text-slate-800">€ {room.monthlyRent}/maand</p>
+                          <p className="mt-1 text-sm font-bold text-slate-800">€ {indexationData[room.id]?.indexedRent ?? room.monthlyRent}/maand</p>
                           {selectedPropertyId && indexationStates[selectedPropertyId] && (
                             <div className="mt-1.5 flex items-center gap-1">
                               <Check size={12} className="text-emerald-600" />

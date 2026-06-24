@@ -323,38 +323,43 @@ export default function ContractRenewPage() {
                   </label>
                 )}
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <div className="relative">
-                    <MoneyField
-                      label="Huurprijs"
-                      value={form.monthlyRent}
-                      onChange={value => updateField('monthlyRent', value)}
-                    />
-                    {indexationInfo && (
-                      <div className="mt-1 flex items-center gap-1">
-                        <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                          Indexatie toegepast
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setShowIndexInfo(!showIndexInfo)}
-                          className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200"
-                        >
-                          <Info size={10} />
-                        </button>
-                      </div>
-                    )}
-                    {showIndexInfo && indexationInfo && (
-                      <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs text-slate-700">
-                        <p className="font-semibold">
-                          €{indexationInfo.baseRent} × ({indexationInfo.currentIndex} / {indexationInfo.startIndex}) = €{indexationInfo.indexedRent}
-                        </p>
-                        <p className="mt-1 text-slate-500">
-                          Aanvangsindex: aug {indexationInfo.startIndex} • Huidige index: aug {indexationInfo.currentIndex}
-                        </p>
-                      </div>
-                    )}
+                {indexationInfo && showIndexInfo && (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs text-slate-700">
+                    <p className="font-semibold">
+                      €{indexationInfo.baseRent} × ({indexationInfo.currentIndex} / {indexationInfo.startIndex}) = €{indexationInfo.indexedRent}
+                    </p>
+                    <p className="mt-1 text-slate-500">
+                      Aanvangsindex: aug {indexationInfo.startIndex} • Huidige index: aug {indexationInfo.currentIndex}
+                    </p>
                   </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <label className="grid gap-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Huurprijs</span>
+                      {indexationInfo && (
+                        <>
+                          <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700">Geïndexeerd</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowIndexInfo(!showIndexInfo)}
+                            className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200"
+                          >
+                            <Info size={8} />
+                          </button>
+                        </>
+                      )}
+                    </span>
+                    <input
+                      aria-label="Huurprijs"
+                      type="number"
+                      min="0"
+                      value={form.monthlyRent}
+                      onChange={event => updateField('monthlyRent', event.target.value)}
+                      className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    />
+                  </label>
                   <MoneyField
                     label="Vaste kosten"
                     value={form.fixedCosts}
