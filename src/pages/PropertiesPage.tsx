@@ -11,6 +11,7 @@ import {
   deleteRoomData,
   getContracts,
   getHealthIndex,
+  getLatestHealthIndex,
   getProperties,
   getRooms,
   getSchoolYears,
@@ -431,6 +432,11 @@ export default function PropertiesPage() {
           indexCache[y] = await getHealthIndex(y, 8)
         }),
       )
+
+      if (!indexCache[currentYear]) {
+        const latest = await getLatestHealthIndex()
+        if (latest) indexCache[currentYear] = latest.value
+      }
 
       for (const room of propRooms) {
         const baseRent = room.baseRent ?? room.monthlyRent

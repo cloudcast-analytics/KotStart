@@ -1186,6 +1186,37 @@ export async function createContractRenewal(input: CreateContractRenewalInput): 
   return (data as ContractRow).id
 }
 
+export async function updateStudentData(studentId: string, updates: Partial<Omit<Student, 'id' | 'createdAt'>>): Promise<void> {
+  if (!isSupabaseConfigured) return
+
+  const mapped: Record<string, unknown> = {}
+  const keyMap: Record<string, string> = {
+    firstName: 'first_name',
+    lastName: 'last_name',
+    dateOfBirth: 'date_of_birth',
+    photoUrl: 'photo_url',
+    studentNumber: 'student_number',
+    residenceStreet: 'residence_street',
+    residenceNumber: 'residence_number',
+    residenceBox: 'residence_box',
+    residencePostalCode: 'residence_postal_code',
+    residenceCity: 'residence_city',
+    guardianName: 'guardian_name',
+    guardianEmail: 'guardian_email',
+    guardianPhone: 'guardian_phone',
+  }
+  for (const [key, value] of Object.entries(updates)) {
+    mapped[keyMap[key] ?? key] = value
+  }
+
+  const { error } = await supabase
+    .from('students')
+    .update(mapped)
+    .eq('id', studentId)
+
+  if (error) throw error
+}
+
 export async function deleteContractBundleData(contractId: string): Promise<void> {
   const bundle = await getContractBundleData(contractId)
   if (!bundle) throw new Error('Contract niet gevonden')
@@ -1505,13 +1536,35 @@ export async function getHealthIndex(year: number, month: number): Promise<numbe
   return Number(data.value)
 }
 
+export async function getLatestHealthIndex(): Promise<{ year: number; value: number } | null> {
+  if (!isSupabaseConfigured) {
+    const sorted = [...MOCK_HEALTH_INDEX].filter(h => h.month === 8).sort((a, b) => b.year - a.year)
+    return sorted[0] ? { year: sorted[0].year, value: sorted[0].value } : null
+  }
+
+  const { data, error } = await supabase
+    .from('health_index')
+    .select('year, value')
+    .eq('month', 8)
+    .order('year', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return { year: data.year, value: Number(data.value) }
+}
+
 export async function calculateIndexedRent(
   baseRent: number,
   baseYear: number,
   targetYear: number,
 ): Promise<number> {
   const startIndex = await getHealthIndex(baseYear, 8) // augustus
-  const currentIndex = await getHealthIndex(targetYear, 8) // augustus
+  let currentIndex = await getHealthIndex(targetYear, 8) // augustus
+  if (!currentIndex) {
+    const latest = await getLatestHealthIndex()
+    if (latest) currentIndex = latest.value
+  }
   if (!startIndex || !currentIndex) return baseRent
   return calculateIndexedRentPure(baseRent, startIndex, currentIndex)
 }
