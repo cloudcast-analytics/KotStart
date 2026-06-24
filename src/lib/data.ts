@@ -1572,7 +1572,10 @@ export async function calculateIndexedRent(
 // --- Property Indexation ---
 
 export async function getPropertyIndexation(propertyId: string): Promise<boolean> {
-  if (!isSupabaseConfigured) return false
+  if (!isSupabaseConfigured) {
+    const property = PROPERTIES.find(p => p.id === propertyId)
+    return property?.indexationEnabled === true
+  }
 
   const { data, error } = await supabase
     .from('properties')

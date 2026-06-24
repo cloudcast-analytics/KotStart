@@ -3,18 +3,18 @@ import type { Contract, Inspection, InspectionItem, InspectionTemplateCategory, 
 export const SCHOOL_YEARS = ['2025–2026']
 
 export const PROPERTIES: Property[] = [
-  { id: 'p1', name: 'Residentie De Linde', street: 'Lindestraat', number: '12', postalCode: '9000', city: 'Gent', createdAt: '2024-08-01' },
-  { id: 'p2', name: 'Kot Guldensporenstraat', street: 'Guldensporenstraat', number: '45', postalCode: '9000', city: 'Gent', createdAt: '2024-08-01' },
+  { id: 'p1', name: 'Residentie De Linde', street: 'Lindestraat', number: '12', postalCode: '9000', city: 'Gent', createdAt: '2024-08-01', indexationEnabled: true },
+  { id: 'p2', name: 'Kot Guldensporenstraat', street: 'Guldensporenstraat', number: '45', postalCode: '9000', city: 'Gent', createdAt: '2024-08-01', indexationEnabled: true },
 ]
 
 export const ROOMS: Room[] = [
-  { id: 'r1', propertyId: 'p1', roomNumber: '01', roomType: 'single', monthlyRent: 450, studentTax: 12, fixedCosts: 60, deposit: 900 },
-  { id: 'r2', propertyId: 'p1', roomNumber: '02', roomType: 'single', monthlyRent: 470, studentTax: 12, fixedCosts: 60, deposit: 940 },
-  { id: 'r3', propertyId: 'p1', roomNumber: '03', roomType: 'studio', monthlyRent: 550, studentTax: 12, fixedCosts: 80, deposit: 1100 },
-  { id: 'r4', propertyId: 'p1', roomNumber: '04', roomType: 'single', monthlyRent: 450, studentTax: 12, fixedCosts: 60, deposit: 900 },
-  { id: 'r5', propertyId: 'p1', roomNumber: '05', roomType: 'single', monthlyRent: 460, studentTax: 12, fixedCosts: 60, deposit: 920 },
-  { id: 'r6', propertyId: 'p1', roomNumber: '06', roomType: 'double', monthlyRent: 600, studentTax: 24, fixedCosts: 80, deposit: 1200 },
-  { id: 'r7', propertyId: 'p1', roomNumber: '07', roomType: 'single', monthlyRent: 450, studentTax: 12, fixedCosts: 60, deposit: 900 },
+  { id: 'r1', propertyId: 'p1', roomNumber: '01', roomType: 'single', monthlyRent: 450, studentTax: 12, fixedCosts: 60, deposit: 900, baseRent: 450, baseRentYear: 2024 },
+  { id: 'r2', propertyId: 'p1', roomNumber: '02', roomType: 'single', monthlyRent: 470, studentTax: 12, fixedCosts: 60, deposit: 940, baseRent: 470, baseRentYear: 2024 },
+  { id: 'r3', propertyId: 'p1', roomNumber: '03', roomType: 'studio', monthlyRent: 550, studentTax: 12, fixedCosts: 80, deposit: 1100, baseRent: 550, baseRentYear: 2024 },
+  { id: 'r4', propertyId: 'p1', roomNumber: '04', roomType: 'single', monthlyRent: 450, studentTax: 12, fixedCosts: 60, deposit: 900, baseRent: 450, baseRentYear: 2024 },
+  { id: 'r5', propertyId: 'p1', roomNumber: '05', roomType: 'single', monthlyRent: 460, studentTax: 12, fixedCosts: 60, deposit: 920, baseRent: 460, baseRentYear: 2024 },
+  { id: 'r6', propertyId: 'p1', roomNumber: '06', roomType: 'double', monthlyRent: 600, studentTax: 24, fixedCosts: 80, deposit: 1200, baseRent: 600, baseRentYear: 2024 },
+  { id: 'r7', propertyId: 'p1', roomNumber: '07', roomType: 'single', monthlyRent: 450, studentTax: 12, fixedCosts: 60, deposit: 900, baseRent: 450, baseRentYear: 2024 },
 ]
 
 export const STUDENTS: Student[] = [
