@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Building2, Check, ChevronLeft, DoorOpen, Edit3, FileText, Home, Info, MapPin, Plus, Trash2, User, X } from 'lucide-react'
+import FilterDropdown from '../components/ui/FilterDropdown'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell'
 import { CONTRACTS, PROPERTIES, ROOMS, SCHOOL_YEARS, STUDENTS } from '../lib/mockData'
 import {
+  addSchoolYear,
   createPropertyData,
   createRoomData,
   deleteRoomData,
   getContracts,
+  getHealthIndex,
   getProperties,
   getRooms,
+  getSchoolYears,
   getStudents,
-  getHealthIndex,
+  nextSchoolYear,
   updatePropertyData,
   updateRoomData,
 } from '../lib/data'
@@ -354,6 +358,7 @@ export default function PropertiesPage() {
   const [indexationData, setIndexationData] = useState<Record<string, { baseRent: number; startIndex: number; currentIndex: number; indexedRent: number; baseYear: number; targetYear: number }>>({})
   const [activeTooltipRoom, setActiveTooltipRoom] = useState<string | null>(null)
   const [roomSchoolYear, setRoomSchoolYear] = useState('2025–2026')
+  const [dynamicSchoolYears, setDynamicSchoolYears] = useState<string[]>(SCHOOL_YEARS)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -368,13 +373,15 @@ export default function PropertiesPage() {
       setLoading(true)
       setError(null)
       try {
-        const [nextProperties, nextRooms, nextContracts, nextStudents] = await Promise.all([
+        const [nextProperties, nextRooms, nextContracts, nextStudents, nextSchoolYears] = await Promise.all([
           getProperties(),
           getRooms(),
           getContracts(),
           getStudents(),
+          getSchoolYears(),
         ])
         if (cancelled) return
+        setDynamicSchoolYears(nextSchoolYears)
         setProperties(nextProperties)
         const indexStates: Record<string, boolean> = {}
         for (const prop of nextProperties) {
@@ -707,19 +714,28 @@ export default function PropertiesPage() {
               </div>
 
               <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/45 p-3 backdrop-blur-xl">
-                <label htmlFor="room-school-year" className="text-xs font-bold uppercase tracking-wider text-slate-400">Schooljaar</label>
-                <select
-                  id="room-school-year"
-                  value={roomSchoolYear}
-                  onChange={e => setRoomSchoolYear(e.target.value)}
-                  className="rounded-xl border border-slate-200 bg-white/70 px-3 py-1.5 text-sm font-bold text-slate-800"
-                >
-                  {SCHOOL_YEARS.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
+                <FilterDropdown
+                  label={roomSchoolYear}
+                  options={dynamicSchoolYears}
+                  onSelect={setRoomSchoolYear}
+                  extraAction={{
+                    label: `+ Volgend schooljaar (${nextSchoolYear(dynamicSchoolYears[dynamicSchoolYears.length - 1] ?? roomSchoolYear)})`,
+                    onClick: async () => {
+                      const last = dynamicSchoolYears[dynamicSchoolYears.length - 1] ?? roomSchoolYear
+                      const newYear = nextSchoolYear(last)
+                      const updated = await addSchoolYear(newYear)
+                      if (updated) {
+                        setDynamicSchoolYears(updated)
+                      } else {
+                        setDynamicSchoolYears(prev => (prev.includes(newYear) ? prev : [...prev, newYear]))
+                      }
+                      setRoomSchoolYear(newYear)
+                    },
+                  }}
+                  className="max-w-[150px]"
+                />
                 <span className="ml-auto text-xs font-semibold text-slate-500">
-                  {selectedRooms.filter(r => !contracts.some(c => c.roomId === r.id && c.schoolYear === roomSchoolYear)).length} van {selectedRooms.length} kamers vrij
+                  {selectedRooms.filter(r => !contracts.some(c => c.roomId === r.id && c.schoolYear === roomSchoolYear)).length}/{selectedRooms.length} vrij
                 </span>
               </div>
 
