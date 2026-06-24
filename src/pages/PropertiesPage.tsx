@@ -753,9 +753,15 @@ export default function PropertiesPage() {
                             <div className="flex flex-wrap items-center gap-2">
                               <h2 className="text-base font-bold text-slate-900">Kamer {room.roomNumber}</h2>
                               {occupancy ? (
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
-                                  {CONTRACT_STATUS_LABEL[occupancy.contract.status]}
-                                </span>
+                                occupancy.contract.status === 'sent' ? (
+                                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">
+                                    Bezet
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                                    {CONTRACT_STATUS_LABEL[occupancy.contract.status]}
+                                  </span>
+                                )
                               ) : (
                                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
                                   Vrij
@@ -808,7 +814,7 @@ export default function PropertiesPage() {
                         ) : (
                           <div className="flex items-center gap-2 text-sm font-bold text-emerald-700">
                             <DoorOpen size={16} />
-                            Deze kamer is vrij in {schoolYear}
+                            Deze kamer is vrij in {roomSchoolYear}
                           </div>
                         )}
                       </div>
@@ -817,10 +823,12 @@ export default function PropertiesPage() {
                         <div className="relative rounded-xl bg-white/45 p-3">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Huurprijs</p>
                           <p className="mt-1 text-sm font-bold text-slate-800">€ {room.monthlyRent}/maand</p>
-                          {selectedPropertyId && indexationStates[selectedPropertyId] && indexationData[room.id] && (
+                          {selectedPropertyId && indexationStates[selectedPropertyId] && (
                             <div className="mt-1.5 flex items-center gap-1">
                               <Check size={12} className="text-emerald-600" />
-                              <span className="text-[10px] font-bold text-emerald-600">Geïndexeerd</span>
+                              <span className="text-[10px] font-bold text-emerald-600">
+                                {indexationData[room.id] && indexationData[room.id].baseYear !== indexationData[room.id].targetYear ? 'Geïndexeerd' : 'Indexatie actief'}
+                              </span>
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); setActiveTooltipRoom(activeTooltipRoom === room.id ? null : room.id) }}
@@ -830,13 +838,23 @@ export default function PropertiesPage() {
                               </button>
                               {activeTooltipRoom === room.id && (
                                 <div className="absolute bottom-full left-0 z-20 mb-2 w-56 rounded-xl border border-emerald-200 bg-white p-3 text-xs text-slate-700 shadow-lg">
-                                  <p className="font-bold text-slate-900">Indexatieberekening</p>
-                                  <p className="mt-1">Basishuur: €{indexationData[room.id].baseRent}</p>
-                                  <p>Index aug {indexationData[room.id].baseYear}: {indexationData[room.id].startIndex}</p>
-                                  <p>Index aug {indexationData[room.id].targetYear}: {indexationData[room.id].currentIndex}</p>
-                                  <p className="mt-1 font-bold text-emerald-700">
-                                    €{indexationData[room.id].baseRent} × ({indexationData[room.id].currentIndex} / {indexationData[room.id].startIndex}) = €{indexationData[room.id].indexedRent}
-                                  </p>
+                                  {indexationData[room.id] && indexationData[room.id].baseYear !== indexationData[room.id].targetYear ? (
+                                    <>
+                                      <p className="font-bold text-slate-900">Indexatieberekening</p>
+                                      <p className="mt-1">Basishuur: €{indexationData[room.id].baseRent}</p>
+                                      <p>Index aug {indexationData[room.id].baseYear}: {indexationData[room.id].startIndex}</p>
+                                      <p>Index aug {indexationData[room.id].targetYear}: {indexationData[room.id].currentIndex}</p>
+                                      <p className="mt-1 font-bold text-emerald-700">
+                                        €{indexationData[room.id].baseRent} × ({indexationData[room.id].currentIndex} / {indexationData[room.id].startIndex}) = €{indexationData[room.id].indexedRent}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="font-bold text-slate-900">Indexatie actief</p>
+                                      <p className="mt-1">Basishuur: €{room.baseRent ?? room.monthlyRent} ({room.baseRentYear ?? new Date().getFullYear()})</p>
+                                      <p className="mt-1 text-slate-500">De huurprijs wordt automatisch geïndexeerd bij contractverlenging.</p>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </div>
