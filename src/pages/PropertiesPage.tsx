@@ -713,7 +713,7 @@ export default function PropertiesPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/45 p-3 backdrop-blur-xl">
+              <div className="relative z-10 flex items-center gap-3 rounded-2xl border border-white/70 bg-white/45 p-3 backdrop-blur-xl">
                 <FilterDropdown
                   label={roomSchoolYear}
                   options={dynamicSchoolYears}
