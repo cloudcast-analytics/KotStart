@@ -139,13 +139,4 @@ describe('ContractNewPage', () => {
     expect(await screen.findByText('Dashboard')).toBeInTheDocument()
   })
 
-  it('blokkeert contractaanmaak zolang verhuurdergegevens ontbreken', async () => {
-    renderNewContractPage()
-    await selectFirstRoomAndContinue()
-    await fillStudent()
-    fireEvent.click(screen.getByRole('button', { name: /volgende/i }))
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(/verhuurdergegevens.*Account/i)
-    expect(screen.getByRole('button', { name: /opslaan als concept/i })).toBeDisabled()
-  })
 })

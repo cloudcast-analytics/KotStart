@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { createContractDraft, getAvailableRoomsForNewContract, getHealthIndex, getLatestHealthIndex, getLandlordProfile, getProperties, getPropertyIndexation, getSchoolYears, isLandlordProfileComplete } from '../lib/data'
+import { createContractDraft, getAvailableRoomsForNewContract, getHealthIndex, getLatestHealthIndex, getProperties, getPropertyIndexation, getSchoolYears } from '../lib/data'
 import { calculateIndexedRentPure } from '../lib/indexation'
-import { MOCK_LANDLORD_PROFILE } from '../lib/mockData'
 import { isValidBelgianPostalCode } from '../lib/residence'
 import type { Room } from '../types'
-import type { LandlordProfile } from '../types'
 import Step1Room from './wizard/Step1Room'
 import Step2Student from './wizard/Step2Student'
 import Step4Review from './wizard/Step4Review'
@@ -69,7 +67,6 @@ export default function ContractNewPage() {
   const [students, setStudents] = useState<StudentFormData[]>([emptyStudent()])
   const [isSending, setIsSending] = useState(false)
   const [rooms, setRooms] = useState<Room[]>([])
-  const [landlordProfile, setLandlordProfile] = useState<LandlordProfile>(MOCK_LANDLORD_PROFILE)
   const [propertyId, setPropertyId] = useState<string | null>(navState?.propertyId ?? null)
   const [schoolYear, setSchoolYear] = useState<string | null>(navState?.schoolYear ?? null)
   const [loadingRooms, setLoadingRooms] = useState(true)
@@ -113,16 +110,6 @@ export default function ContractNewPage() {
     loadRooms(currentPropertyId, currentSchoolYear)
     return () => { cancelled = true }
   }, [propertyId, schoolYear])
-
-  useEffect(() => {
-    let cancelled = false
-
-    getLandlordProfile().then(profile => {
-      if (!cancelled) setLandlordProfile(profile)
-    })
-
-    return () => { cancelled = true }
-  }, [currentStep])
 
   useEffect(() => {
     if (!selectedRoomId || !schoolYear || !propertyId) {
@@ -185,7 +172,7 @@ export default function ContractNewPage() {
     if (loadingRooms || error) return false
     if (currentStep === 1) return selectedRoomId !== null
     if (currentStep === 2) return students.every(studentIsComplete)
-    if (currentStep === 3) return Boolean(effectiveRoom) && isLandlordProfileComplete(landlordProfile)
+    if (currentStep === 3) return Boolean(effectiveRoom)
     return Boolean(effectiveRoom)
   }
 
@@ -198,10 +185,6 @@ export default function ContractNewPage() {
     }
 
     if (!effectiveRoom || !schoolYear) return
-    if (!isLandlordProfileComplete(landlordProfile)) {
-      setError('Vul eerst alle verhuurdergegevens in bij Account voordat je een contract aanmaakt.')
-      return
-    }
 
     setIsSending(true)
     try {
@@ -262,14 +245,7 @@ export default function ContractNewPage() {
         {currentStep === 2 && <Step2Student students={students} onChange={handleStudentChange} />}
 
         {currentStep === 3 && effectiveRoom && (
-          <>
-            {!isLandlordProfileComplete(landlordProfile) && (
-              <div role="alert" className="m-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
-                Vul eerst alle verhuurdergegevens in bij Account voordat je een contract aanmaakt.
-              </div>
-            )}
-            <Step4Review room={effectiveRoom} students={students} />
-          </>
+          <Step4Review room={effectiveRoom} students={students} />
         )}
       </WizardLayout>
     </div>
