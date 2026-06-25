@@ -94,11 +94,6 @@ export default function WizardLayout({
         </button>
       </div>
 
-      {isLastStep && !isSending && (
-        <p className="mt-2 text-center text-xs text-slate-400">
-          Je kan daarna de plaatsbeschrijving doen en ondertekenen.
-        </p>
-      )}
     </div>
   )
 }

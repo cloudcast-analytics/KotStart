@@ -5,7 +5,7 @@ import ActionBar from './components/ActionBar'
 import StudentRow from './components/StudentRow'
 import EmptyState from './components/EmptyState'
 import { PROPERTIES, SCHOOL_YEARS } from '../lib/mockData'
-import { getDashboardRowsData, getProperties, getPropertyDelegation } from '../lib/data'
+import { getDashboardRowsData, getLandlordProfile, getProperties, getPropertyDelegation, isLandlordProfileComplete } from '../lib/data'
 import type { Property, StudentDashboardRow } from '../types'
 
 type SortKey = 'student' | 'room'
@@ -40,6 +40,12 @@ export default function DashboardPage() {
   const [delegationMode, setDelegationMode] = useState<'together' | 'delegate'>('together')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [profileComplete, setProfileComplete] = useState(true)
+  const [showProfileWarning, setShowProfileWarning] = useState(false)
+
+  useEffect(() => {
+    getLandlordProfile().then(profile => setProfileComplete(isLandlordProfileComplete(profile)))
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -140,8 +146,27 @@ export default function DashboardPage() {
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={handleSort}
-          onNewContract={() => navigate('/contracts/new', { state: { propertyId, schoolYear } })}
+          onNewContract={() => {
+            if (!profileComplete) {
+              setShowProfileWarning(true)
+              return
+            }
+            navigate('/contracts/new', { state: { propertyId, schoolYear } })
+          }}
         />
+
+        {showProfileWarning && (
+          <div className="mx-4 mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-amber-900">Vul je verhuurdersprofiel aan om contracten aan te maken.</span>
+            <button
+              type="button"
+              onClick={() => navigate('/account')}
+              className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-200 transition-colors"
+            >
+              Ga naar Account
+            </button>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
