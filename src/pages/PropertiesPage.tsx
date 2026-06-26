@@ -221,6 +221,7 @@ function PropertyEditModal({
   onSave: (input: EditableProperty) => void
 }) {
   const [form, setForm] = useState(() => toEditableProperty(property))
+  const [saving, setSaving] = useState(false)
   const isEditing = Boolean(property)
 
   function updateField<K extends keyof EditableProperty>(field: K, value: EditableProperty[K]) {
@@ -228,6 +229,8 @@ function PropertyEditModal({
   }
 
   function handleSave() {
+    if (saving) return
+    setSaving(true)
     onSave({
       name: form.name.trim(),
       street: form.street.trim(),
@@ -331,10 +334,10 @@ function PropertyEditModal({
           <button
             type="button"
             onClick={handleSave}
-            disabled={!form.name.trim()}
+            disabled={!form.name.trim() || saving}
             className="btn-primary flex-[2] py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Opslaan
+            {saving ? 'Opslaan...' : 'Opslaan'}
           </button>
         </div>
       </div>

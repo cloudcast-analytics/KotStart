@@ -1405,57 +1405,49 @@ export async function approveInspectionToken(
   tokenId: string,
   contractId: string,
   type: 'start' | 'end',
+  landlordItems: Array<Record<string, unknown>>,
+  studentItems: Array<Record<string, unknown>>,
+  studentPhotoUrls: string[],
 ): Promise<void> {
   if (!isSupabaseConfigured) return
 
-  const { data: tokenData, error: tokenError } = await supabase
-    .from('inspection_tokens')
-    .select('*')
-    .eq('id', tokenId)
-    .single()
-
-  if (tokenError || !tokenData) throw new Error('Token niet gevonden')
-
-  const token = tokenData as InspectionTokenRow
-  const allItems = [
-    ...((token.landlord_items as Array<Record<string, unknown>>) ?? []),
-    ...((token.student_items as Array<Record<string, unknown>>) ?? []),
-  ]
+  const allItems = [...landlordItems, ...studentItems]
 
   const { data: inspData, error: inspError } = await supabase
     .from('inspections')
     .insert({
       contract_id: contractId,
       type,
-      overview_photo_urls: token.student_photo_urls ?? [],
+      overview_photo_urls: studentPhotoUrls,
     })
     .select('id')
     .single()
 
   if (inspError) throw inspError
 
-  if (allItems.length > 0) {
-    const itemRows = allItems.map(item => ({
-      inspection_id: inspData.id,
-      category: item.category as string,
-      item_name: item.itemName as string,
-      condition: (item.condition as string) ?? null,
-      key_count: (item.keyCount as number) ?? null,
-      meter_value: (item.meterValue as number) ?? null,
-      meter_unit: (item.meterUnit as string) ?? null,
-      photo_url: (item.photoUrl as string) ?? null,
-    }))
+  const itemRows = allItems.map(item => ({
+    inspection_id: inspData.id,
+    category: item.category as string,
+    item_name: item.itemName as string,
+    condition: (item.condition as string) ?? null,
+    key_count: (item.keyCount as number) ?? null,
+    meter_value: (item.meterValue as number) ?? null,
+    meter_unit: (item.meterUnit as string) ?? null,
+    photo_url: (item.photoUrl as string) ?? null,
+  }))
 
-    const { error: itemsError } = await supabase.from('inspection_items').insert(itemRows)
-    if (itemsError) throw itemsError
-  }
+  const insertItems = itemRows.length > 0
+    ? supabase.from('inspection_items').insert(itemRows)
+    : Promise.resolve({ error: null })
 
-  const { error: updateError } = await supabase
+  const updateToken = supabase
     .from('inspection_tokens')
     .update({ status: 'approved', reviewed_at: new Date().toISOString() })
     .eq('id', tokenId)
 
-  if (updateError) throw updateError
+  const [itemsResult, updateResult] = await Promise.all([insertItems, updateToken])
+  if (itemsResult.error) throw itemsResult.error
+  if (updateResult.error) throw updateResult.error
 }
 
 export async function sendInspectionDelegationEmail(

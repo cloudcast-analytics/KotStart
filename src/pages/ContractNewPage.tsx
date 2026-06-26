@@ -147,6 +147,7 @@ export default function ContractNewPage() {
     return () => { cancelled = true }
   }, [selectedRoomId, schoolYear, propertyId, rooms])
 
+
   const propertyRooms = useMemo(() => rooms, [rooms])
   const selectedRoom: Room | null = propertyRooms.find(room => room.id === selectedRoomId) ?? null
   const effectiveRoom = selectedRoom && indexedRent != null
