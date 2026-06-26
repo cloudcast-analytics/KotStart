@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Loader2, Send } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronDown, Info, Loader2, Send } from 'lucide-react'
 import StepIndicator from './wizard/StepIndicator'
-import { createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, nextSchoolYear } from '../lib/data'
+import { createContractRenewal, getAvailableRoomsForRenewal, getContractBundleData, getHealthIndex, getLatestHealthIndex, getPropertyIndexation, nextSchoolYear, updateStudentData } from '../lib/data'
+import { calculateIndexedRentPure } from '../lib/indexation'
 import { cn } from '../lib/cn'
 import type { Contract, Property, Room, Student } from '../types'
 
@@ -35,6 +36,22 @@ export default function ContractRenewPage() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [indexationEnabled, setIndexationEnabled] = useState(false)
+  const [indexationInfo, setIndexationInfo] = useState<{
+    baseRent: number
+    startIndex: number
+    currentIndex: number
+    indexedRent: number
+  } | null>(null)
+  const [showIndexInfo, setShowIndexInfo] = useState(false)
+  const [showStudentEdit, setShowStudentEdit] = useState(false)
+  const [studentForm, setStudentForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    dateOfBirth: '',
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -47,6 +64,13 @@ export default function ContractRenewPage() {
         if (cancelled) return
         setBundle(nextBundle)
         if (nextBundle) {
+          setStudentForm({
+            firstName: nextBundle.student.firstName,
+            lastName: nextBundle.student.lastName,
+            email: nextBundle.student.email,
+            phone: nextBundle.student.phone,
+            dateOfBirth: nextBundle.student.dateOfBirth,
+          })
           const upcomingSchoolYear = nextSchoolYear(nextBundle.contract.schoolYear)
           const rooms = await getAvailableRoomsForRenewal(nextBundle.property.id, upcomingSchoolYear, nextBundle.contract.id)
           if (cancelled) return
@@ -58,6 +82,29 @@ export default function ContractRenewPage() {
             fixedCosts: String(defaultRoom?.fixedCosts ?? nextBundle.room.fixedCosts),
             studentTax: String(defaultRoom?.studentTax ?? nextBundle.room.studentTax),
           })
+
+          const indexEnabled = await getPropertyIndexation(nextBundle.property.id)
+          if (cancelled) return
+          setIndexationEnabled(indexEnabled)
+
+          if (indexEnabled && defaultRoom) {
+            const baseRent = defaultRoom.baseRent ?? defaultRoom.monthlyRent
+            const baseYear = defaultRoom.baseRentYear ?? 2024
+            const targetYear = Number(upcomingSchoolYear.match(/^(\d{4})/)?.[1] ?? 2026)
+
+            const startIndex = await getHealthIndex(baseYear, 8)
+            let currentIndex = await getHealthIndex(targetYear, 8)
+            if (!currentIndex) {
+              const latest = await getLatestHealthIndex()
+              if (latest) currentIndex = latest.value
+            }
+
+            if (startIndex && currentIndex && !cancelled) {
+              const indexedRent = calculateIndexedRentPure(baseRent, startIndex, currentIndex)
+              setIndexationInfo({ baseRent, startIndex, currentIndex, indexedRent })
+              setForm(prev => ({ ...prev, monthlyRent: String(indexedRent) }))
+            }
+          }
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Contract kon niet geladen worden')
@@ -90,7 +137,7 @@ export default function ContractRenewPage() {
     setForm(previous => ({ ...previous, [field]: value }))
   }
 
-  function handleRoomChange(roomId: string) {
+  async function handleRoomChange(roomId: string) {
     const selected = availableRooms.find(availableRoom => availableRoom.id === roomId)
     if (!selected) return
     setForm({
@@ -99,6 +146,25 @@ export default function ContractRenewPage() {
       fixedCosts: String(selected.fixedCosts),
       studentTax: String(selected.studentTax),
     })
+
+    if (indexationEnabled) {
+      const baseRent = selected.baseRent ?? selected.monthlyRent
+      const baseYear = selected.baseRentYear ?? 2024
+      const targetYear = Number(upcomingSchoolYear.match(/^(\d{4})/)?.[1] ?? 2026)
+      const startIndex = await getHealthIndex(baseYear, 8)
+      let currentIndex = await getHealthIndex(targetYear, 8)
+      if (!currentIndex) {
+        const latest = await getLatestHealthIndex()
+        if (latest) currentIndex = latest.value
+      }
+      if (startIndex && currentIndex) {
+        const indexedRent = calculateIndexedRentPure(baseRent, startIndex, currentIndex)
+        setIndexationInfo({ baseRent, startIndex, currentIndex, indexedRent })
+        setForm(prev => ({ ...prev, monthlyRent: String(indexedRent) }))
+      } else {
+        setIndexationInfo(null)
+      }
+    }
   }
 
   function canProceed() {
@@ -114,6 +180,16 @@ export default function ContractRenewPage() {
 
     setIsSending(true)
     try {
+      const studentChanged =
+        studentForm.firstName !== student.firstName ||
+        studentForm.lastName !== student.lastName ||
+        studentForm.email !== student.email ||
+        studentForm.phone !== student.phone ||
+        studentForm.dateOfBirth !== student.dateOfBirth
+      if (studentChanged) {
+        await updateStudentData(student.id, studentForm)
+      }
+
       const newContractId = await createContractRenewal({
         previousContractId: contract.id,
         roomId: form.roomId,
@@ -153,15 +229,73 @@ export default function ContractRenewPage() {
             </div>
 
             <div className="rounded-2xl border border-white/70 bg-white/45 p-4 backdrop-blur-xl">
-              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500">
-                Alleen verlenggegevens zijn bewerkbaar
-              </p>
               <div className="grid gap-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <ReadonlyField label="Student" value={`${student.firstName} ${student.lastName}`} />
                   <ReadonlyField label="Huidig schooljaar" value={contract.schoolYear} />
+                  <ReadonlyField label="Nieuw schooljaar" value={upcomingSchoolYear} />
                 </div>
-                <ReadonlyField label="Nieuw schooljaar" value={upcomingSchoolYear} />
+                <button
+                  type="button"
+                  onClick={() => setShowStudentEdit(!showStudentEdit)}
+                  className="flex items-center gap-2 text-left"
+                >
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Studentgegevens</span>
+                  <ChevronDown size={12} className={cn('text-slate-400 transition-transform', showStudentEdit && 'rotate-180')} />
+                  <span className="ml-auto text-[10px] font-semibold text-accent">{showStudentEdit ? 'Inklappen' : 'Bewerken'}</span>
+                </button>
+                {showStudentEdit ? (
+                  <div className="grid gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="grid gap-1">
+                        <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Voornaam</span>
+                        <input
+                          value={studentForm.firstName}
+                          onChange={e => setStudentForm(prev => ({ ...prev, firstName: e.target.value }))}
+                          className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Achternaam</span>
+                        <input
+                          value={studentForm.lastName}
+                          onChange={e => setStudentForm(prev => ({ ...prev, lastName: e.target.value }))}
+                          className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        />
+                      </label>
+                    </div>
+                    <label className="grid gap-1">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">E-mail</span>
+                      <input
+                        type="email"
+                        value={studentForm.email}
+                        onChange={e => setStudentForm(prev => ({ ...prev, email: e.target.value }))}
+                        className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                      />
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="grid gap-1">
+                        <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Telefoon</span>
+                        <input
+                          type="tel"
+                          value={studentForm.phone}
+                          onChange={e => setStudentForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Geboortedatum</span>
+                        <input
+                          type="date"
+                          value={studentForm.dateOfBirth}
+                          onChange={e => setStudentForm(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                          className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <ReadonlyField label="Student" value={`${studentForm.firstName} ${studentForm.lastName}`} />
+                )}
               </div>
             </div>
 
@@ -189,12 +323,43 @@ export default function ContractRenewPage() {
                   </label>
                 )}
 
+                {indexationInfo && showIndexInfo && (
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs text-slate-700">
+                    <p className="font-semibold">
+                      €{indexationInfo.baseRent} × ({indexationInfo.currentIndex} / {indexationInfo.startIndex}) = €{indexationInfo.indexedRent}
+                    </p>
+                    <p className="mt-1 text-slate-500">
+                      Aanvangsindex: aug {indexationInfo.startIndex} • Huidige index: aug {indexationInfo.currentIndex}
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  <MoneyField
-                    label="Huurprijs"
-                    value={form.monthlyRent}
-                    onChange={value => updateField('monthlyRent', value)}
-                  />
+                  <label className="grid gap-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Huurprijs</span>
+                      {indexationInfo && (
+                        <>
+                          <span className="rounded-md bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-700">Geïndexeerd</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowIndexInfo(!showIndexInfo)}
+                            className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200"
+                          >
+                            <Info size={8} />
+                          </button>
+                        </>
+                      )}
+                    </span>
+                    <input
+                      aria-label="Huurprijs"
+                      type="number"
+                      min="0"
+                      value={form.monthlyRent}
+                      onChange={event => updateField('monthlyRent', event.target.value)}
+                      className="rounded-xl border border-white/90 bg-white/65 px-3 py-2.5 text-sm font-semibold text-slate-900 focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/20"
+                    />
+                  </label>
                   <MoneyField
                     label="Vaste kosten"
                     value={form.fixedCosts}
@@ -218,7 +383,7 @@ export default function ContractRenewPage() {
 
             <SummaryCard
               rows={[
-                ['Student', `${student.firstName} ${student.lastName}`],
+                ['Student', `${studentForm.firstName} ${studentForm.lastName}`],
                 ['Pand', property.name],
                 ['Kamer', selectedRoom?.roomNumber ?? room.roomNumber],
                 ['Schooljaar', upcomingSchoolYear],

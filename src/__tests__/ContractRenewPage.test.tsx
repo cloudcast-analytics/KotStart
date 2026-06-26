@@ -30,7 +30,8 @@ describe('ContractRenewPage', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Emma Janssen' })).toBeInTheDocument()
-    expect(screen.getByDisplayValue('450')).toBeInTheDocument()
+    // Huurprijs is geïndexeerd: €450 × (132.10 / 126.08) = €471.49
+    expect(screen.getByDisplayValue('471.49')).toBeInTheDocument()
     expect(screen.getByDisplayValue('60')).toBeInTheDocument()
     expect(screen.getByDisplayValue('12')).toBeInTheDocument()
   })
@@ -105,7 +106,7 @@ describe('ContractRenewPage', () => {
       previousContractId: 'c1',
       roomId: 'r1',
       schoolYear: '2026–2027',
-      monthlyRent: 450,
+      monthlyRent: 471.49,
       fixedCosts: 60,
       studentTax: 12,
     })

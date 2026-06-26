@@ -7,6 +7,7 @@ export interface Property {
   city: string
   createdAt: string
   inspectionDelegation?: 'together' | 'delegate'
+  indexationEnabled?: boolean
 }
 
 export interface Room {
@@ -18,6 +19,8 @@ export interface Room {
   studentTax: number
   fixedCosts: number
   deposit: number
+  baseRent?: number
+  baseRentYear?: number
 }
 
 export interface Student {

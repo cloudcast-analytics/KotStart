@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { createContractDraft, getAvailableRoomsForNewContract, getProperties, getSchoolYears } from '../lib/data'
+import { createContractDraft, getAvailableRoomsForNewContract, getHealthIndex, getLatestHealthIndex, getProperties, getPropertyIndexation, getSchoolYears } from '../lib/data'
+import { calculateIndexedRentPure } from '../lib/indexation'
 import { isValidBelgianPostalCode } from '../lib/residence'
 import type { Room } from '../types'
 import Step1Room from './wizard/Step1Room'
@@ -70,6 +71,7 @@ export default function ContractNewPage() {
   const [schoolYear, setSchoolYear] = useState<string | null>(navState?.schoolYear ?? null)
   const [loadingRooms, setLoadingRooms] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [indexedRent, setIndexedRent] = useState<number | null>(null)
 
   useEffect(() => {
     if (propertyId && schoolYear) return
@@ -109,8 +111,48 @@ export default function ContractNewPage() {
     return () => { cancelled = true }
   }, [propertyId, schoolYear])
 
+  useEffect(() => {
+    if (!selectedRoomId || !schoolYear || !propertyId) {
+      setIndexedRent(null)
+      return
+    }
+
+    let cancelled = false
+    const room = rooms.find(r => r.id === selectedRoomId)
+    if (!room) return
+
+    async function calcIndexed() {
+      const enabled = await getPropertyIndexation(propertyId!)
+      if (cancelled || !enabled) { setIndexedRent(null); return }
+
+      const baseRent = room!.baseRent ?? room!.monthlyRent
+      const baseYear = room!.baseRentYear ?? new Date().getFullYear()
+      const targetYear = Number(schoolYear!.match(/^(\d{4})/)?.[1] ?? new Date().getFullYear())
+
+      const startIndex = await getHealthIndex(baseYear, 8)
+      let currentIndex = await getHealthIndex(targetYear, 8)
+      if (!currentIndex) {
+        const latest = await getLatestHealthIndex()
+        if (latest) currentIndex = latest.value
+      }
+
+      if (!cancelled && startIndex && currentIndex && startIndex !== currentIndex) {
+        setIndexedRent(calculateIndexedRentPure(baseRent, startIndex, currentIndex))
+      } else if (!cancelled) {
+        setIndexedRent(null)
+      }
+    }
+
+    calcIndexed()
+    return () => { cancelled = true }
+  }, [selectedRoomId, schoolYear, propertyId, rooms])
+
+
   const propertyRooms = useMemo(() => rooms, [rooms])
   const selectedRoom: Room | null = propertyRooms.find(room => room.id === selectedRoomId) ?? null
+  const effectiveRoom = selectedRoom && indexedRent != null
+    ? { ...selectedRoom, monthlyRent: indexedRent }
+    : selectedRoom
 
   function handleRoomSelect(id: string) {
     setSelectedRoomId(id)
@@ -131,8 +173,8 @@ export default function ContractNewPage() {
     if (loadingRooms || error) return false
     if (currentStep === 1) return selectedRoomId !== null
     if (currentStep === 2) return students.every(studentIsComplete)
-    if (currentStep === 3) return Boolean(selectedRoom)
-    return Boolean(selectedRoom)
+    if (currentStep === 3) return Boolean(effectiveRoom)
+    return Boolean(effectiveRoom)
   }
 
   async function handleNext() {
@@ -143,17 +185,17 @@ export default function ContractNewPage() {
       return
     }
 
-    if (!selectedRoom || !schoolYear) return
+    if (!effectiveRoom || !schoolYear) return
 
     setIsSending(true)
     try {
       const contractId = await createContractDraft({
-        roomId: selectedRoom.id,
+        roomId: effectiveRoom.id,
         schoolYear,
         students,
-        monthlyRent: selectedRoom.monthlyRent,
-        fixedCosts: selectedRoom.fixedCosts,
-        studentTax: selectedRoom.studentTax,
+        monthlyRent: effectiveRoom.monthlyRent,
+        fixedCosts: effectiveRoom.fixedCosts,
+        studentTax: effectiveRoom.studentTax,
       })
       navigate(contractId ? `/contracts/${contractId}` : '/', { state: { savedDraft: true } })
     } catch (err) {
@@ -203,8 +245,8 @@ export default function ContractNewPage() {
 
         {currentStep === 2 && <Step2Student students={students} onChange={handleStudentChange} />}
 
-        {currentStep === 3 && selectedRoom && (
-          <Step4Review room={selectedRoom} students={students} />
+        {currentStep === 3 && effectiveRoom && (
+          <Step4Review room={effectiveRoom} students={students} />
         )}
       </WizardLayout>
     </div>

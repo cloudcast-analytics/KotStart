@@ -1,19 +1,26 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, ChevronLeft, DoorOpen, Edit3, FileText, Home, MapPin, Plus, Trash2, User, X } from 'lucide-react'
+import { Building2, Check, ChevronLeft, DoorOpen, Edit3, FileText, Home, Info, MapPin, Plus, Trash2, User, X } from 'lucide-react'
+import FilterDropdown from '../components/ui/FilterDropdown'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell'
 import { CONTRACTS, PROPERTIES, ROOMS, SCHOOL_YEARS, STUDENTS } from '../lib/mockData'
 import {
+  addSchoolYear,
   createPropertyData,
   createRoomData,
   deleteRoomData,
   getContracts,
+  getHealthIndex,
+  getLatestHealthIndex,
   getProperties,
   getRooms,
+  getSchoolYears,
   getStudents,
+  nextSchoolYear,
   updatePropertyData,
   updateRoomData,
 } from '../lib/data'
+import { calculateIndexedRentPure } from '../lib/indexation'
 import { formatAddress } from '../lib/residence'
 import type { Contract, Property, Room, Student } from '../types'
 
@@ -351,6 +358,11 @@ export default function PropertiesPage() {
   const [showPropertyModal, setShowPropertyModal] = useState(false)
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
   const [showRoomModal, setShowRoomModal] = useState(false)
+  const [indexationStates, setIndexationStates] = useState<Record<string, boolean>>({})
+  const [indexationData, setIndexationData] = useState<Record<string, { baseRent: number; startIndex: number; currentIndex: number; indexedRent: number; baseYear: number; targetYear: number }>>({})
+  const [activeTooltipRoom, setActiveTooltipRoom] = useState<string | null>(null)
+  const [roomSchoolYear, setRoomSchoolYear] = useState('2025–2026')
+  const [dynamicSchoolYears, setDynamicSchoolYears] = useState<string[]>(SCHOOL_YEARS)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -365,14 +377,21 @@ export default function PropertiesPage() {
       setLoading(true)
       setError(null)
       try {
-        const [nextProperties, nextRooms, nextContracts, nextStudents] = await Promise.all([
+        const [nextProperties, nextRooms, nextContracts, nextStudents, nextSchoolYears] = await Promise.all([
           getProperties(),
           getRooms(),
           getContracts(),
           getStudents(),
+          getSchoolYears(),
         ])
         if (cancelled) return
+        setDynamicSchoolYears(nextSchoolYears)
         setProperties(nextProperties)
+        const indexStates: Record<string, boolean> = {}
+        for (const prop of nextProperties) {
+          indexStates[prop.id] = prop.indexationEnabled ?? false
+        }
+        setIndexationStates(indexStates)
         setRooms(nextRooms)
         setContracts(nextContracts)
         setStudents(nextStudents)
@@ -392,13 +411,66 @@ export default function PropertiesPage() {
     }
   }, [propertyId])
 
+  useEffect(() => {
+    if (!selectedPropertyId || !indexationStates[selectedPropertyId]) {
+      setIndexationData({})
+      return
+    }
+
+    let cancelled = false
+    const propRooms = rooms.filter(r => r.propertyId === selectedPropertyId)
+    const targetYear = Number(roomSchoolYear.match(/^(\d{4})/)?.[1] ?? new Date().getFullYear())
+
+    async function loadIndexation() {
+      const data: typeof indexationData = {}
+      const years = new Set<number>()
+      for (const room of propRooms) {
+        if (room.baseRent && room.baseRentYear) years.add(room.baseRentYear)
+      }
+      years.add(targetYear)
+
+      const indexCache: Record<number, number | null> = {}
+      await Promise.all(
+        [...years].map(async y => {
+          indexCache[y] = await getHealthIndex(y, 8)
+        }),
+      )
+
+      if (!indexCache[targetYear]) {
+        const latest = await getLatestHealthIndex()
+        if (latest) indexCache[targetYear] = latest.value
+      }
+
+      for (const room of propRooms) {
+        const baseRent = room.baseRent ?? room.monthlyRent
+        const baseYear = room.baseRentYear ?? targetYear
+        const startIndex = indexCache[baseYear]
+        const currentIndex = indexCache[targetYear]
+        if (startIndex && currentIndex) {
+          data[room.id] = {
+            baseRent,
+            startIndex,
+            currentIndex,
+            indexedRent: calculateIndexedRentPure(baseRent, startIndex, currentIndex),
+            baseYear,
+            targetYear,
+          }
+        }
+      }
+      if (!cancelled) setIndexationData(data)
+    }
+
+    loadIndexation()
+    return () => { cancelled = true }
+  }, [selectedPropertyId, indexationStates, rooms, roomSchoolYear])
+
   const selectedRooms = useMemo(
     () => rooms.filter(room => room.propertyId === selectedPropertyId).sort((a, b) => a.roomNumber.localeCompare(b.roomNumber)),
     [rooms, selectedPropertyId],
   )
 
   function getRoomOccupancy(room: Room) {
-    const contract = contracts.find(item => item.roomId === room.id && item.schoolYear === schoolYear)
+    const contract = contracts.find(item => item.roomId === room.id && item.schoolYear === roomSchoolYear)
     if (!contract) return null
 
     const primaryStudent = students.find(student => student.id === contract.studentId)
@@ -490,6 +562,7 @@ export default function PropertiesPage() {
     }
   }
 
+
   function openNewPropertyModal() {
     setEditingProperty(null)
     setShowPropertyModal(true)
@@ -572,6 +645,9 @@ export default function PropertiesPage() {
                         <span className="rounded-full border border-white/80 bg-white/60 px-2.5 py-1 text-xs font-bold text-slate-500">
                           {propertyRooms.length} kamers
                         </span>
+                        {indexationStates[property.id] && (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">Indexatie</span>
+                        )}
                         <button
                           type="button"
                           aria-label={`${property.name} bewerken`}
@@ -614,8 +690,8 @@ export default function PropertiesPage() {
 
           {!loading && selectedProperty && (
             <div className="flex flex-col gap-4">
-              <div className="glass rounded-2xl p-4">
-                <div className="flex items-start gap-3">
+              <div className="relative z-10 glass rounded-2xl">
+                <div className="flex items-start gap-3 p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10">
                     <Home size={18} className="text-accent" />
                   </div>
@@ -644,6 +720,31 @@ export default function PropertiesPage() {
                     </button>
                   </div>
                 </div>
+                <div className="border-t border-slate-200/50 px-4 py-3 flex items-center gap-3">
+                  <FilterDropdown
+                    label={roomSchoolYear}
+                    options={dynamicSchoolYears}
+                    onSelect={setRoomSchoolYear}
+                    extraAction={{
+                      label: `+ Volgend schooljaar (${nextSchoolYear(dynamicSchoolYears[dynamicSchoolYears.length - 1] ?? roomSchoolYear)})`,
+                      onClick: async () => {
+                        const last = dynamicSchoolYears[dynamicSchoolYears.length - 1] ?? roomSchoolYear
+                        const newYear = nextSchoolYear(last)
+                        const updated = await addSchoolYear(newYear)
+                        if (updated) {
+                          setDynamicSchoolYears(updated)
+                        } else {
+                          setDynamicSchoolYears(prev => (prev.includes(newYear) ? prev : [...prev, newYear]))
+                        }
+                        setRoomSchoolYear(newYear)
+                      },
+                    }}
+                    className="max-w-[150px]"
+                  />
+                  <span className="ml-auto text-xs font-semibold text-slate-500">
+                    {selectedRooms.filter(r => !contracts.some(c => c.roomId === r.id && c.schoolYear === roomSchoolYear)).length}/{selectedRooms.length} vrij
+                  </span>
+                </div>
               </div>
 
               <div className="grid gap-3">
@@ -661,9 +762,15 @@ export default function PropertiesPage() {
                             <div className="flex flex-wrap items-center gap-2">
                               <h2 className="text-base font-bold text-slate-900">Kamer {room.roomNumber}</h2>
                               {occupancy ? (
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">
-                                  {CONTRACT_STATUS_LABEL[occupancy.contract.status]}
-                                </span>
+                                occupancy.contract.status === 'sent' ? (
+                                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">
+                                    Bezet
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                                    {CONTRACT_STATUS_LABEL[occupancy.contract.status]}
+                                  </span>
+                                )
                               ) : (
                                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
                                   Vrij
@@ -716,14 +823,53 @@ export default function PropertiesPage() {
                         ) : (
                           <div className="flex items-center gap-2 text-sm font-bold text-emerald-700">
                             <DoorOpen size={16} />
-                            Deze kamer is vrij in {schoolYear}
+                            Deze kamer is vrij in {roomSchoolYear}
                           </div>
                         )}
                       </div>
 
                       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div className="relative rounded-xl bg-white/45 p-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Huurprijs</p>
+                          <p className="mt-1 text-sm font-bold text-slate-800">€ {indexationData[room.id]?.indexedRent ?? room.monthlyRent}/maand</p>
+                          {selectedPropertyId && indexationStates[selectedPropertyId] && (
+                            <div className="mt-1.5 flex items-center gap-1">
+                              <Check size={12} className="text-emerald-600" />
+                              <span className="text-[10px] font-bold text-emerald-600">
+                                {indexationData[room.id] && indexationData[room.id].baseYear !== indexationData[room.id].targetYear ? 'Geïndexeerd' : 'Indexatie actief'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setActiveTooltipRoom(activeTooltipRoom === room.id ? null : room.id) }}
+                                className="ml-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200"
+                              >
+                                <Info size={9} />
+                              </button>
+                              {activeTooltipRoom === room.id && (
+                                <div className="absolute bottom-full left-0 z-20 mb-2 w-56 rounded-xl border border-emerald-200 bg-white p-3 text-xs text-slate-700 shadow-lg">
+                                  {indexationData[room.id] && indexationData[room.id].baseYear !== indexationData[room.id].targetYear ? (
+                                    <>
+                                      <p className="font-bold text-slate-900">Indexatieberekening</p>
+                                      <p className="mt-1">Basishuur: €{indexationData[room.id].baseRent}</p>
+                                      <p>Index aug {indexationData[room.id].baseYear}: {indexationData[room.id].startIndex}</p>
+                                      <p>Index aug {indexationData[room.id].targetYear}: {indexationData[room.id].currentIndex}</p>
+                                      <p className="mt-1 font-bold text-emerald-700">
+                                        €{indexationData[room.id].baseRent} × ({indexationData[room.id].currentIndex} / {indexationData[room.id].startIndex}) = €{indexationData[room.id].indexedRent}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="font-bold text-slate-900">Indexatie actief</p>
+                                      <p className="mt-1">Basishuur: €{room.baseRent ?? room.monthlyRent} ({room.baseRentYear ?? new Date().getFullYear()})</p>
+                                      <p className="mt-1 text-slate-500">De huurprijs wordt automatisch geïndexeerd bij contractverlenging.</p>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                         {[
-                          ['Huurprijs', `€ ${room.monthlyRent}/maand`],
                           ['Vaste kosten', `€ ${room.fixedCosts}/maand`],
                           ['Studentenbelasting', `€ ${room.studentTax}/maand`],
                           ['Waarborg', `€ ${room.deposit}`],
