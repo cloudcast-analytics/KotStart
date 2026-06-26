@@ -100,7 +100,14 @@ export default function InspectionReviewPage() {
     if (!token || !contractId) return
     setSubmitting(true)
     try {
-      await approveInspectionToken(token.id, contractId, 'start')
+      await approveInspectionToken(
+        token.id,
+        contractId,
+        'start',
+        (token.landlordItems as Array<Record<string, unknown>>) ?? [],
+        (token.studentItems as Array<Record<string, unknown>>) ?? [],
+        token.studentPhotoUrls ?? [],
+      )
       navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Goedkeuring mislukt')
