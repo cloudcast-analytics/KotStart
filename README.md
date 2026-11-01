@@ -59,22 +59,22 @@ Zonder deze variabelen werkt de app op lokale mock-data. `VITE_DEMO_MODE` is ver
 
 ## Deployment
 
-De app draait op Railway: `https://kotstart.up.railway.app`
+De app draait op Railway: `https://kotstart-production.up.railway.app` (project `KotStart`, service `KotStart`, account Vini G).
 
-Redeploy na een push naar `master` gaat automatisch als Railway aan de GitHub-repo is gekoppeld.
+De service is niet aan GitHub gekoppeld. Redeployen doe je met `railway up --service KotStart`.
 
 ## Database
 
-Supabase (project `tsieqsxzjrfnevcrbswg`). Migraties staan in `supabase/migrations/`. Toepassen:
+Supabase (project `fimwpuleixpoznryuzvg`, organisatie AV Solutions). Migraties staan in `supabase/migrations/`. Toepassen:
 
 ```bash
-npx supabase link --project-ref tsieqsxzjrfnevcrbswg
+npx supabase link --project-ref fimwpuleixpoznryuzvg
 npx supabase db push
 ```
 
 ## E-mail
 
-Contracten worden verstuurd via Resend vanuit de Supabase Edge Function `send-contract-email`. Afzender: `info@cloudcastanalytics.com`. DNS-records (DKIM, SPF, MX) zijn geconfigureerd bij one.com.
+Contracten worden verstuurd via Resend vanuit de Supabase Edge Function `send-contract-email`. Afzender: `KotStart <contact@kotklusser.be>`, via het geverifieerde domein `kotklusser.be`. Bevestigings- en resetmails van Supabase Auth lopen via Resend SMTP.
 
 ## Status (mei 2026)
 

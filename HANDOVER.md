@@ -1,5 +1,7 @@
 # KotStart Handover
 
+> **Verouderd sinds 2026-11-01.** KotStart is verhuisd omdat het oude Supabase- en Railway-account niet meer bereikbaar is. Supabase: `fimwpuleixpoznryuzvg` (AV Solutions). Railway: project `KotStart` (account Vini G), `https://kotstart-production.up.railway.app`. Refs, URL's en accounts hieronder gelden niet meer.
+
 Date: 2026-05-24
 
 ## Current Status

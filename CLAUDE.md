@@ -184,7 +184,8 @@ Without these, the app runs entirely on mock data (read-only, no persistence, no
 
 ## Deployment
 
-- **Railway** is the live host. Project: `kotstart-demo`, URL: `https://kotstart.up.railway.app`
+- **Railway** is the live host. Project and service: `KotStart` (account Vini G), URL: `https://kotstart-production.up.railway.app`. Not linked to GitHub; redeploy with `railway up --service KotStart`
+- **Supabase**: project `fimwpuleixpoznryuzvg` (organisation AV Solutions, eu-central-1), moved on 2026-11-01. The old projects `tsieqsxzjrfnevcrbswg` and `bqlykafglpdumupesdsl` belong to an account we can no longer access
 - **Build**: `npm run build` (requires Node 20+)
 - **Start**: `node server.js` — a custom static file server that binds to `0.0.0.0:$PORT` and serves the `dist/` folder with SPA fallback (all unknown paths → `index.html`)
 - **railway.toml** controls build/start commands on Railway
@@ -203,7 +204,7 @@ Storage buckets: `student-photos`, `inspection-photos`
 
 To apply: run new migration SQL in the Supabase SQL Editor (in filename order), then add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to Railway env vars.
 
-**Email domain (Resend)**: Currently using `cloudcast-analytics.com` (domain of a separate company, Cloudcast). SPF + MX are verified. DKIM was added at one.com on 2026-05-24 — propagation may take 24–48h, check Resend dashboard for green status. **Before official launch, KotStart needs its own domain** (e.g. `kotstart.be`) with fresh SPF/DKIM/MX records configured in Resend.
+**Email domain (Resend)**: Since 2026-11-01 KotStart sends as `KotStart <contact@kotklusser.be>`, using the verified `kotklusser.be` domain. Edge functions read `RESEND_API_KEY`, `RESEND_FROM_EMAIL` and `RESEND_FROM_NAME` from Supabase secrets; Auth mails go through Resend SMTP. **Before official launch, KotStart needs its own domain** (e.g. `kotstart.be`) with fresh SPF/DKIM/MX records configured in Resend.
 
 ---
 
